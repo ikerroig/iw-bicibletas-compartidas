@@ -1,0 +1,578 @@
+openapi: 3.1.0
+info:
+  title: API SI-16 — Bicicletas Compartidas
+  version: 1.0.0
+  description: >
+    Contrato único compartido por las 8 especificaciones (constitución SI-16,
+    principio III). Cada operación lleva el tag de la spec responsable.
+    Convenciones globales: contracts/README.md. Modelo de datos: ../data-model.md.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Entorno de desarrollo
+security:
+  - bearerAuth: []
+tags:
+  - name: auth            # base compartida (spec-001)
+  - name: spec-001        # Iker Roig — disponibilidad en tiempo real
+  - name: spec-002        # Iker Roig — desbloqueo
+  - name: spec-003        # Alex Morell — devolución y tarificación
+  - name: spec-004        # Alex Morell — historial
+  - name: spec-005        # Josep Peiró — incidencias (reporte)
+  - name: spec-006        # Josep Peiró — taller
+  - name: spec-007        # Alberto Copa — balanceo
+  - name: spec-008        # Alberto Copa — analítica
+
+paths:
+  # ---------------------------------------------------------------- auth (base)
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      security: []
+      summary: Inicio de sesión (email + contraseña → JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/me:
+    get:
+      tags: [auth]
+      operationId: getMe
+      summary: Usuario autenticado actual (rol, abono)
+      responses:
+        '200':
+          description: Usuario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  # ---------------------------------------------------------------- spec-001
+  /estaciones:
+    get:
+      tags: [spec-001]
+      operationId: listarEstaciones
+      summary: Red completa con estado en vivo desde Redis (polling ≤ 15 s)
+      description: >
+        HU-01 FR-001…FR-006. Contadores provenientes del estado en vivo
+        (contracts/redis-state.md); bicicletas averiadas excluidas; estaciones
+        fuera de servicio marcadas. Cualquier usuario autenticado.
+      responses:
+        '200':
+          description: Snapshot de la red con marca de frescura
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [actualizado_en, estaciones]
+                properties:
+                  actualizado_en: { type: string, format: date-time }
+                  estaciones:
+                    type: array
+                    items: { $ref: '#/components/schemas/EstacionEstado' }
+        '401': { $ref: '#/components/responses/Error' }
+  /estaciones/{id}:
+    get:
+      tags: [spec-001]
+      operationId: detalleEstacion
+      summary: Detalle de una estación (HU-001 FR-004)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: Detalle con contadores y estado de servicio
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstacionDetalle' }
+        '404': { $ref: '#/components/responses/Error' }
+
+  # ---------------------------------------------------------------- spec-002
+  /alquileres/desbloqueo:
+    post:
+      tags: [spec-002]
+      operationId: desbloquear
+      summary: Desbloqueo por código de anclaje — crea viaje activo (HU-02)
+      description: >
+        Reglas críticas server-side: abono vigente (403 ABONO_VENCIDO), sin
+        viaje activo (409 VIAJE_ACTIVO), anclaje en servicio con bicicleta
+        disponible (404/409). Todo o nada (transacción única).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codigo_anclaje]
+              properties:
+                codigo_anclaje: { type: string, example: "AN-00123" }
+      responses:
+        '201':
+          description: Viaje activo creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Viaje' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /alquileres/activo:
+    get:
+      tags: [spec-002]
+      operationId: viajeActivo
+      summary: Viaje activo del usuario autenticado (o null)
+      responses:
+        '200':
+          description: Viaje activo o ausencia del mismo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  viaje:
+                    oneOf:
+                      - { $ref: '#/components/schemas/Viaje' }
+                      - { type: 'null' }
+
+  # ---------------------------------------------------------------- spec-003
+  /devoluciones:
+    post:
+      tags: [spec-003]
+      operationId: devolver
+      summary: Devolución en anclaje libre — cierra viaje y tarifica (HU-03)
+      description: >
+        Registra hora de llegada, libera al usuario, ancla la bicicleta.
+        ≤ 1800 s → coste 0,00 €; excedente → solo minutos que exceden de los
+        30 iniciales × TARIFA_MINUTO. Una sola devolución efectiva por viaje.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codigo_anclaje]
+              properties:
+                codigo_anclaje: { type: string, example: "AN-00456" }
+      responses:
+        '200':
+          description: Viaje finalizado con importe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Viaje' }
+        '409': { $ref: '#/components/responses/Error' }   # SIN_VIAJE_ACTIVO | ANCLAJE_OCUPADO
+
+  # ---------------------------------------------------------------- spec-004
+  /viajes:
+    get:
+      tags: [spec-004]
+      operationId: historialViajes
+      summary: Historial propio finalizado con filtros y sumatorio (HU-04)
+      parameters:
+        - { name: desde,  in: query, schema: { type: string, format: date } }
+        - { name: hasta,  in: query, schema: { type: string, format: date } }
+        - { name: page,     in: query, schema: { type: integer, default: 1 } }
+        - { name: page_size, in: query, schema: { type: integer, default: 50, maximum: 200 } }
+      responses:
+        '200':
+          description: Solo viajes finalizados del usuario; coste 0,00 identificado con etiqueta
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, suma_coste]
+                properties:
+                  total: { type: integer }
+                  suma_coste: { type: number, example: 4.6 }
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Viaje' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  # ---------------------------------------------------------------- spec-005
+  /incidencias:
+    post:
+      tags: [spec-005]
+      operationId: reportarAveria
+      summary: Reporte de avería por usuario — bicicleta a 'averiada' (HU-05)
+      description: >
+        Cambio de estado inmediato e inhabilitación para alquiler. Reporte
+        repetido sobre bicicleta ya averiada: 200 con 'duplicada: true' y la
+        incidencia original, sin segundo bloqueo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bicicleta_id, tipo_fallo, descripcion_reporte]
+              properties:
+                bicicleta_id: { type: integer, format: int64 }
+                tipo_fallo: { $ref: '#/components/schemas/TipoFallo' }
+                descripcion_reporte: { type: string, minLength: 10 }
+      responses:
+        '201':
+          description: Incidencia registrada y bicicleta inhabilitada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incidencia: { $ref: '#/components/schemas/Incidencia' }
+                  duplicada: { type: boolean, default: false }
+        '200':
+          description: Ya estaba averiada (duplicada: true, sin efectos nuevos)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incidencia: { $ref: '#/components/schemas/Incidencia' }
+                  duplicada: { type: boolean, default: true }
+        '422': { $ref: '#/components/responses/Error' }
+    get:
+      tags: [spec-005]
+      operationId: listarIncidencias
+      summary: Panel de incidencias (HU-05) — rol operario_taller
+      parameters:
+        - name: estado
+          in: query
+          schema: { type: string, enum: [pendiente, en_reparacion, resuelta] }
+      responses:
+        '200':
+          description: Incidencias ordenadas por fecha de reporte
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Incidencia' }
+        '403': { $ref: '#/components/responses/Error' }
+
+  # ---------------------------------------------------------------- spec-006
+  /taller/bicicletas/{id}:
+    get:
+      tags: [spec-006]
+      operationId: fichaBicicleta
+      summary: Ficha de taller con reporte original del usuario (HU-06) — rol operario_taller
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: Bicicleta + incidencias/intervenciones de su historial
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FichaBicicleta' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+  /taller/bicicletas/{id}/intervenciones:
+    post:
+      tags: [spec-006]
+      operationId: registrarIntervencion
+      summary: Parte de taller; opcionalmente marca 'operativa' (HU-06) — rol operario_taller
+      description: >
+        Cierra todas las incidencias abiertas de la bicicleta y firma la
+        intervención (operario + fecha). 'marcar_operativa: true' → la
+        bicicleta pasa a 'disponible' SIN anclaje (invisible en mapa hasta
+        confirmar ubicación, FR-007). Campos obligatorios: piezas o notas.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IntervencionRequest' }
+      responses:
+        '201':
+          description: Intervención persistida firmada por el operario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incidencia' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /taller/bicicletas/{id}/ubicacion:
+    post:
+      tags: [spec-006]
+      operationId: confirmarUbicacion
+      summary: Ubica bicicleta reparada en anclaje libre (HU-06 FR-005) — rol operario_taller
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codigo_anclaje]
+              properties:
+                codigo_anclaje: { type: string }
+      responses:
+        '200':
+          description: Bicicleta anclada; vuelve a figurar disponible en el mapa (Redis actualizado en el acto)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EstacionEstado' }
+        '409': { $ref: '#/components/responses/Error' }   # ANCLAJE_OCUPADO | BICICLETA_NO_DISPONIBLE
+
+  # ---------------------------------------------------------------- spec-007
+  /balanceo/alertas:
+    get:
+      tags: [spec-007]
+      operationId: panelBalanceo
+      summary: Alertas abiertas ordenadas por urgencia (HU-07) — rol operario_logistica
+      responses:
+        '200':
+          description: Alertas no resueltas (estaciones < 10 % o > 90 %, excluye fuera de servicio)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/AlertaBalanceo' }
+        '403': { $ref: '#/components/responses/Error' }
+  /balanceo/traslados:
+    post:
+      tags: [spec-007]
+      operationId: confirmarTraslado
+      summary: Carga/descarga de lote entre estaciones (HU-07 FR-006) — rol operario_logistica
+      description: >
+        Valida que origen y destino existen/operan y que el lote no supera las
+        bicis disponibles en origen (si no → 409). Recalcula ambas estaciones
+        de inmediato (Redis post-commit) y evalúa umbrales de alerta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TrasladoRequest' }
+      responses:
+        '200':
+          description: Estado recalculado de ambas estaciones
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [origen, destino]
+                properties:
+                  origen:  { $ref: '#/components/schemas/EstacionEstado' }
+                  destino: { $ref: '#/components/schemas/EstacionEstado' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }   # ESTACION_SIN_CAPACIDAD
+
+  # ---------------------------------------------------------------- spec-008
+  /analitica/viajes:
+    get:
+      tags: [spec-008]
+      operationId: analiticaViajes
+      summary: Volumen de viajes por hora y día de la semana (HU-08) — rol gestor
+      parameters:
+        - { name: desde, in: query, required: true, schema: { type: string, format: date } }
+        - { name: hasta, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Agregados de viajes finalizados de toda la red en el rango
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnaliticaViajes' }
+        '403': { $ref: '#/components/responses/Error' }
+  /analitica/export:
+    get:
+      tags: [spec-008]
+      operationId: exportarCSV
+      summary: CSV del mismo rango con los mismos totales que los gráficos (HU-08) — rol gestor
+      parameters:
+        - { name: desde, in: query, required: true, schema: { type: string, format: date } }
+        - { name: hasta, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: >
+            Fichero CSV (UTF-8 con BOM, comas, RFC 4180) con columnas
+            id,fecha_hora,estacion_origen,estacion_destino,duracion_minutos,coste_eur
+          content:
+            text/csv:
+              schema: { type: string }
+        '403': { $ref: '#/components/responses/Error' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Error:
+      description: Error de negocio o de autorización
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [codigo, mensaje]
+          properties:
+            codigo: { type: string, example: ABONO_VENCIDO }
+            mensaje: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+    LoginResponse:
+      type: object
+      required: [token, usuario]
+      properties:
+        token: { type: string }
+        usuario: { $ref: '#/components/schemas/Usuario' }
+    Usuario:
+      type: object
+      required: [id, nombre, email, rol, abono_activo, fecha_vencimiento_abono]
+      properties:
+        id: { type: integer, format: int64 }
+        nombre: { type: string }
+        email: { type: string, format: email }
+        rol: { $ref: '#/components/schemas/Rol' }
+        abono_activo: { type: boolean }
+        fecha_vencimiento_abono: { type: [string, 'null'], format: date }
+    Rol:
+      type: string
+      enum: [usuario, operario_taller, operario_logistica, gestor]
+
+    EstacionEstado:
+      type: object
+      required: [id, nombre, latitud, longitud, capacidad_total, estado, bicis_disponibles, anclajes_libres, actualizado_en]
+      properties:
+        id: { type: integer, format: int64 }
+        nombre: { type: string }
+        latitud: { type: number }
+        longitud: { type: number }
+        capacidad_total: { type: integer }
+        estado: { type: string, enum: [operativa, fuera_de_servicio] }
+        bicis_disponibles: { type: integer }
+        anclajes_libres: { type: integer }
+        ocupacion_pct: { type: number }
+        actualizado_en: { type: string, format: date-time }
+    EstacionDetalle:
+      allOf:
+        - $ref: '#/components/schemas/EstacionEstado'
+        - type: object
+          properties:
+            anclajes:
+              type: array
+              items:
+                type: object
+                properties:
+                  codigo_anclaje: { type: string }
+                  estado: { type: string, enum: [libre, ocupado, fuera_de_servicio] }
+                  bicicleta_codigo: { type: [string, 'null'] }
+                  bicicleta_estado: { type: [string, 'null'] }
+
+    Viaje:
+      type: object
+      required: [id, usuario_id, bicicleta_id, estacion_origen_id, fecha_inicio, estado, coste_total]
+      properties:
+        id: { type: integer, format: int64 }
+        usuario_id: { type: integer, format: int64 }
+        bicicleta_id: { type: integer, format: int64 }
+        estacion_origen_id: { type: integer, format: int64 }
+        estacion_destino_id: { type: [integer, 'null'], format: int64 }
+        fecha_inicio: { type: string, format: date-time }
+        fecha_fin: { type: [string, 'null'], format: date-time }
+        duracion_minutos: { type: [integer, 'null'] }
+        coste_total: { type: number }
+        estado: { type: string, enum: [en_curso, finalizado] }
+        etiqueta: { type: [string, 'null'], description: '"Tramo gratuito (0,00 €)" cuando coste_total = 0 y finalizado' }
+
+    TipoFallo:
+      type: string
+      enum: [ frenos, cadena, neumatico, otro ]
+    Incidencia:
+      type: object
+      required: [id, bicicleta_id, tipo_fallo, descripcion_reporte, fecha_reporte, estado]
+      properties:
+        id: { type: integer, format: int64 }
+        bicicleta_id: { type: integer, format: int64 }
+        usuario_reporta_id: { type: [integer, 'null'], format: int64 }
+        operario_id: { type: [integer, 'null'], format: int64 }
+        tipo_fallo: { $ref: '#/components/schemas/TipoFallo' }
+        descripcion_reporte: { type: string }
+        piezas_sustituidas: { type: [string, 'null'] }
+        notas_taller: { type: [string, 'null'] }
+        fecha_reporte: { type: string, format: date-time }
+        fecha_reparacion: { type: [string, 'null'], format: date-time }
+        estado: { type: string, enum: [pendiente, en_reparacion, resuelta] }
+    FichaBicicleta:
+      type: object
+      required: [bicicleta, incidencias]
+      properties:
+        bicicleta:
+          type: object
+          properties:
+            id: { type: integer, format: int64 }
+            codigo: { type: string }
+            estado: { type: string, enum: [disponible, en_uso, averiada, en_taller] }
+        incidencias:
+          type: array
+          items: { $ref: '#/components/schemas/Incidencia' }
+    IntervencionRequest:
+      type: object
+      required: [piezas_sustituidas, notas_taller]
+      description: Obligatorio al menos uno de los dos campos
+      properties:
+        piezas_sustituidas: { type: [string, 'null'] }
+        notas_taller: { type: [string, 'null'] }
+        marcar_operativa: { type: boolean, default: false }
+
+    AlertaBalanceo:
+      type: object
+      required: [id, estacion_id, tipo_alerta, porcentaje_ocupacion, severidad, fecha_generacion, resuelta]
+      properties:
+        id: { type: integer, format: int64 }
+        estacion_id: { type: integer, format: int64 }
+        estacion_nombre: { type: string }
+        tipo_alerta: { type: string, enum: [vacia_menos_10, llena_mas_90] }
+        porcentaje_ocupacion: { type: number }
+        severidad: { type: string, default: alta }
+        fecha_generacion: { type: string, format: date-time }
+        resuelta: { type: boolean }
+    TrasladoRequest:
+      type: object
+      required: [estacion_origen_id, estacion_destino_id, unidades]
+      properties:
+        estacion_origen_id: { type: integer, format: int64 }
+        estacion_destino_id: { type: integer, format: int64 }
+        unidades: { type: integer, minimum: 1 }
+
+    AnaliticaViajes:
+      type: object
+      required: [desde, hasta, total_viajes, total_coste, por_hora, por_dia_semana]
+      properties:
+        desde: { type: string, format: date }
+        hasta: { type: string, format: date }
+        total_viajes: { type: integer }
+        total_coste: { type: number }
+        por_hora:
+          type: array
+          minItems: 24
+          maxItems: 24
+          items: { type: integer }
+        por_dia_semana:
+          type: array
+          minItems: 7
+          maxItems: 7
+          items: { type: integer }
