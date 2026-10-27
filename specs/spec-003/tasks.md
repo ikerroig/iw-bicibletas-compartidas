@@ -22,9 +22,9 @@
 
 **Purpose**: Inicializar las dos raíces de código y la configuración de entorno
 
-- [ ] T001 [P] Initialize Go module `si16/backend` in `backend/go.mod` with deps: gin v1.10, pgx/v5, pgxpool, go-redis/v9, golang-jwt/v5, golang.org/x/crypto (bcrypt), github.com/pressly/goose/v3
-- [ ] T002 [P] Scaffold SolidJS + Vite 6 + Tailwind app in `frontend/` (`frontend/package.json`, `frontend/vite.config.ts`, `frontend/tailwind.config.js`, `frontend/index.html`, `frontend/src/index.tsx`)
-- [ ] T003 [P] Create `/.env.example` at repo root with `DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO=0,20` (requisito de `docker-compose.yml` y de la tarificación HU-03)
+- [X] T001 [P] Initialize Go module `si16/backend` in `backend/go.mod` with deps: gin v1.10, pgx/v5, pgxpool, go-redis/v9, golang-jwt/v5, golang.org/x/crypto (bcrypt), github.com/pressly/goose/v3
+- [X] T002 [P] Scaffold SolidJS + Vite 6 + Tailwind app in `frontend/` (`frontend/package.json`, `frontend/vite.config.ts`, `frontend/tailwind.config.js`, `frontend/index.html`, `frontend/src/index.tsx`)
+- [X] T003 [P] Create `/.env.example` at repo root with `DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO=0,20` (requisito de `docker-compose.yml` y de la tarificación HU-03)
 
 ---
 
@@ -34,16 +34,16 @@
 
 **?? CRITICAL**: Ninguna tarea de la US1 empieza hasta completar esta fase
 
-- [ ] T004 Create env config loader in `backend/internal/config/config.go` (lee `DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO` — este último como `float64`, default 0.20)
-- [ ] T005 [P] Create pgx pool + transaction helper in `backend/internal/db/db.go` (pool global y `WithTx(ctx, fn)` que hace BEGIN/COMMIT/ROLLBACK — la US1 exige una única transacción, research D2)
-- [ ] T006 [P] Create shared schema migration in `backend/migrations/0001_esquema_base.sql` tomando el DDL de [data-model de spec-001](../spec-001/data-model.md) (tablas `usuarios`, `estaciones`, `bicicletas`, `anclajes`, `viajes` + índices `ux_viajes_usuario_activo`, `ux_viajes_bicicleta_activa`, `ix_anclajes_estacion`) — **sin adiciones**: la HU-03 no cambia esquema; si el fichero ya existe al fusionar, NO se toca (propiedad spec-001, principio III)
-- [ ] T007 Create migration runner in `backend/cmd/migrate/main.go` (goose `up` contra `DATABASE_URL`)
-- [ ] T008 [P] Create minimal seed in `backend/cmd/seed/main.go`: ≥2 estaciones, anclajes (`AN-00001`… con `codigo_anclaje`), bicicletas (una `disponible` anclada, una `averiada`), usuarios de prueba (uno con abono vigente y otro caducado, rol `usuario`) — necesario para probar la US1 sin dependencias de otras ramas
-- [ ] T009 [P] Create shared structs in `backend/internal/models/models.go` (`Viaje`, `Anclaje`, `Bicicleta`, `Estacion`, `Usuario` con los campos exactos del modelo compartido)
-- [ ] T010 [P] Create minimal auth in `backend/internal/auth/` (`jwt.go` con `GenerarToken`/middleware `RequireAuth` + `RequireRole`, endpoint `POST /auth/login` en `backend/internal/auth/login.go`) — base mínima para probar el endpoint autenticado de la US1; si al fusionar ya existe el auth global de spec-001, se elimina este y se reutiliza el suyo
-- [ ] T011 [P] Create Redis state writer in `backend/internal/cache/estado.go` (reescritura de `estacion:{id}:estado` con campos `bicis_disponibles`, `anclajes_libres`, `ocupacion_pct`, `estado`, `actualizado_en`, TTL 120 s, fórmula R9 — la US1 la llama post-commit, research D4)
-- [ ] T012 Create HTTP server entrypoint in `backend/cmd/server/main.go` + shared router skeleton in `backend/internal/routes/register.go` (función `Register(rg *gin.RouterGroup, deps Deps)` que hoy solo llama al auth; cada spec añadirá su `RegisterSpec00N` en su propio fichero)
-- [ ] T013 [P] Create typed fetch client in `frontend/src/services/api.ts` (lee token de `localStorage`, header `Authorization: Bearer`, maneja el envelope `{ error: { codigo, mensaje } }`)
+- [X] T004 Create env config loader in `backend/internal/config/config.go` (lee `DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO` — este último como `float64`, default 0.20)
+- [X] T005 [P] Create pgx pool + transaction helper in `backend/internal/db/db.go` (pool global y `WithTx(ctx, fn)` que hace BEGIN/COMMIT/ROLLBACK — la US1 exige una única transacción, research D2)
+- [X] T006 [P] Create shared schema migration in `backend/migrations/0001_esquema_base.sql` tomando el DDL de [data-model de spec-001](../spec-001/data-model.md) (tablas `usuarios`, `estaciones`, `bicicletas`, `anclajes`, `viajes` + índices `ux_viajes_usuario_activo`, `ux_viajes_bicicleta_activa`, `ix_anclajes_estacion`) — **sin adiciones**: la HU-03 no cambia esquema; si el fichero ya existe al fusionar, NO se toca (propiedad spec-001, principio III)
+- [X] T007 Create migration runner in `backend/cmd/migrate/main.go` (goose `up` contra `DATABASE_URL`)
+- [X] T008 [P] Create minimal seed in `backend/cmd/seed/main.go`: ≥2 estaciones, anclajes (`AN-00001`… con `codigo_anclaje`), bicicletas (una `disponible` anclada, una `averiada`), usuarios de prueba (uno con abono vigente y otro caducado, rol `usuario`) — necesario para probar la US1 sin dependencias de otras ramas
+- [X] T009 [P] Create shared structs in `backend/internal/models/models.go` (`Viaje`, `Anclaje`, `Bicicleta`, `Estacion`, `Usuario` con los campos exactos del modelo compartido)
+- [X] T010 [P] Create minimal auth in `backend/internal/auth/` (`jwt.go` con `GenerarToken`/middleware `RequireAuth` + `RequireRole`, endpoint `POST /auth/login` en `backend/internal/auth/login.go`) — base mínima para probar el endpoint autenticado de la US1; si al fusionar ya existe el auth global de spec-001, se elimina este y se reutiliza el suyo
+- [X] T011 [P] Create Redis state writer in `backend/internal/cache/estado.go` (reescritura de `estacion:{id}:estado` con campos `bicis_disponibles`, `anclajes_libres`, `ocupacion_pct`, `estado`, `actualizado_en`, TTL 120 s, fórmula R9 — la US1 la llama post-commit, research D4)
+- [X] T012 Create HTTP server entrypoint in `backend/cmd/server/main.go` + shared router skeleton in `backend/internal/routes/register.go` (función `Register(rg *gin.RouterGroup, deps Deps)` que hoy solo llama al auth; cada spec añadirá su `RegisterSpec00N` en su propio fichero)
+- [X] T013 [P] Create typed fetch client in `frontend/src/services/api.ts` (lee token de `localStorage`, header `Authorization: Bearer`, maneja el envelope `{ error: { codigo, mensaje } }`)
 
 **Checkpoint**: infraestructura lista — `docker compose up -d`, `go run ./cmd/migrate up`, `go run ./cmd/seed`, `go run ./cmd/server` y `npm run dev` arrancan; login devuelve JWT
 
@@ -57,19 +57,19 @@
 
 ### Tests for User Story 1 ?? (primero, deben FALLAR antes de implementar)
 
-- [ ] T014 [P] [US1] Unit tests for tarifa in `backend/internal/services/devolucion/tarifa_test.go`: T3a 25 min → 0.00; T3c exactamente 1800 s → 0.00; T3d 1801 s × TARIFA 0.20 → 0.20; T3b 45 min → 3.00; segundos negativos → piso 0.00 (spec edge "reloj inconsistente")
-- [ ] T015 [P] [US1] Integration tests for cierre in `backend/tests/devolucion_test.go` (contra BD del compose): T3e sin viaje activo → 409 `SIN_VIAJE_ACTIVO` y anclaje intacto; T3g anclaje ocupado/inexistente → 409 y viaje sigue `en_curso`; T3f 2 devoluciones concurrentes → exactamente 1 × 200 + 1 × 409 `VIAJE_YA_CERRADO`; T3h bici averiada durante viaje → 200 y bici queda anclada + `averiada`; T3i `fecha_fin < fecha_inicio` forzada → coste ≥ 0; T3j latencia: cronometrar la devolución válida y asertar < 10 s (SC-003)
+- [X] T014 [P] [US1] Unit tests for tarifa in `backend/internal/services/devolucion/tarifa_test.go`: T3a 25 min → 0.00; T3c exactamente 1800 s → 0.00; T3d 1801 s × TARIFA 0.20 → 0.20; T3b 45 min → 3.00; segundos negativos → piso 0.00 (spec edge "reloj inconsistente")
+- [X] T015 [P] [US1] Integration tests for cierre in `backend/tests/devolucion_test.go` (contra BD del compose): T3e sin viaje activo → 409 `SIN_VIAJE_ACTIVO` y anclaje intacto; T3g anclaje ocupado/inexistente → 409 y viaje sigue `en_curso`; T3f 2 devoluciones concurrentes → exactamente 1 × 200 + 1 × 409 `VIAJE_YA_CERRADO`; T3h bici averiada durante viaje → 200 y bici queda anclada + `averiada`; T3i `fecha_fin < fecha_inicio` forzada → coste ≥ 0; T3j latencia: cronometrar la devolución válida y asertar < 10 s (SC-003)
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Implement pure tariff calculation in `backend/internal/services/devolucion/tarifa.go`: `CalcularCoste(segundos int64, tarifaMinuto float64) (coste float64)` — ≤ 1800 → 0; si no `ceil((segundos−1800)/60) × tarifaMinuto`, piso 0 (research D1, FR-003/FR-004)
-- [ ] T017 [US1] Implement closing service in `backend/internal/services/devolucion/service.go`: `CerrarViaje(ctx, usuarioID, codigoAnclaje)` con la transacción única y el orden de research D2 — `FOR UPDATE` anclaje (valida `libre` → V2), `FOR UPDATE` viaje `en_curso` (→ V1), validación de reloj (V4), cálculo con T016, `UPDATE viajes … WHERE estado='en_curso'` (rows=0 → `VIAJE_YA_CERRADO`, V3), `UPDATE anclajes` a `ocupado`, `UPDATE bicicletas` preservando `averiada` (V5), COMMIT; todos los errores con los códigos de research D3
-- [ ] T018 [US1] Add post-commit Redis invalidation in `backend/internal/services/devolucion/service.go` (tras COMMIT, reescribe `estacion:{id}:estado` de la estación destino vía `cache.ActualizarEstadoEstacion`, research D4; fallo de Redis no revierte el cierre)
-- [ ] T019 [P] [US1] Implement HTTP handler in `backend/internal/handlers/devolucion/handler.go`: valida `codigo_anclaje` (D6 → 422 `ENTRADA_INVALIDA`), llama al servicio, responde `200` con schema `Viaje` incluyendo `etiqueta: "Tramo gratuito (0,00 €)"` cuando `coste_total = 0` (D5) y el envelope de error correspondiente (D3)
-- [ ] T020 [US1] Register route in `backend/internal/routes/spec_003_devolucion.go`: `RegisterSpec003(rg *gin.RouterGroup, deps Deps)` montando `POST /devoluciones` con `RequireAuth` + `RequireRole("usuario")` (research D7) y añadir su llamada en `backend/internal/routes/register.go` (único punto de merge compartido)
-- [ ] T021 [P] [US1] Create API client in `frontend/src/services/api/devolucion.ts`: `devolver(codigoAnclaje)` → `POST /devoluciones` tipado contra el contrato [contracts/devoluciones.md](./contracts/devoluciones.md)
-- [ ] T022 [US1] Implement page in `frontend/src/pages/devolucion/index.tsx`: formulario de `codigo_anclaje`, estado de envío, pantalla de éxito con duración/coste/etiqueta "Tramo gratuito (0,00 €)", y manejo de los 409/422 mostrando `error.mensaje`; registrar la ruta en `frontend/src/routes.tsx` (segundo punto de merge compartido)
-- [ ] T023 [P] [US1] Component test in `frontend/src/pages/devolucion/index.test.tsx` (Vitest + @solidjs/testing-library + MSW): éxito ≤ 30 min pinta la etiqueta; 409 `SIN_VIAJE_ACTIVO` y 409 `ANCLAJE_OCUPADO` pintan el mensaje sin cambiar de vista
+- [X] T016 [US1] Implement pure tariff calculation in `backend/internal/services/devolucion/tarifa.go`: `CalcularCoste(segundos int64, tarifaMinuto float64) (coste float64)` — ≤ 1800 → 0; si no `ceil((segundos−1800)/60) × tarifaMinuto`, piso 0 (research D1, FR-003/FR-004)
+- [X] T017 [US1] Implement closing service in `backend/internal/services/devolucion/service.go`: `CerrarViaje(ctx, usuarioID, codigoAnclaje)` con la transacción única y el orden de research D2 — `FOR UPDATE` anclaje (valida `libre` → V2), `FOR UPDATE` viaje `en_curso` (→ V1), validación de reloj (V4), cálculo con T016, `UPDATE viajes … WHERE estado='en_curso'` (rows=0 → `VIAJE_YA_CERRADO`, V3), `UPDATE anclajes` a `ocupado`, `UPDATE bicicletas` preservando `averiada` (V5), COMMIT; todos los errores con los códigos de research D3
+- [X] T018 [US1] Add post-commit Redis invalidation in `backend/internal/services/devolucion/service.go` (tras COMMIT, reescribe `estacion:{id}:estado` de la estación destino vía `cache.ActualizarEstadoEstacion`, research D4; fallo de Redis no revierte el cierre)
+- [X] T019 [P] [US1] Implement HTTP handler in `backend/internal/handlers/devolucion/handler.go`: valida `codigo_anclaje` (D6 → 422 `ENTRADA_INVALIDA`), llama al servicio, responde `200` con schema `Viaje` incluyendo `etiqueta: "Tramo gratuito (0,00 €)"` cuando `coste_total = 0` (D5) y el envelope de error correspondiente (D3)
+- [X] T020 [US1] Register route in `backend/internal/routes/spec_003_devolucion.go`: `RegisterSpec003(rg *gin.RouterGroup, deps Deps)` montando `POST /devoluciones` con `RequireAuth` + `RequireRole("usuario")` (research D7) y añadir su llamada en `backend/internal/routes/register.go` (único punto de merge compartido)
+- [X] T021 [P] [US1] Create API client in `frontend/src/services/api/devolucion.ts`: `devolver(codigoAnclaje)` → `POST /devoluciones` tipado contra el contrato [contracts/devoluciones.md](./contracts/devoluciones.md)
+- [X] T022 [US1] Implement page in `frontend/src/pages/devolucion/index.tsx`: formulario de `codigo_anclaje`, estado de envío, pantalla de éxito con duración/coste/etiqueta "Tramo gratuito (0,00 €)", y manejo de los 409/422 mostrando `error.mensaje`; registrar la ruta en `frontend/src/routes.tsx` (segundo punto de merge compartido)
+- [X] T023 [P] [US1] Component test in `frontend/src/pages/devolucion/index.test.tsx` (Vitest + @solidjs/testing-library; **stub global de fetch en lugar de MSW**: el único msw del registro local, 3.0.3, marca subpaths de Node como `"browser": null` y es irresoluble en el pipeline jsdom de Vitest 5 + Vite 6 — misma cobertura: éxito ≤ 30 min pinta la etiqueta; 409 `SIN_VIAJE_ACTIVO` y 409 `ANCLAJE_OCUPADO` pintan el mensaje sin cambiar de vista)
 
 **Checkpoint**: US1 completa y testeable en solitario — devolución funcional de extremo a extremo (UI → API → transacción → Redis)
 
@@ -79,10 +79,10 @@
 
 **Purpose**: Verificación de calidad y validación contra el spec
 
-- [ ] T024 [P] Run backend test suite in `backend/`: `go vet ./...` y `go test ./...` (unit + integración T3a–T3i) hasta dejarlo en verde
-- [ ] T025 [P] Run frontend test suite in `frontend/`: `npm test` (Vitest) hasta dejarlo en verde
-- [ ] T026 Execute manual validation per [quickstart.md](./quickstart.md) §3 (escenario S3): devolución ≤ 30 min → 0,00 €; > 30 min → solo excedente; usuario puede desbloquear de inmediato; `actualizado_en` de la estación destino nuevo en ≤ 30 s (constitución IV); rechazos sin efectos
-- [ ] T027 Update `specs/spec-003/checklists/requirements.md` marcando cada criterio de aceptación del spec como cubierto (con puntero al test/verificación que lo demuestra)
+- [X] T024 [P] Run backend test suite in `backend/`: `go vet ./...` y `go test ./...` (unit + integración T3a–T3i) hasta dejarlo en verde
+- [X] T025 [P] Run frontend test suite in `frontend/`: `npm test` (Vitest) hasta dejarlo en verde
+- [X] T026 Execute manual validation per [quickstart.md](./quickstart.md) §3 (escenario S3): devolución ≤ 30 min → 0,00 €; > 30 min → solo excedente; usuario puede desbloquear de inmediato; `actualizado_en` de la estación destino nuevo en ≤ 30 s (constitución IV); rechazos sin efectos
+- [X] T027 Update `specs/spec-003/checklists/requirements.md` marcando cada criterio de aceptación del spec como cubierto (con puntero al test/verificación que lo demuestra)
 
 ---
 
