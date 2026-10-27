@@ -40,6 +40,7 @@ go test ./...                                    # integración end-to-end contr
 | T3g | Anclaje ocupado / inexistente / fuera de servicio | `409` con código específico; viaje sigue `en_curso` |
 | T3h | Bici reportada averiada durante el viaje (HU-05) → devolución | `200`, viaje `finalizado` y tarificado; la bici queda **anclada y `averiada`** (no suma en `bicis_disponibles`) |
 | T3i | Reloj inconsistente (`fecha_fin < fecha_inicio` forzada en BD) | coste ≥ 0; se usa hora validada |
+| T3j | Latencia de una devolución válida (SC-003) | completa en < 10 s (asertado en el test de integración y cronometrado en el manual) |
 
 ## 3. Escenario manual S3 (misma prueba del quickstart global)
 
@@ -69,5 +70,5 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/devoluciones `
 |---|---|
 | SC-001 (100 % viajes ≤ 30 min con coste 0,00 €) | T3a/T3c + inspección SQL: `SELECT count(*) FROM viajes WHERE duracion_minutos <= 30 AND coste_total <> 0` = 0 |
 | SC-002 (100 % viajes > 30 min cobrados solo excedente) | T3b/T3d + inspección SQL: coste = minutos excedentes × TARIFA_MINUTO |
-| SC-003 (devolución < 10 s) | cronómetro manual en el paso 3; o benchmark de integración |
+| SC-003 (devolución < 10 s) | T3j (aserción en test de integración) + cronómetro manual en el paso 3 |
 | SC-004 (usuario libre de inmediato, 0 dobles cierres) | pasos 1 y T3f |

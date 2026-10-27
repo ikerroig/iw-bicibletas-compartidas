@@ -58,7 +58,7 @@
 ### Tests for User Story 1 ?? (primero, deben FALLAR antes de implementar)
 
 - [ ] T014 [P] [US1] Unit tests for tarifa in `backend/internal/services/devolucion/tarifa_test.go`: T3a 25 min → 0.00; T3c exactamente 1800 s → 0.00; T3d 1801 s × TARIFA 0.20 → 0.20; T3b 45 min → 3.00; segundos negativos → piso 0.00 (spec edge "reloj inconsistente")
-- [ ] T015 [P] [US1] Integration tests for cierre in `backend/tests/devolucion_test.go` (contra BD del compose): T3e sin viaje activo → 409 `SIN_VIAJE_ACTIVO` y anclaje intacto; T3g anclaje ocupado/inexistente → 409 y viaje sigue `en_curso`; T3f 2 devoluciones concurrentes → exactamente 1 × 200 + 1 × 409 `VIAJE_YA_CERRADO`; T3h bici averiada durante viaje → 200 y bici queda anclada + `averiada`; T3i `fecha_fin < fecha_inicio` forzada → coste ≥ 0
+- [ ] T015 [P] [US1] Integration tests for cierre in `backend/tests/devolucion_test.go` (contra BD del compose): T3e sin viaje activo → 409 `SIN_VIAJE_ACTIVO` y anclaje intacto; T3g anclaje ocupado/inexistente → 409 y viaje sigue `en_curso`; T3f 2 devoluciones concurrentes → exactamente 1 × 200 + 1 × 409 `VIAJE_YA_CERRADO`; T3h bici averiada durante viaje → 200 y bici queda anclada + `averiada`; T3i `fecha_fin < fecha_inicio` forzada → coste ≥ 0; T3j latencia: cronometrar la devolución válida y asertar < 10 s (SC-003)
 
 ### Implementation for User Story 1
 
