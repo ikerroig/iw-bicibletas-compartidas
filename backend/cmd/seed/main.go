@@ -192,6 +192,9 @@ func run() error {
 		// ---- Viajes FINALIZADOS de Ana para la HU-04 (research D8) ----
 		// Repartidos en ≥ 2 meses (actual, anterior y anteactual): uno con
 		// coste 0,00 (etiqueta de tramo gratuito), otros con coste > 0.
+		// Los costes siguen la tarifa HU-03 (0,20 €/min tras los 30 primeros
+		// minutos gratis, véase services/devolucion/tarifa.go) para que
+		// duración y precio no se contradigan en la validación manual.
 		// Día 15 mediodía UTC = día 15 tarde en Europe/Madrid (evita bordes
 		// de zona horaria y de fin de mes). Cumple el CHECK de 'finalizado':
 		// fecha_fin, estacion_destino_id y duracion_minutos NOT NULL.
@@ -202,11 +205,11 @@ func run() error {
 			minutos  int
 			coste    string
 		}{
-			{0, 5, 12, "0.00"},   // tramo gratuito → etiqueta
-			{0, 10, 25, "2.50"},
-			{0, 20, 40, "1.25"},
-			{-1, 15, 30, "3.00"},  // mes anterior
-			{-2, 15, 55, "4.00"},  // dos meses atrás
+			{0, 5, 12, "0.00"},   // ≤ 30 min → tramo gratuito → etiqueta
+			{0, 10, 40, "2.00"},  // 10 min excedente × 0,20
+			{0, 20, 45, "3.00"},  // 15 min excedente × 0,20
+			{-1, 15, 50, "4.00"}, // mes anterior: 20 min excedente × 0,20
+			{-2, 15, 55, "5.00"}, // dos meses atrás: 25 min excedente × 0,20
 		}
 		bHist, err := crearBici("B-100", "disponible", nil)
 		if err != nil {
