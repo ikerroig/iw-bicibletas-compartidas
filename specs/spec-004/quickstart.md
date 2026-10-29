@@ -87,11 +87,11 @@ Ejecutado con el seed de T003 y el backend en `:8080`:
 | `npm test` (6 tests de la página + 3 de HU-03) | ✅ 9/9 |
 | `npm run build` (typecheck TS) | ✅ |
 | `go vet ./...` / `gofmt` | ✅ (avisos solo CRLF del working tree, no reales) |
-| S4 API historial ana | ✅ `total=5`, `suma=10.75`, orden DESC, nombres por JOIN, etiqueta en el viaje de 0,00 € |
+| S4 API historial ana | ✅ `total=5`, `suma=14.00`, orden DESC, nombres por JOIN, etiqueta en el viaje de 0,00 € |
 | Viaje `en_curso` de ana | ✅ **no** aparece en el historial |
-| Filtro `2026-10-01..2026-10-31` | ✅ `total=3`, `suma=3.75` (0,00 + 2,50 + 1,25) |
-| Paginación `page_size=1` pág. 1 vs 2 | ✅ items distintos (id 4 / id 3); `total=5` y `suma=10.75` idénticos |
-| Página fuera de rango (`page=999`) | ✅ `items=[]`, conserva `total=5` y `suma=10.75` |
+| Filtro `2026-10-01..2026-10-31` | ✅ `total=3`, `suma=5.00` (0,00 + 2,00 + 3,00) |
+| Paginación `page_size=1` pág. 1 vs 2 | ✅ items distintos (id 4 / id 3); `total=5` y `suma=14.00` idénticos |
+| Página fuera de rango (`page=999`) | ✅ `items=[]`, conserva `total=5` y `suma=14.00` |
 | 401 sin token / 422 `page=0` | ✅ `NO_AUTENTICADO` / `ENTRADA_INVALIDA` |
 | Aislamiento (`carla@si16.test`) | ✅ `total=0`, `suma=0` |
 | UI `http://localhost:5173/viajes` | ✅ SPA responde 200; interacciones (filtros, paginación, vacíos, error) cubiertas por los 6 tests de componente |
@@ -99,3 +99,9 @@ Ejecutado con el seed de T003 y el backend en `:8080`:
 > Nota: las fechas de los tests de zona horaria usan horas UTC que caen en
 > el día local esperado **tanto con CEST como con CET** (el 31-oct-2026
 > Madrid ya está en CET, DST terminó el 25-oct).
+
+> Nota (2026-10-29): reproceso del seed con costes coherentes con la tarifa
+> HU-03 (0,20 €/min tras 30 min gratis): 12 min → 0,00 · 40 min → 2,00 ·
+> 45 min → 3,00 · 50 min → 4,00 · 55 min → 5,00. Antes había viajes de
+> 25 min por 2,50 € y de 40 min por 1,25 € (costes fijados a mano), que
+> contradecían la regla tarifaria al validar a ojo en la UI.
