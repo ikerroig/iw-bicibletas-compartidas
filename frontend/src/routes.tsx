@@ -1,5 +1,6 @@
 import type { Component } from "solid-js";
 import { Devolucion } from "./pages/devolucion";
+import { MisViajes } from "./pages/viajes";
 
 /**
  * Registro único de rutas del SPA (fichero compartido entre specs).
@@ -16,4 +17,6 @@ export const routes: AppRoute[] = [
   { path: "/", component: Home },
   // spec-003 (HU-03): devolución y tarificación
   { path: "/devolucion", component: Devolucion },
+  // spec-004 (HU-04): historial de viajes y desglose mensual
+  { path: "/viajes", component: MisViajes },
 ];

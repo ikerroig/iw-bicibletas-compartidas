@@ -18,6 +18,8 @@ function Layout(props: RouteSectionProps) {
         <A href="/">Inicio</A>
         {/* spec-003 (T022): HU-03 */}
         <A href="/devolucion">Devolver</A>
+        {/* spec-004 (T012): HU-04 */}
+        <A href="/viajes">Mis viajes</A>
       </nav>
       <main class="p-4">{props.children}</main>
     </>

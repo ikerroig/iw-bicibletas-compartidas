@@ -189,6 +189,48 @@ func run() error {
 			return fmt.Errorf("viaje activo de Ana: %w", err)
 		}
 
+		// ---- Viajes FINALIZADOS de Ana para la HU-04 (research D8) ----
+		// Repartidos en ≥ 2 meses (actual, anterior y anteactual): uno con
+		// coste 0,00 (etiqueta de tramo gratuito), otros con coste > 0.
+		// Día 15 mediodía UTC = día 15 tarde en Europe/Madrid (evita bordes
+		// de zona horaria y de fin de mes). Cumple el CHECK de 'finalizado':
+		// fecha_fin, estacion_destino_id y duracion_minutos NOT NULL.
+		ana := ids["ana@si16.test"]
+		filas := []struct {
+			mes      int // 0 = mes actual, -1 = anterior, -2 = anteactual
+			dia      int
+			minutos  int
+			coste    string
+		}{
+			{0, 5, 12, "0.00"},   // tramo gratuito → etiqueta
+			{0, 10, 25, "2.50"},
+			{0, 20, 40, "1.25"},
+			{-1, 15, 30, "3.00"},  // mes anterior
+			{-2, 15, 55, "4.00"},  // dos meses atrás
+		}
+		bHist, err := crearBici("B-100", "disponible", nil)
+		if err != nil {
+			return fmt.Errorf("bicicleta B-100: %w", err)
+		}
+		for i, f := range filas {
+			inicio := time.Date(hoy.Year(), hoy.Month()+time.Month(f.mes), f.dia,
+				12, 0, 0, 0, time.UTC)
+			fin := inicio.Add(time.Duration(f.minutos) * time.Minute)
+			// Alterna estación destino para que origen/destino sean visibles.
+			destino := e1
+			if i%2 == 1 {
+				destino = e2
+			}
+			if _, err := tx.Exec(ctx,
+				`INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id,
+				                     estacion_destino_id, fecha_inicio, fecha_fin,
+				                     duracion_minutos, coste_total, estado)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, 'finalizado')`,
+				ana, bHist, e2, destino, inicio, fin, f.minutos, f.coste); err != nil {
+				return fmt.Errorf("viaje finalizado %d de Ana: %w", i+1, err)
+			}
+		}
+
 		return nil
 	})
 }
