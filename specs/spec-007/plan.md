@@ -8,7 +8,7 @@
 
 ## Summary
 
-Detectar y gestionar desequilibrios de ocupación de la red: el backend evalúa, para cada estación `operativa`, la ocupación según la fórmula R9 del modelo compartido (`bicis_disponibles / capacidad_total`, averiadas excluidas — FR-001/FR-008) y genera automáticamente una alerta de prioridad alta con umbrales estrictos (`< 10 %` → `vacia_menos_10`, `> 90 %` → `llena_mas_90`), resolviéndola automáticamente al volver al rango `[10, 90]` (FR-002…FR-004). La generación es de doble mecanismo (R10): evaluación **inline** tras cada traslado y un **worker `alertas`** (cada 60 s, arrancado desde `cmd/server/main.go`) que cubre cualquier otra mutación de la red (devoluciones, averías, taller) sin tocar el código de otras specs (const. V). El operario de logística consume dos endpoints propios, ya definidos en el OpenAPI global: `GET /balanceo/alertas` (panel ordenado por urgencia, FR-005) y `POST /balanceo/traslados` (confirmación de lote origen→destino en transacción con bloqueo, que recalcula ambas estaciones de inmediato en la vista del operario y en Redis post-commit, FR-006/FR-007). Frontend SolidJS: página `pages/balanceo/` con la lista de alertas y el formulario de traslado. **Cero migraciones nuevas y cero claves Redis nuevas**: se usan `alertas_balanceo` (ya en `0001_esquema_base.sql`, con `ux_alerta_abierta` e `ix_alertas_abiertas`) y `estacion:{id}:estado`. La auditoría de traslados (`traslados_balanceo`) queda **pendiente de acuerdo del equipo** (const. III); el MVP no la necesita.
+Detectar y gestionar desequilibrios de ocupación de la red: el backend evalúa, para cada estación `operativa`, la ocupación según la fórmula R9 del modelo compartido (`bicis_disponibles / capacidad_total`, averiadas excluidas — FR-001/FR-008) y genera automáticamente una alerta de prioridad alta con umbrales estrictos (`< 10 %` → `vacia_menos_10`, `> 90 %` → `llena_mas_90`), resolviéndola automáticamente al volver al rango `[10, 90]` (FR-002…FR-004). La generación es de doble mecanismo (R10): evaluación **inline** tras cada traslado y un **worker `alertas`** (cada 55 s — desviación mínima de R10, research D6 —, arrancado desde `cmd/server/main.go`) que cubre cualquier otra mutación de la red (devoluciones, averías, taller) sin tocar el código de otras specs (const. V). El operario de logística consume dos endpoints propios, ya definidos en el OpenAPI global: `GET /balanceo/alertas` (panel ordenado por urgencia, FR-005) y `POST /balanceo/traslados` (confirmación de lote origen→destino en transacción con bloqueo, que recalcula ambas estaciones de inmediato en la vista del operario y en Redis post-commit, FR-006/FR-007). Frontend SolidJS: página `pages/balanceo/` con la lista de alertas y el formulario de traslado. **Cero migraciones nuevas y cero claves Redis nuevas**: se usan `alertas_balanceo` (ya en `0001_esquema_base.sql`, con `ux_alerta_abierta` e `ix_alertas_abiertas`) y `estacion:{id}:estado`. La auditoría de traslados (`traslados_balanceo`) queda **pendiente de acuerdo del equipo** (const. III); el MVP no la necesita.
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Detectar y gestionar desequilibrios de ocupación de la red: el backend evalúa,
 
 **Project Type**: Monorepo web — esta spec aporta 2 endpoints + 1 worker + 1 página SPA dentro de las raíces `/backend` y `/frontend`.
 
-**Performance Goals**: Alerta generada < 60 s (SC-001, barrido del worker según R10); panel < 3 s; traslado < 10 s con recálculo inmediato en la respuesta y frescura ≤ 30 s en el estado global (SC-003, const. IV).
+**Performance Goals**: Alerta generada < 60 s (SC-001 = periodo de 55 s + barrido < 5 s verificado — research D6, desviación mínima de R10); panel < 3 s; traslado < 10 s con recálculo inmediato en la respuesta y frescura ≤ 30 s en el estado global (SC-003, const. IV).
 
 **Constraints**: Reglas de negocio solo server-side (const. I: umbrales, unicidad y validación del traslado se producen en Go + restricción DB `ux_alerta_abierta`); stack fijado (const. II); sin cambios de esquema compartido — los pendientes se marcan explícitamente (const. III); paquetes y rutas propios de spec-007 para no colisionar con otras ramas (const. V).
 
@@ -92,7 +92,7 @@ specs/spec-007/
 │   │   │   └── traslados_test.go # Unitarios (validaciones de entrada)
 │   │   ├── handlers/balanceo/    # spec-007 — handlers HTTP + DTOs
 │   │   │   └── handler.go
-│   │   ├── workers/alertas/      # spec-007 — barrido de umbrales cada 60 s (R10)
+│   │   ├── workers/alertas/      # spec-007 — barrido de umbrales cada 55 s (research D6)
 │   │   │   └── worker.go
 │   │   └── routes/
 │   │       ├── register.go       # Compartido: añadir 1 línea (RegisterSpec007)

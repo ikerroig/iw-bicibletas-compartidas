@@ -53,7 +53,7 @@ Panel de logística: lista de estaciones descompensadas **ordenada por urgencia 
 |---|---|
 | `items` | Alertas con `resuelta = false`, **ya ordenadas por el backend** por urgencia (extremos más alejados del rango `[10, 90]` primero; empates → `fecha_generacion` ASC). El frontend las pinta tal cual (const. I). |
 | `estacion_nombre` | Resuelto en backend con JOIN (campo del schema global `AlertaBalanceo`) |
-| `porcentaje_ocupacion` | Snapshot de ocupación en la última evaluación del worker (≤ 60 s); formatear con `es-ES` |
+| `porcentaje_ocupacion` | Snapshot de ocupación en la última evaluación del worker (< 60 s = `periodo + T_barrido`, research D6); formatear con `es-ES` |
 | `severidad` | Siempre `"alta"` (HU-07) |
 | `items: []` | Red equilibrada — **no** es error (caso límite) |
 
@@ -139,10 +139,10 @@ Garantías del `200`:
 |---|---|---|---|
 | 401 | `NO_AUTENTICADO` | Sin JWT o token inválido/expirado | Ninguno |
 | 403 | `ROL_NO_PERMITIDO` | Rol distinto de `operario_logistica` | Ninguno |
-| 422 | `ENTRADA_INVALIDA` | JSON malformado, campos ausentes, `unidades < 1` o `estacion_origen_id == estacion_destino_id` | Ninguno (validación previa a la transacción) |
-| 409 | `ESTACION_SIN_CAPACIDAD` | Estación origen o destino **inexistente** o **no operativa**; o el lote supera las bicis disponibles en origen; o supera los anclajes libres en destino | **ROLLBACK íntegro**: las estaciones quedan exactamente igual que antes (caso límite del spec: "se rechaza la confirmación inconsistente sin alterar estaciones") |
+| 422 | `ENTRADA_INVALIDA` | El **payload** es ilegible o no puede ser interpretado: JSON malformado, campos ausentes o no numéricos, `unidades < 1`, `estacion_origen_id == estacion_destino_id`. La petición ni siquiera llega a evaluarse contra el estado real | Ninguno (validación previa a la transacción) |
+| 409 | `ESTACION_SIN_CAPACIDAD` | El payload es **bien formado** pero choca con el **estado actual** del sistema: estación origen o destino **inexistente** o **no operativa**; o el lote supera las bicis disponibles en origen; o supera los anclajes libres en destino (incl. carrera concurrente resuelta con `FOR UPDATE`) | **ROLLBACK íntegro**: las estaciones quedan exactamente igual que antes (caso límite del spec: "se rechaza la confirmación inconsistente sin alterar estaciones") |
 
-El `mensaje` del `409` distingue la causa concreta (estación inexistente / fuera de servicio / origen sin bicicletas suficientes / destino sin anclajes libres) para que el operario pueda corregir el formulario; el `codigo` de negocio es siempre `ESTACION_SIN_CAPACIDAD` (el único 409 definido en el OpenAPI global para este endpoint). El `422 ENTRADA_INVALIDA` sigue el patrón del envelope ya usado por spec-003/spec-004.
+Criterio de separación (decisión de diseño, sin cambios en el OpenAPI global): **422 = no puedo interpretar tu petición; 409 = la entiendo, pero el estado actual no permite ejecutarla.** El `422` no está enumerado en el OpenAPI global para este endpoint, pero sigue el envelope ya consolidado por spec-003/spec-004 (`apierr.Codigo`); el `409` mantiene su único `codigo` de negocio global `ESTACION_SIN_CAPACIDAD`. El `mensaje` del `409` distingue la causa concreta (estación inexistente / fuera de servicio / origen sin bicicletas suficientes / destino sin anclajes libres) para que el operario pueda corregir el formulario. Si el equipo prefiere ceñirse al OpenAPI literal, el fallback es mapear el `422` a `409`, perdiendo la distinción (no recomendado).
 
 ### Ejemplos
 
@@ -163,5 +163,5 @@ POST /api/v1/balanceo/traslados
 ### Rendimiento (SC-001/SC-003)
 
 - Traslado: 1 transacción corta (bloqueo de 2 filas de estaciones + 2 LIMIT + 2 UPDATE) + 2 refrescos Redis post-commit; objetivo < 10 s (holgura enorme).
-- Generación de alertas: inline en el propio traslado; para el resto de mutaciones de la red, el worker garantiza < 60 s (SC-001).
+- Generación de alertas: inline en el propio traslado; para el resto de mutaciones de la red, el worker garantiza < 60 s (SC-001; condiciones verificables en [research.md](../research.md) D6 — periodo 55 s + barrido medido < 5 s).
 - Panel: 1 consulta indexada sobre alertas abiertas; objetivo < 3 s.

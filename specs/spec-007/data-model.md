@@ -65,7 +65,7 @@ UPDATE alertas_balanceo a
 ```
 
 - **Unicidad (FR-003, SC-002)**: `ux_alerta_abierta (estacion_id, tipo_alerta) WHERE NOT resuelta` ya existe en `0001_esquema_base.sql`; la creación usa `ON CONFLICT … DO NOTHING` → **0 duplicados** por diseño y por índice. Al resolver y re-cruzar el umbral se abre una fila **nueva** (la resuelta queda como histórico).
-- **Origen de la evaluación**: inline tras cada traslado (origen y destino) + worker `alertas` cada 60 s sobre toda la red (D1) → cubre también devoluciones y futuras mutaciones de otras specs sin modificar su código.
+- **Origen de la evaluación**: inline tras cada traslado (origen y destino) + worker `alertas` cada 55 s sobre toda la red (D1, research D6) → cubre también devoluciones y futuras mutaciones de otras specs sin modificar su código.
 - `severidad` usa el DEFAULT `'alta'` del esquema (HU-07: prioridad alta por definición); `fecha_generacion` el DEFAULT `now()`.
 
 ## 3. Panel del operario (FR-005, SC-002 — `GET /balanceo/alertas`)
@@ -84,7 +84,7 @@ SELECT a.id, a.estacion_id, e.nombre AS estacion_nombre,
 ```
 
 - **Orden por urgencia** (FR-005): extremos más alejados del rango `[10, 90]` primero (0 % antes que 9 %; 100 % antes que 91 %); empates → alerta más antigua. `ix_alertas_abiertas` cubre el filtro de abiertas.
-- Solo alertas **abiertas** (`resuelta = false`); las resueltas salen del panel automáticamente (SC-004, 0 obsoletas). El `porcentaje_ocupacion` mostrado es el snapshot refrescado por el worker (≤ 60 s, D3).
+- Solo alertas **abiertas** (`resuelta = false`); las resueltas salen del panel automáticamente (SC-004, 0 obsoletas). El `porcentaje_ocupacion` mostrado es el snapshot refrescado por el worker (< 60 s = `periodo + T_barrido`, D3/D6).
 
 ## 4. Traslado de lote (FR-006, FR-007, SC-003 — `POST /balanceo/traslados`)
 

@@ -21,7 +21,7 @@ go run ./cmd/server           # terminal 1 — arranca también el worker alerta
 cd ../frontend && npm install && npm run dev   # terminal 2
 ```
 
-> El worker `alertas` evalúa la red al arrancar y después cada 60 s: con el seed de extremos, el panel tendrá alertas en **≤ 60 s** tras el arranque del servidor.
+> El worker `alertas` evalúa la red al arrancar y después cada 55 s: con el seed de extremos, el panel tendrá alertas en **< 60 s** tras el arranque del servidor.
 
 ## 2. Pruebas automatizadas (gate constitución I — regla T5 + traslados)
 
@@ -41,7 +41,7 @@ npm test                      # Vitest: página de balanceo
 | T7e | Roles (const. I) | Sin token → `401 NO_AUTENTICADO`; rol `usuario`/`gestor`/`operario_taller` → `403 ROL_NO_PERMITIDO` en **ambos** endpoints |
 | T7f | Traslado válido (FR-006/FR-007, SC-003) | `POST /balanceo/traslados` con lote factible → `200` con `origen`/`destino` **recalculados en la propia respuesta**; Redis `estacion:{id}:estado` de ambas escrito post-commit; umbrales evaluados inline (p. ej. destino que recibe el lote cruza > 90 % → alerta en la siguiente lectura del panel) |
 | T7g | Traslado inconsistente (caso límite) | `unidades > disponibles en origen` o `> anclajes libres en destino` o estación inexistente/fuera de servicio → `409 ESTACION_SIN_CAPACIDAD` **sin alterar nada** (recuentos idénticos antes/después); `unidades < 1`, origen = destino o JSON malformado → `422 ENTRADA_INVALIDA` |
-| T7h | Latencia (SC-001) | Con una estación mutada a la fuerza (SQL) fuera de rango, el **worker** genera la alerta en < 60 s (aserción cronometrada en el test del worker: barrido único tras el tick) |
+| T7h | Latencia (SC-001) | (i) Barrido completo sobre el volumen de estaciones definido para el proyecto, cronometrado **< 5 s** (presupuesto verificable de SC-001); (ii) con el periodo de test inyectado, mutación de una estación fuera de rango (SQL) → alerta en `alertas_balanceo` con latencia **< periodo + 5 s**. La garantía de SC-001 (< 60 s = 55 s + barrido) depende de cumplir ese límite medido |
 
 > T7a/T7b cubren la regla crítica T5 del [quickstart global](../spec-001/quickstart.md) (alertas <10 % / >90 %): son **obligatorias antes de fusionar** (gate de calidad de la constitución).
 

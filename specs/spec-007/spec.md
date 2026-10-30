@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-20
 
-**Status**: Draft
+**Status**: Ready for Implementation
 
 **Input**: User description: "HU-07 — Monitorización de desequilibrios y alertas de balanceo de flota (historia.md, SI-16)."
 
@@ -97,16 +97,36 @@ ambas estaciones.
   (activa/resuelta).
 - **Operación de traslado**: Confirmación del operario; estación de origen,
   estación de destino, número de unidades movidas y fecha.
+  *(Definición operativa: el traslado se ejecuta y valida en el acto —
+  FR-006 — con respuestas en `contracts/balanceo.md`. Su persistencia como
+  tabla de auditoría `traslados_balanceo` está PENDIENTE DE ACUERDO DEL
+  EQUIPO (const. III); ver data-model.md §"Pendiente" y tasks.md Phase 5
+  (tareas T021/T022, bloqueadas). El MVP no depende de ella y ese acuerdo
+  sigue sin ser otorgado.)*
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: El 100 % de las estaciones que cruzan los umbrales (<10 % o
-  >90 %) generan una alerta de prioridad alta en menos de 1 minuto.
-- **SC-002**: El panel del operario muestra siempre las estaciones
-  descompensadas ordenadas por urgencia, con 0 duplicados de alerta por
-  estación y umbral.
+  >90 %) generan una alerta de prioridad alta en menos de 1 minuto (borde
+  estricto: 60 s exactos o más NO cumplen):
+  - el traslado que descompensa la estación la incluye ya en la respuesta
+    del propio traslado (mecanismo inline, < 1 s percibido por el
+    operario); y
+  - el resto de mutaciones de la red (devolución, avería, taller) quedan
+    cubiertas por el barrido del worker con latencia final por debajo de
+    60 s, verificable con el test cronometrado T7h del quickstart.
+- **SC-002**: El panel del operario:
+  - muestra las estaciones descompensadas ordenadas por urgencia, con 0
+    duplicados de alerta por estación y umbral, y 0 alertas resueltas
+    (integridad de contenido); y
+  - se refresca de inmediato tras un traslado propio del operario
+    (respuesta + refresco del panel); los cambios externos (devoluciones
+    de otros usuarios, averías, taller) aparecen en el panel cuando el
+    worker los evalúa, dentro del mismo plazo estricto de SC-001
+    (< 1 minuto). Lo que NO está garantizado es la reflexión
+    instantánea (< 1 s) de cambios externos.
 - **SC-003**: Tras confirmar un traslado, la vista del operario refleja los
   nuevos valores de inmediato y el estado global en un máximo de 30 segundos
   en el 100 % de los casos.
