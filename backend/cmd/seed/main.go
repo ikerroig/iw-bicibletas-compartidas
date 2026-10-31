@@ -29,6 +29,7 @@ func main() {
 	fmt.Println("  diego@si16.test   usuario, abono CADUCADO")
 	fmt.Println("  taller@si16.test  operario_taller   | logistica@si16.test operario_logistica")
 	fmt.Println("  gestor@si16.test  gestor")
+	fmt.Println("  Estaciones extremas (HU-07): Estació Nord id3 (5 %, vacía) | Estació Port id4 (95 %, llena)")
 }
 
 func run() error {
@@ -231,6 +232,60 @@ func run() error {
 				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, 'finalizado')`,
 				ana, bHist, e2, destino, inicio, fin, f.minutos, f.coste); err != nil {
 				return fmt.Errorf("viaje finalizado %d de Ana: %w", i+1, err)
+			}
+		}
+
+		// ---- HU-07: estaciones en extremos de ocupación (research D8) ----
+		// Insertadas después de E1/E2 → ids 3 (E-vacía) y 4 (E-llena), sin
+		// alterar los ids de los fixtures HU-03/HU-04. Los nombres y coords
+		// coinciden con los ejemplos de contracts/balanceo.md.
+		var e3, e4 int64
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO estaciones (nombre, latitud, longitud, capacidad_total)
+			 VALUES ('Estació Nord', 39.477000, -0.380100, 20),
+			        ('Estació Port', 39.481200, -0.371100, 20)
+			 RETURNING id`).Scan(&e3); err != nil {
+			return fmt.Errorf("estaciones extremo: %w", err)
+		}
+		if err := tx.QueryRow(ctx,
+			`SELECT id FROM estaciones WHERE nombre = 'Estació Port'`).Scan(&e4); err != nil {
+			return fmt.Errorf("estación Ext 2: %w", err)
+		}
+
+		// Anclajes: Nord → AN-00015..AN-00034, Port → AN-00035..AN-00054.
+		anclajesExt := map[int64][2]int64{} // estacion → (primera id, última id)
+		for _, r := range []struct {
+			estacion int64
+			desde, n int
+		}{{e3, 15, 20}, {e4, 35, 20}} {
+			var first int64
+			for i := 0; i < r.n; i++ {
+				codigo := fmt.Sprintf("AN-%05d", r.desde+i)
+				var id int64
+				if err := tx.QueryRow(ctx,
+					`INSERT INTO anclajes (estacion_id, codigo_anclaje)
+					 VALUES ($1, $2) RETURNING id`, r.estacion, codigo).Scan(&id); err != nil {
+					return fmt.Errorf("anclaje %s: %w", codigo, err)
+				}
+				if i == 0 {
+					first = id
+				}
+			}
+			anclajesExt[r.estacion] = [2]int64{first, first + int64(r.n) - 1}
+		}
+
+		// E-vacía: 1 bici disponible anclada de 20 anclajes → ocupación 5 %.
+		bNord := anclajesExt[e3][0]
+		if _, err := crearBici("B-200", "disponible", &bNord); err != nil {
+			return fmt.Errorf("bicicleta B-200: %w", err)
+		}
+		// E-llena: 19 bicis disponibles ancladas (AN-00035..AN-00053), 1 anclaje
+		// libre → ocupación 95 %. Cumple el CHECK de anclajes (ocupado ⇒ bici).
+		for i := 0; i < 19; i++ {
+			codigo := fmt.Sprintf("B-%03d", 201+i)
+			ancl := anclajesExt[e4][0] + int64(i)
+			if _, err := crearBici(codigo, "disponible", &ancl); err != nil {
+				return fmt.Errorf("bicicleta %s: %w", codigo, err)
 			}
 		}
 

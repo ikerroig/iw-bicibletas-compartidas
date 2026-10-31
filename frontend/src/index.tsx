@@ -20,6 +20,8 @@ function Layout(props: RouteSectionProps) {
         <A href="/devolucion">Devolver</A>
         {/* spec-004 (T012): HU-04 */}
         <A href="/viajes">Mis viajes</A>
+        {/* spec-007 (T017): HU-07 */}
+        <A href="/balanceo">Balanceo</A>
       </nav>
       <main class="p-4">{props.children}</main>
     </>

@@ -97,8 +97,10 @@ func prepararHistorial(t *testing.T, d deps.Deps) escenarioHistorial {
 	}
 
 	ahora := time.Now()
+	// Anclar al día 1 antes de restar meses: si hoy es día 31, restar un mes
+	// normaliza (31-sept → 1-oct) y colapsaría viajes de meses distintos.
 	diaMes := func(offsetMes int, dia int) time.Time {
-		base := ahora.AddDate(0, offsetMes, 0)
+		base := time.Date(ahora.Year(), ahora.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, offsetMes, 0)
 		return time.Date(base.Year(), base.Month(), dia, 12, 0, 0, 0, time.UTC)
 	}
 

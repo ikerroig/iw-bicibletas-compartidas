@@ -13,6 +13,7 @@ import (
 	"si16/backend/internal/db"
 	"si16/backend/internal/deps"
 	"si16/backend/internal/routes"
+	alertas "si16/backend/internal/workers/alertas"
 )
 
 func main() {
@@ -27,13 +28,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	pool, err := db.NewPool(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
+
+	go alertas.Run(ctx, pool) // worker HU-07: evaluación inmediata + cada 55 s
 
 	rdb := redis.NewClient(&redis.Options{Addr: cfg.RedisAddr})
 	defer rdb.Close()

@@ -16,4 +16,5 @@ func Register(rg *gin.RouterGroup, d deps.Deps) {
 	auth.RegisterAuth(rg, d) // base compartida: POST /auth/login, GET /auth/me
 	RegisterSpec003(rg, d)   // spec-003 (Alex Morell): HU-03 devolución y tarificación
 	RegisterSpec004(rg, d)   // spec-004 (Alex Morell): HU-04 historial de viajes
+	RegisterSpec007(rg, d)   // spec-007 (HU-07): alertas de balanceo y traslados
 }

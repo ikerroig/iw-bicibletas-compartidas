@@ -83,4 +83,29 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/balanceo/trasla
 
 ## 5. Resultados de la validación
 
-_Pendiente de ejecución tras la implementación (Phase 2 / `/speckit.tasks`): se registrarán aquí los resultados contra la rama `spec-007`, siguiendo el patrón de la sección 5 de [spec-004/quickstart.md](../spec-004/quickstart.md)._
+**Fecha**: 2026-10-31 · **Rama**: `spec-007` · Backend `:8080`, frontend dev `:5173`, Postgres 16 + Redis 7 vía compose.
+
+### 5.1 Pruebas automatizadas (gate constitución I)
+
+| Comando | Resultado |
+|---|---|
+| `go test ./...` (backend) | ✅ en verde (~8,4 s): `services/balanceo`, `services/devolucion`, `services/viajes` y el paquete de integración `tests` (T7a–T7h + HU-03/HU-04) |
+| `go vet ./...` | ✅ limpio |
+| `gofmt -l` | ✅ sin avisos reales (solo fin de línea CRLF del working tree Windows; los ficheros nuevos de spec-007 no aparecen) |
+| `npm test` (frontend) | ✅ 13/13 en 3 ficheros (incl. `pages/balanceo/index.test.tsx`) |
+| `npm run build` | ✅ `tsc -b && vite build` sin errores (typecheck TS) |
+
+> Corrección aplicada durante el gate: el fixture `diaMes` de `backend/tests/historial_test.go` anclaba al día de hoy antes de restar meses; con hoy = día 31, `AddDate(0, -1, 0)` normalizaba (31-sept → 1-oct) y colapsaba un viaje del mes anterior dentro del actual (T4a/T4b). Anclado al día 1 antes del offset — fix de robustez temporal, sin cambio de comportamiento del producto.
+
+### 5.2 Escenario manual S7 (API en vivo, sin reiniciar el server)
+
+1. **Login** `POST /auth/login` `logistica@si16.test` → `200` con token ✅
+2. **Alertas en < 60 s (SC-001)**: tras `go run ./cmd/seed` (idempotente), el panel pasó de `items: []` a **2 alertas en ≤ 12 s** (barrido del worker): Estació Nord id3 `vacia_menos_10` 5 % y Estació Port id4 `llena_mas_90` 95 %, ambas severidad `alta` ✅
+3. **Panel ordenado (SC-002)**: `GET /api/v1/balanceo/alertas` con token → `200`, solo abiertas, orden por urgencia (empate de score → `fecha_generacion` ASC) ✅
+4. **Traslado válido (SC-003)**: `POST /api/v1/balanceo/traslados` `{"origen":4,"destino":3,"unidades":10}` → `200` con `origen` `{bicis 9, libres 11, 45 %}` y `destino` `{bicis 11, libres 9, 55 %}` recalculados en la respuesta ✅
+5. **Redis post-commit**: `HGETALL estacion:3:estado` → `bicis_disponibles 11 / anclajes_libres 9 / ocupacion_pct 55.00`; `HGETALL estacion:4:estado` → `9 / 11 / 45.00`, con `actualizado_en` del momento del traslado ✅
+6. **Resolución automática (SC-004)**: tras volver ambas a `[10, 90]`, el panel devolvió `{"items":[]}` sin intervención manual (alertas inline resueltas) ✅
+7. **Traslado rechazado (caso límite)**: `unidades: 999` → `409 ESTACION_SIN_CAPACIDAD` con mensaje que distingue la causa (`disponibles 9, unidades pedidas 999`); sin cambios en ambas estaciones ✅
+8. **Roles (const. I)**: sin token → `401 NO_AUTENTICADO`; login `ana@si16.test` (rol `usuario`) → `403 ROL_NO_PERMITIDO` ✅
+
+La validación visual del panel en `http://localhost:5173/balanceo` (render, formulario de traslado, tarjetas `EstacionEstado`) queda cubierta por `frontend/src/pages/balanceo/index.test.tsx` (Vitest, 13/13) y el dev server está operativo en `:5173`.

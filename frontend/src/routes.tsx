@@ -1,6 +1,7 @@
 import type { Component } from "solid-js";
 import { Devolucion } from "./pages/devolucion";
 import { MisViajes } from "./pages/viajes";
+import { Balanceo } from "./pages/balanceo";
 
 /**
  * Registro único de rutas del SPA (fichero compartido entre specs).
@@ -19,4 +20,6 @@ export const routes: AppRoute[] = [
   { path: "/devolucion", component: Devolucion },
   // spec-004 (HU-04): historial de viajes y desglose mensual
   { path: "/viajes", component: MisViajes },
+  // spec-007 (HU-07): panel de alertas de balanceo
+  { path: "/balanceo", component: Balanceo },
 ];
