@@ -8,6 +8,27 @@
 
 **Input**: User description: "HU-08 — Panel de analítica de uso y exportación de datos a CSV (historia.md, SI-16)."
 
+## Clarifications
+
+### Session 2026-11-01
+
+- Q: ¿Cómo debe interpretar el sistema el rango de fechas `desde`/`hasta` al
+  filtrar la analítica y el CSV, incluyendo qué sucede cuando el rango viene
+  invertido? — A: `desde` y `hasta` inclusivos (`desde ≤ fecha de inicio del
+  viaje ≤ hasta`), interpretados en Europe/Madrid; si `desde > hasta`, el
+  sistema responde con un error de validación sin generar gráficos ni CSV.
+- Q: ¿Según qué fecha y criterio se agrupan los viajes en las barras por hora
+  del día y por día de la semana de los gráficos y de los totales? — A: Hora
+  y día de la semana se calculan sobre la fecha de inicio del viaje,
+  interpretada en Europe/Madrid; 24 barras horarias (00–23) y 7 barras de día
+  en orden lunes → domingo.
+- Q: ¿Qué formato exacto debe tener el archivo CSV exportado para abrirse sin
+  pérdida de caracteres en software externo de hojas de cálculo? — A: UTF-8
+  con BOM, separador coma, comillas RFC 4180, finales de línea CRLF; columnas
+  `id,fecha_hora,estacion_origen,estacion_destino,duracion_minutos,coste_eur`
+  con `fecha_hora` en Europe/Madrid (AAAA-MM-DD HH:MM); nombre del fichero
+  `viajes_AAAAMMDD_AAAAMMDD.csv`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Analítica de la red con exportación (Priority: P1)
@@ -45,6 +66,8 @@ con los mismos totales que los gráficos.
   cabecera.
 - Rango futuro o parcialmente futuro: solo se computan los datos existentes
   hasta la fecha actual, sin error.
+- Rango invertido (desde posterior a hasta): se rechaza con un error de
+  validación, sin generar gráficos ni CSV.
 - Rango muy amplio (varios años): la consulta se limita al histórico
   disponible y los gráficos permanecen consultables; el CSV refleja el rango
   completo solicitado con los datos existentes.
@@ -64,16 +87,22 @@ con los mismos totales que los gráficos.
 ### Functional Requirements
 
 - **FR-001**: El sistema MUST permitir al gestor filtrar el análisis por un
-  rango de fechas inicial y final.
+  rango de fechas inicial y final; ambos extremos son inclusivos (desde ≤
+  fecha de inicio del viaje ≤ hasta) y se interpretan en Europe/Madrid; un
+  rango invertido (desde > hasta) MUST rechazarse con un error de validación
+  sin generar gráficos ni CSV.
 - **FR-002**: El sistema MUST generar gráficos interactivos con el volumen de
-  viajes del rango seleccionado, distribuidos por hora del día y por día de
-  la semana.
+  viajes del rango seleccionado, distribuidos en 24 barras por hora del día
+  (00–23) y 7 barras por día de la semana (lunes → domingo), calculadas sobre
+  la fecha de inicio del viaje interpretada en Europe/Madrid.
 - **FR-003**: El sistema MUST permitir descargar un archivo CSV con el
   histórico de viajes filtrado por el mismo rango seleccionado.
-- **FR-004**: El archivo CSV MUST contener los campos de cada viaje
-  (identificador, fecha, hora, estación de origen, estación de destino,
-  duración y coste) con codificación compatible con software externo de hojas
-  de cálculo.
+- **FR-004**: El archivo CSV MUST usar UTF-8 con BOM, separador coma,
+  comillas RFC 4180 y finales de línea CRLF, con las columnas
+  `id,fecha_hora,estacion_origen,estacion_destino,duracion_minutos,coste_eur`
+  (fecha_hora en Europe/Madrid, formato AAAA-MM-DD HH:MM) y nombre del
+  fichero `viajes_AAAAMMDD_AAAAMMDD.csv`, de modo que se abra sin pérdida de
+  caracteres en software externo de hojas de cálculo.
 - **FR-005**: El área de administración y su exportación MUST estar restringida
   a usuarios con rol de gestor; el sistema MUST denegar el acceso al resto de
   usuarios.
@@ -110,8 +139,8 @@ con los mismos totales que los gráficos.
 - Los gráficos son interactivos en el sentido de permitir consultar valores
   al explorarlos; no se definen tipos de gráfico concretos más allá de los
   ejes hora/día de la semana.
-- El CSV usa formato estándar de intercambio (separador y codificación
-  compatibles con hojas de cálculo, sin pérdida de tildes).
+- El CSV usa el formato de intercambio fijado en FR-004 (UTF-8 con BOM,
+  comas, RFC 4180), sin pérdida de tildes.
 - El rol de gestor municipal es preexistente en el sistema; su alta queda
   fuera del alcance de esta spec (entre las 8 HU validadas no se incluye).
 - Los detalles de implementación (pila tecnológica, esquema de datos) se rigen
