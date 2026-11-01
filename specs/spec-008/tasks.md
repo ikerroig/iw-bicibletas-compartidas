@@ -6,17 +6,16 @@
 
 **Tests**: **INCLUIDOS (obligatorios)** — [quickstart.md](./quickstart.md) define T8a–T8i como gate de verificación de esta spec (consistencia gráficos↔CSV FR-006/SC-002, bordes del rango inclusivo, denegación de roles SC-003, formato CSV SC-004); se escriben ANTES de implementar.
 
-**Organization**: La HU-08 tiene **una única user story** (US1, P1) que es también el MVP de esta spec. Tareas agrupadas en Setup → Foundational → US1 → Polish → **Bloqueadas**.
+**Organization**: La HU-08 tiene **una única user story** (US1, P1) que es también el MVP de esta spec. Tareas agrupadas en Setup → Foundational → US1 → Polish → **Shared**.
 
 **Base de código**: la rama `spec-008` ya contiene `backend/` y `frontend/` tras los avances de spec-003/spec-004/spec-007 (auth JWT con `RequireRole`, `apierr`, `services/viajes` con filtro Europe/Madrid, `services/balanceo`, `workers/alertas`, páginas devolución/historial/balanceo). **No recrear nada de eso.** La HU-08 añade solo: `services/analitica`, `handlers/analitica`, `routes/spec_008_analitica.go`, `pages/analitica/`, `services/api/analitica.ts`, el struct `AnaliticaViajes` y el lote de viajes de demo en el seed. Si al ejecutar detectas que algo de la base falta, recrea la tarea y márcala.
 
-**Esquema compartido**: la HU-08 **no necesita migraciones** — solo LEE `viajes` y `estaciones` con el índice `ix_viajes_fecha` ya existente; sin claves Redis nuevas. Las tareas que tocan el **OpenAPI global** y **`frontend/package.json`** están en la **Phase 5: Bloqueadas** y NO se ejecutan sin acuerdo del equipo (const. III); los cambios aditivos de models/seed/rutas/nav son tareas revisables en el PR (patrón de spec-007).
+**Esquema compartido**: la HU-08 **no necesita migraciones** — solo LEE `viajes` y `estaciones` con el índice `ix_viajes_fecha` ya existente; sin claves Redis nuevas. Las tareas que tocan el **OpenAPI global** y **`frontend/package.json`** (T019/T020) fueron **autorizadas por el equipo** y aplicadas en Phase 5; los cambios aditivos de models/seed/rutas/nav son tareas revisables en el PR (patrón de spec-007).
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (US1)
-- **[BLOCKED]**: No ejecutar hasta que el equipo apruebe el cambio de fichero compartido (Phase 5)
 - Include exact file paths in descriptions
 
 ---
@@ -63,7 +62,7 @@
 - [x] T011 [US1] Implementar los handlers `backend/internal/handlers/analitica/handler.go` (`HandlerAgregados(d deps.Deps)` y `HandlerExport(d deps.Deps)`): agregados → lee `desde`/`hasta` de la query, `ValidarEntrada` (→ `422`), `Agregados`, `200` con `models.AnaliticaViajes` eco de fechas; export → `ValidarEntrada` **antes** de escribir cabeceras, luego `Content-Type: text/csv; charset=utf-8` + `Content-Disposition: attachment; filename=…` y streaming de `ExportarCSV`; en error se responde el envelope JSON global **sin** cabeceras de descarga; mapear `*apierr.Error` al status/código — contracts/analitica.md §1/§2 (depende de T009, T010)
 - [x] T012 [US1] Registrar las rutas: crear `backend/internal/routes/spec_008_analitica.go` con `RegisterSpec008(rg *gin.RouterGroup, d deps.Deps)` → `rg.GET("/analitica/viajes", auth.RequireAuth(d.JWTSecret), auth.RequireRole("gestor"), analitica.HandlerAgregados(d))` y `rg.GET("/analitica/export", …)` (mismo encadenamiento de middlewares), y añadir **una línea** `RegisterSpec008(rg, d)` en `backend/internal/routes/register.go` (fichero compartido, sin modificar las líneas existentes) — contracts/analitica.md §autorización + research D5 (depende de T011)
 - [x] T013 [P] [US1] Crear el cliente `frontend/src/services/api/analitica.ts`: interface `AnaliticaViajes` (espejo del backend), función `consultarAnalitica(desde, hasta)` vía `api.request` de `frontend/src/services/api.ts` (patrón de `services/api/viajes.ts`) y función `descargarCSV(desde, hasta)` que hace `fetch` autenticado de `/analitica/export` (Authorization del mismo mecanismo que `api.request`), crea un `Blob` y dispara la descarga con un `<a download>` temporal (el JWT **no** viaja en la URL) — contracts/analitica.md + research D6 (cadena frontend, paralela con backend)
-- [x] T014 [US1] Implementar la página `frontend/src/pages/analitica/index.tsx` con wrapper aislado `frontend/src/pages/analitica/GraficoBarras.tsx` (componente fino sobre **chart.js** que recibe etiquetas + datos): señales (`desde`, `hasta` con default **últimos 30 días**, `datos`, `cargando`, `error`, `descargando`); al aplicar → `consultarAnalitica` y pintado de **tal cual** los arrays del backend (const. I): "Viajes por hora del día" (eje 00–23) y "Viajes por día de la semana" (eje lunes…domingo), totales (`total_viajes`, `total_coste` es-ES) y aviso **"sin datos en el periodo"** cuando `total_viajes == 0`; validación cliente `desde ≤ hasta` (el 422 del backend se muestra igualmente); botón "Descargar CSV" **deshabilitado mientras `descargando`** (edge del doble clic: cada acción descarga un único archivo consistente) → `descargarCSV`; 403 → mensaje de permiso con `role="alert"`; Tailwind + `data-testid` (patrón de `pages/viajes/index.tsx`) — research D6. **Nota**: `GraficoBarras.tsx` importa `chart.js`, cuya alta en `frontend/package.json` está **pendiente de acuerdo del equipo** (Phase 5, T020) — hasta su aprobación la página puede desarrollarse y sus tests (T008) pasan mockeando el wrapper; el `npm run build` completo la requiere (depende de T008, T013)
+- [x] T014 [US1] Implementar la página `frontend/src/pages/analitica/index.tsx` con wrapper aislado `frontend/src/pages/analitica/GraficoBarras.tsx` (componente fino sobre **chart.js** que recibe etiquetas + datos): señales (`desde`, `hasta` con default **últimos 30 días**, `datos`, `cargando`, `error`, `descargando`); al aplicar → `consultarAnalitica` y pintado de **tal cual** los arrays del backend (const. I): "Viajes por hora del día" (eje 00–23) y "Viajes por día de la semana" (eje lunes…domingo), totales (`total_viajes`, `total_coste` es-ES) y aviso **"sin datos en el periodo"** cuando `total_viajes == 0`; validación cliente `desde ≤ hasta` (el 422 del backend se muestra igualmente); botón "Descargar CSV" **deshabilitado mientras `descargando`** (edge del doble clic: cada acción descarga un único archivo consistente) → `descargarCSV`; 403 → mensaje de permiso con `role="alert"`; Tailwind + `data-testid` (patrón de `pages/viajes/index.tsx`) — research D6. **Nota**: `GraficoBarras.tsx` importa `chart.js`; su alta en `frontend/package.json` fue autorizada y aplicada en T020. Los tests de página mockean el wrapper; el build completo la requiere (depende de T008, T013)
 - [x] T015 [US1] Publicar la página: añadir la entrada `{ path: "/analitica", component: PanelAnalitica }` en `frontend/src/routes.tsx` y el enlace `<A href="/analitica">Analítica</A>` en el nav de `frontend/src/index.tsx` (ficheros compartidos, una entrada cada uno, sin modificar las existentes) (depende de T014)
 
 **Checkpoint**: US1 completa y testeable — `go test ./...` y `npm test` en verde; escenario manual S8 (API + página) operativo con el seed de T003
@@ -80,12 +79,12 @@
 
 ---
 
-## Phase 5: Bloqueadas — pendientes de acuerdo del equipo (constitución III)
+## Phase 5: Shared — autorizadas y aplicadas por acuerdo del equipo (constitución III)
 
-**⚠️ NO EJECUTAR** sin acuerdo previo del equipo: estas tareas tocan **ficheros compartidos** por las 8 specs. El MVP de la HU-08 está completo y validado sin ellas (Phase 3–4, con el wrapper de gráfico mockeado en tests); se documentaron como `⚠ PENDIENTE DE ACUERDO DEL EQUIPO` en [data-model.md](./data-model.md) y [contracts/analitica.md](./contracts/analitica.md).
+**✅ APLICADAS** con acuerdo del equipo: estas tareas tocan ficheros compartidos. El MVP de la HU-08 estaba completo y validado sin ellas; el equipo autorizó su ejecución y quedaron reflejadas en [data-model.md](./data-model.md) y [contracts/analitica.md](./contracts/analitica.md).
 
-- [ ] T019 [BLOCKED] *(requiere acuerdo de equipo)* Añadir la respuesta `422 ENTRADA_INVALIDA` a `/analitica/viajes` y `/analitica/export` en `specs/spec-001/contracts/openapi.yaml` (hoy solo enumeran `200` y `403`), reflejando el comportamiento que la rama ya consolida (patrón spec-003/004/007); hasta entonces [contracts/analitica.md](./contracts/analitica.md) es la fuente de detalle — data-model.md § "PENDIENTES" punto 1
-- [ ] T020 [BLOCKED] *(requiere acuerdo de equipo)* Añadir la dependencia `"chart.js": "^4"` a `frontend/package.json` (+ `npm install`), tecnología **ya designada globalmente** para los gráficos HU-08 en R14 del plan global; desbloquea el import de `frontend/src/pages/analitica/GraficoBarras.tsx` y el `npm run build` de T016 — data-model.md § "PENDIENTES" punto 2 + research D6
+- [x] T019 Añadir la respuesta `422 ENTRADA_INVALIDA` a `/analitica/viajes` y `/analitica/export` en `specs/spec-001/contracts/openapi.yaml`, reflejando el comportamiento que la rama ya consolida (patrón spec-003/004/007); [contracts/analitica.md](./contracts/analitica.md) detalla la semántica
+- [x] T020 Añadir la dependencia `chart.js` (`^4`) a `frontend/package.json` y actualizar `frontend/package-lock.json`; dependencia designada globalmente para los gráficos HU-08 en R14 del plan global
 
 ---
 
@@ -96,8 +95,8 @@
 - **Setup (Phase 1)**: heredada de spec-003/spec-004/spec-007, verificada
 - **Foundational (Phase 2)**: T003 y T004 en paralelo; **T003 bloquea el escenario manual S8** y la integración con datos reales
 - **User Story 1 (Phase 3)**: requiere Setup ✅; los tests (T005–T008) se escriben ANTES que la implementación; T010 depende de T009 (mismo paquete, `construirFiltro`); T012 depende de T011; T015 depende de T014
-- **Polish (Phase 4)**: depende de toda la US1 (T016/T017 requieren T020 aprobada para el build con chart.js)
-- **Bloqueadas (Phase 5)**: sin dependencia de ejecución — **solo** de la aprobación del equipo; T019 nunca bloquea el MVP; T020 desbloquea el build del gráfico real (los tests de página la eluden mockeando el wrapper)
+- **Polish (Phase 4)**: depende de toda la US1; el build completo del frontend requiere la dependencia chart.js de T020 (aplicada)
+- **Shared (Phase 5)**: T019/T020 **autorizadas por el equipo y aplicadas** — el OpenAPI global documenta el `422` y `chart.js` está en `package.json`/lockfile (los tests de página siguen mockeando el wrapper)
 
 ### Within User Story 1
 
@@ -127,16 +126,15 @@ Frontend: T013 → T014 → T015
 1. Setup (heredada ✅) + Foundational (T003 seed lote HU-08, T004 struct `AnaliticaViajes`)
 2. Tests T005–T008 → verlos FALLAR
 3. Backend T009–T012 → `go test ./...` en verde
-4. Frontend T013–T015 → `npm test` en verde (wrapper de gráfico mockeado mientras T020 esté bloqueada)
-5. **STOP y VALIDAR**: escenario S8 del quickstart vía API (y con la página una vez aprobada T020)
-6. Polish T016–T018 (T016 completo tras aprobación de T020)
-7. Phase 5 queda **aparcada** hasta el acuerdo del equipo (no forma parte del MVP funcional; solo T020 condiciona el build definitivo del gráfico)
+4. Frontend T013–T015 → `npm test` en verde (wrapper del gráfico mockeado en los tests de página)
+5. **STOP y VALIDAR**: escenario S8 del quickstart vía API (y con la página)
+6. Polish T016–T018; Phase 5 (T019/T020) **autorizada y aplicada** por acuerdo del equipo: OpenAPI con `422` y `chart.js` instalada (build definitivo del gráfico).
 
 ## Notes
 
 - [P] tasks = different files, no dependencies
 - Cada entrada en `routes/register.go` y en el nav/rutas del frontend es de **una línea/entrada** para que los merges con otras ramas sigan siendo triviales (const. V); `models.go` y `cmd/seed/main.go` reciben bloques **puramente aditivos** (patrón revisable de spec-007)
-- No migraciones, no claves Redis, sin dependencias npm/go nuevas en las fases 1–4 (chart.js queda a la espera del acuerdo en T020)
+- No migraciones, no claves Redis; la única dependencia npm nueva es `chart.js` (T020, autorizada y aplicada por el equipo)
 - La HU-08 es de **solo lectura**: ningún endpoint toca `viajes`, `estaciones` ni Redis con escrituras
 - Un único `construirFiltro` por petición alimenta agregados y CSV: es la garantía FR-006/SC-002 "por construcción" — no duplicar el predicado en ningún fichero
 - Commits por fase (convención del repo): `docs: spec-008 …` / `feat: spec-008 …`

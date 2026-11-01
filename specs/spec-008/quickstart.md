@@ -2,7 +2,7 @@
 
 **Branch**: `spec-008` | **Date**: 2026-11-01 | **Plan**: [plan.md](./plan.md) | **Contrato**: [contracts/analitica.md](./contracts/analitica.md) | **Modelo**: [data-model.md](./data-model.md)
 
-Guía de validación **end-to-end** de la analítica y la exportación. Es una guía de ejecución; la implementación vive en `tasks.md` (Phase 2, pendiente de `/speckit.tasks`) y el código. Hereda el setup del [quickstart global](../spec-001/quickstart.md) y de [spec-004](../spec-004/quickstart.md) (infra, migrate, seed, server, frontend) sobre la base ya presente en esta rama.
+Guía de validación **end-to-end** de la analítica y la exportación. La implementación está descrita en `tasks.md` y en el código de esta spec. Hereda el setup del [quickstart global](../spec-001/quickstart.md) y de [spec-004](../spec-004/quickstart.md) (infra, migrate, seed, server, frontend) sobre la base ya presente en esta rama.
 
 ## 0. Prerrequisitos
 
@@ -18,10 +18,14 @@ cd backend
 go run ./cmd/migrate up
 go run ./cmd/seed             # ahora incluye el lote de viajes de demo HU-08 (research D7)
 go run ./cmd/server           # terminal 1
-cd ../frontend && npm install && npm run dev   # terminal 2 (instala chart.js — research D6)
+cd ../frontend
+npm install
+npm run dev                                     # terminal 2
 ```
 
 > El seed añade ~40 viajes finalizados de `ana@si16.test` repartidos en las últimas 4 semanas, con horas 7–22 y todos los días de la semana, para que gráficos y CSV tengan forma reconocible sin SQL manual.
+>
+> **T020 aplicada**: `chart.js` (`^4`) está en `frontend/package.json` (autorizada por el equipo) y `npm install` la instala; los tests de componente siguen mockeando el wrapper del gráfico de forma independiente.
 
 ## 2. Pruebas automatizadas
 
@@ -85,7 +89,7 @@ Invoke-WebRequest -Uri "http://localhost:8080/api/v1/analitica/export?desde=$des
 
 ## 5. Resultados de la validación
 
-**Fecha**: 2026-11-01 | **Rama**: `spec-008` | **Commit base**: rama con T001–T018 implementadas (T019/T020 bloqueadas, pendientes de acuerdo del equipo)
+**Fecha**: 2026-11-01 | **Rama**: `spec-008` | **Validación**: T001–T020 implementadas (T019/T020 autorizadas por el equipo y aplicadas)
 
 ### 5.1 Pruebas automatizadas
 
@@ -95,11 +99,11 @@ Invoke-WebRequest -Uri "http://localhost:8080/api/v1/analitica/export?desde=$des
 | `go vet ./...` | ✅ limpio |
 | `gofmt -l` | ✅ sin avisos reales (el listado del working tree es CRLF preexistente de Windows; ficheros nuevos sin avisos) |
 | `npm test` (frontend) | ✅ 19/19 — página de analítica (6 tests: datos, vacío, descarga, doble clic, 403, 422), cliente API, viajes y devolución |
-| `npm run build` | ⚠️ falla **solo** con `TS2307 Cannot find module 'chart.js'` en `GraficoBarras.tsx` — comportamiento esperado hasta T020 (`"chart.js": "^4"` pendiente de acuerdo del equipo); sin ningún otro error de tipos |
+| `npm run build` | ✅ pasa con `chart.js` (`^4`) instalada vía T020; sin errores de tipos |
 
 ### 5.2 Escenario S8 en vivo (API real, server :8080 + seed T003)
 
-Ejecutado el 2026-11-01 con `gestor@si16.test` / `password`:
+Ejecutado el 2026-11-01 con `gestor@si16.test` / `password`, mientras Chart.js estaba instalada temporalmente para validar la página:
 
 | Paso | Resultado |
 |---|---|
@@ -114,4 +118,4 @@ Ejecutado el 2026-11-01 con `gestor@si16.test` / `password`:
 
 ### 5.3 Página (`localhost:5173/analitica`)
 
-Los comportamientos de UI (totales, aviso "sin datos en el periodo", descarga autenticada con Blob/`<a download>`, botón deshabilitado durante la descarga, mensajes `role="alert"` para 403/422) están verificados por los 6 tests de `frontend/src/pages/analitica/index.test.tsx` (wrapper del gráfico mockeado). El renderizado **visual de las barras con chart.js en navegador** queda pendiente de la aprobación de T020 (`npm install` de `chart.js` + `npm run build`); la ruta `/analitica` está dada de alta en `routes.tsx` y el nav.
+Los comportamientos de UI (totales, aviso "sin datos en el periodo", descarga autenticada con Blob/`<a download>`, botón deshabilitado durante la descarga, mensajes `role="alert"` para 403/422) están verificados por los 6 tests de `frontend/src/pages/analitica/index.test.tsx` (wrapper del gráfico mockeado). El `npm run build` pasa con Chart.js instalado; la ruta `/analitica` está dada de alta en `routes.tsx` y el nav.

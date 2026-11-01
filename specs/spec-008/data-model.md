@@ -126,10 +126,10 @@ Envelope `200` de `GET /analitica/viajes` (espejo del schema global, sin campos 
 
 **Ninguna.** La HU-08 no añade tablas, columnas, índices ni restricciones, y no toca Redis. Usa `viajes` y `estaciones` de `0001_esquema_base.sql` con el índice **`ix_viajes_fecha`** ya existente (creado en el esquema base para esta HU) y el JOIN a `estaciones` para los nombres del CSV.
 
-## ⚠ PENDIENTES DE ACUERDO DEL EQUIPO (constitución III) — propuestas NO aplicadas
+## Cambios en ficheros compartidos — autorizados por el equipo (constitución III) y aplicados
 
-La HU-08 es implementable y testeable sin ningún cambio de esquema. Los puntos siguientes tocan **ficheros compartidos** (no esquema) y quedan documentados, no aplicados aquí, salvo los marcados como adición trivial ya prevista por el plan global:
+La HU-08 no requiere cambios de esquema. Los dos puntos que afectan a ficheros compartidos fueron **autorizados por el equipo y aplicados** (T019/T020):
 
-1. **`422 ENTRADA_INVALIDA` en el OpenAPI global para `/analitica/viajes` y `/analitica/export`** — el YAML global solo enumera `200` y `403` en estos endpoints. El comportamiento 422 sigue el patrón ya consolidado por spec-003/spec-004/spec-007 (rango/formato inválido) y se documenta en [contracts/analitica.md](./contracts/analitica.md); **añadir el `422` al `specs/spec-001/contracts/openapi.yaml` requiere acuerdo del equipo** (fichero compartido). Fallback si el equipo prefiere ceñirse al YAML literal: mapear la invalidación a `403`, perdiendo la distinción causa/permiso (no recomendado).
-2. **Dependencia `chart.js` en `frontend/package.json`** — ya prevista por el plan global (R14: "Chart.js (gráficos HU-08)"), pero `package.json` es compartido: el alta es una línea aditiva, sin sustituciones de stack (const. II se respeta — Chart.js es la tecnología designada globalmente para esta HU).
-3. **Struct `AnaliticaViajes` en `backend/internal/models/models.go`** — adición puramente aditiva (espejo del schema global, igual que `AlertaBalanceo` lo fue en spec-007); no modifica structs existentes.
+1. **`422 ENTRADA_INVALIDA` en el OpenAPI global para `/analitica/viajes` y `/analitica/export`** — añadido a `specs/spec-001/contracts/openapi.yaml` (T019, acuerdo del equipo); el comportamiento 422 sigue el patrón consolidado por spec-003/spec-004/spec-007 y se detalla en [contracts/analitica.md](./contracts/analitica.md).
+2. **Dependencia `chart.js` (`^4`) en `frontend/package.json`** — alta y actualización del lockfile aplicadas (T020, acuerdo del equipo); tecnología prevista en el plan global (R14).
+El struct `AnaliticaViajes`, el lote de seed y las rutas/nav son adiciones propias de HU-08, ya implementadas en esta rama; no alteran campos existentes ni el esquema compartido.

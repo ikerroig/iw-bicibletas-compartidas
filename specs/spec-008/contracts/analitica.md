@@ -2,7 +2,7 @@
 
 **Branch**: `spec-008` | **Date**: 2026-11-01 | **Plan**: [plan.md](./plan.md)
 
-Contrato de los dos endpoints de spec-008. Alineados con el OpenAPI global (`specs/spec-001/contracts/openapi.yaml`, tag `spec-008`, operationIds `analiticaViajes` y `exportarCSV`): se adoptan **literalmente** sus paths, parámetros (`desde`/`hasta`, `format: date`, obligatorios) y schemas (`AnaliticaViajes`; `text/csv` para la exportación, con el detalle de columnas del schema de respuesta). El fichero global **no se modifica**; este documento detalla la semántica, los mensajes, el mapeo de columnas y el `422` que el YAML deja abiertos (ver pendiente de acuerdo al final). En caso de divergencia no contemplada prevalece el OpenAPI global y este documento se corrige.
+Contrato de los dos endpoints de spec-008. Alineados con el OpenAPI global (`specs/spec-001/contracts/openapi.yaml`, tag `spec-008`, operationIds `analiticaViajes` y `exportarCSV`): se adoptan literalmente sus paths, parámetros (`desde`/`hasta`, `format: date`, obligatorios) y schemas (`AnaliticaViajes`; `text/csv` para la exportación). Este documento detalla la semántica, los mensajes y el mapeo de columnas; el `422` queda documentado en el propio YAML global desde T019 (acuerdo del equipo). En caso de divergencia no contemplada prevalece el OpenAPI global y este documento se corrige.
 
 ## Autorización (ambos endpoints)
 
@@ -145,6 +145,6 @@ Cualquier discrepancia es defecto (caso límite del spec) y se verifica en los t
 - Agregados: 3 consultas pequeñas indexadas en `ix_viajes_fecha` (Q1/Q2/Q3 de [data-model.md](../data-model.md)); presupuesto **< 5 s** para rangos de hasta un año (verificado por test cronometrado).
 - Exportación: 1 consulta streaming con el mismo índice; sin presupuesto específico más allá de la apertura correcta del fichero (SC-004).
 
-## ⚠ Pendiente de acuerdo del equipo (fichero compartido)
+## `422 ENTRADA_INVALIDA` en el OpenAPI global (T019 — autorizada y aplicada)
 
-El OpenAPI global (`specs/spec-001/contracts/openapi.yaml`) enumera hoy solo `200` y `403` en `/analitica/viajes` y `/analitica/export`. Este contrato añade el **`422 ENTRADA_INVALIDA`** siguiendo el patrón ya consolidado en spec-003/spec-004/spec-007 (entrada ilegible vs. estado del sistema). **Reflejar ese `422` en el YAML global requiere acuerdo del equipo** (const. III — fichero compartido); hasta entonces este documento es la fuente de detalle y la implementación responde 422 igual que el resto de la rama.
+El OpenAPI global (`specs/spec-001/contracts/openapi.yaml`) documenta desde T019 la respuesta `422` en `/analitica/viajes` y `/analitica/export` mediante la respuesta compartida `components/responses/Error` (envelope global), reflejando el `422 ENTRADA_INVALIDA` que devuelve la implementación ante rangos ausentes, inválidos o invertidos — patrón consolidado en spec-003/spec-004/spec-007 (entrada ilegible vs. estado del sistema). El detalle de condiciones y mensajes vive en este contrato.

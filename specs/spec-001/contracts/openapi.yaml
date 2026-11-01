@@ -383,6 +383,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/AnaliticaViajes' }
         '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }   # ENTRADA_INVALIDA
   /analitica/export:
     get:
       tags: [spec-008]
@@ -400,6 +401,7 @@ paths:
             text/csv:
               schema: { type: string }
         '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }   # ENTRADA_INVALIDA
 
 components:
   securitySchemes:

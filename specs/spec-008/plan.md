@@ -8,13 +8,13 @@
 
 ## Summary
 
-Exponer al gestor municipal la analítica de uso de la red sobre viajes finalizados: el backend calcula, para un rango `desde`/`hasta` (inclusivo, Europe/Madrid, validado server-side → `422` si inválido), los agregados del volumen de viajes **por hora del día (00–23)** y **por día de la semana (lunes→domingo)** agrupados sobre la **fecha de inicio**, y los sirve en `GET /analitica/viajes` (schema global `AnaliticaViajes`); en paralelo, `GET /analitica/export` entrega el histórico filtrado del **mismo rango** como CSV en streaming con BOM UTF-8, comas, RFC 4180, CRLF y las columnas del contrato global `id,fecha_hora,estacion_origen,estacion_destino,duracion_minutos,coste_eur` (R11), de modo que gráficos y CSV son idénticos **por construcción** (un único predicado compartido, FR-006). Ambos endpoints exigen rol `gestor` (`RequireAuth` + `RequireRole`, 401/403). Frontend SolidJS: página `pages/analitica/` con selector de rango (por defecto últimos 30 días), dos gráficos de barras **Chart.js** (R14 — dependencia aditiva ya prevista en el plan global), estado "sin datos en el periodo" y descarga autenticada vía `fetch` + Blob. **Cero migraciones nuevas y cero claves Redis nuevas**: se leen `viajes` y `estaciones` con el índice `ix_viajes_fecha` ya existente. El `422` de rango inválido se documenta en el contrato propio y su reflejo en el OpenAPI global queda **pendiente de acuerdo del equipo**.
+Exponer al gestor municipal la analítica de uso de la red sobre viajes finalizados: el backend calcula, para un rango `desde`/`hasta` (inclusivo, Europe/Madrid, validado server-side → `422` si inválido), los agregados del volumen de viajes **por hora del día (00–23)** y **por día de la semana (lunes→domingo)** agrupados sobre la **fecha de inicio**, y los sirve en `GET /analitica/viajes` (schema global `AnaliticaViajes`); en paralelo, `GET /analitica/export` entrega el histórico filtrado del **mismo rango** como CSV en streaming con BOM UTF-8, comas, RFC 4180, CRLF y las columnas del contrato global `id,fecha_hora,estacion_origen,estacion_destino,duracion_minutos,coste_eur` (R11), de modo que gráficos y CSV son idénticos **por construcción** (un único predicado compartido, FR-006). Ambos endpoints exigen rol `gestor` (`RequireAuth` + `RequireRole`, 401/403). Frontend SolidJS: página `pages/analitica/` con selector de rango (por defecto últimos 30 días), dos gráficos de barras **Chart.js** (R14 — alta en `frontend/package.json` autorizada y aplicada en T020), estado "sin datos en el periodo" y descarga autenticada vía `fetch` + Blob. **Cero migraciones nuevas y cero claves Redis nuevas**: se leen `viajes` y `estaciones` con el índice `ix_viajes_fecha` ya existente. El `422` de rango inválido está documentado en el contrato propio y en el OpenAPI global (T019, autorizada y aplicada).
 
 ## Technical Context
 
 **Language/Version**: Go 1.22+ (backend); TypeScript 5.x + SolidJS 1.9+ (frontend) — fijado por constitución II y plan global.
 
-**Primary Dependencies**: Gin, pgx/v5 (ya en `backend/go.mod`, sin dependencias Go nuevas); Vite 6 + Tailwind CSS + **chart.js** (adicional, R14 del plan global — ver pendiente de equipo). Sin sustituciones respecto al plan global.
+**Primary Dependencies**: Gin, pgx/v5 (ya en `backend/go.mod`, sin dependencias Go nuevas); Vite 6 + Tailwind CSS + **chart.js** (R14 del plan global; incorporada en T020, autorizada por el equipo). Sin sustituciones respecto al plan global.
 
 **Storage**: PostgreSQL 16 — **solo lectura** sobre `viajes` (filtro `estado='finalizado'`, `ix_viajes_fecha`) y `estaciones` (JOIN de nombres en el CSV), esquema de `specs/spec-001/data-model.md` (`0001_esquema_base.sql`, ya en esta rama). **Redis no se usa**: la HU-08 no consume ni escribe estado en vivo (const. IV no aplica).
 
@@ -28,9 +28,9 @@ Exponer al gestor municipal la analítica de uso de la red sobre viajes finaliza
 
 **Constraints**: Reglas de negocio solo server-side (const. I: filtro Europe/Madrid, agregados, totales y validación de rango se producen en Go/SQL; el frontend pinta los arrays); stack fijado (const. II); sin cambios de esquema compartido (const. III — los puntos que tocan ficheros compartidos se marcan explícitamente); paquetes y rutas propios de spec-008 para no colisionar con otras ramas (const. V).
 
-**Scope/Scale**: 2 endpoints (`GET /analitica/viajes`, `GET /analitica/export`), 1 servicio (`services/analitica`), 1 página (`pages/analitica`), 2 entradas de una línea en ficheros compartidos (`routes/register.go`, frontend `routes.tsx`/`index.tsx`) + bloques aditivos en `models/models.go` y `cmd/seed/main.go` + 1 dependencia frontend (`chart.js`).
+**Scope/Scale**: 2 endpoints (`GET /analitica/viajes`, `GET /analitica/export`), 1 servicio (`services/analitica`), 1 página (`pages/analitica`), 3 entradas de integración de una línea en 3 ficheros compartidos (`routes/register.go`, frontend `routes.tsx` e `index.tsx`) + bloques aditivos en `models/models.go` y `cmd/seed/main.go` + 1 dependencia frontend (`chart.js`, aplicada en T020).
 
-**Unknowns**: **0 NEEDS CLARIFICATION** — el spec está validado (checklist [requirements.md](./checklists/requirements.md)) y el OpenAPI global ya define ambos endpoints, sus parámetros y el schema `AnaliticaViajes`. Las decisiones de diseño están en [research.md](./research.md) (D1–D9).
+**Unknowns**: **0 NEEDS CLARIFICATION** — el spec está validado (checklist [requirements.md](./checklists/requirements.md)) y el OpenAPI global define ambos endpoints, sus parámetros, el schema `AnaliticaViajes` y las respuestas `422` (T019). Las decisiones de diseño están en [research.md](./research.md) (D1–D9).
 
 ## Constitution Check
 
@@ -40,7 +40,7 @@ Exponer al gestor municipal la analítica de uso de la red sobre viajes finaliza
 |---|---|---|---|
 | I | Autoridad del backend en reglas de negocio | El filtro del rango (inclusivo, Europe/Madrid, `desde ≤ hasta` → 422), la agrupación por hora/día de la fecha de inicio, los totales y el contenido del CSV se calculan **solo** en Go/SQL (`services/analitica`); el frontend pinta los arrays y descarga el fichero ya generado. Validación de rol server-side (403). | PASS |
 | II | Pila tecnológica acordada | Go/Gin + SolidJS/Tailwind + PostgreSQL: exactamente el stack del plan global. Chart.js no es una incorporación libre: es la tecnología designada **globalmente** para los gráficos HU-08 (R14). | PASS |
-| III | Arquitectura separada con modelo de datos compartido | Código solo en `backend/internal/{services,handlers}/analitica`, `backend/internal/routes/spec_008_*.go` y `frontend/src/pages/analitica/`. **Cero migraciones**: lectura de `viajes`/`estaciones` con `ix_viajes_fecha` ya existente. Cero claves Redis. El `422` del OpenAPI global y el alta de `chart.js`/structs/seed se documentan como adiciones o **PENDIENTES DE ACUERDO DEL EQUIPO**; no se modifica ningún fichero de spec-007 ni el plan global. | PASS |
+| III | Arquitectura separada con modelo de datos compartido | Código solo en `backend/internal/{services,handlers}/analitica`, `backend/internal/routes/spec_008_*.go` y `frontend/src/pages/analitica/`. **Cero migraciones**: lectura de `viajes`/`estaciones` con `ix_viajes_fecha` ya existente. Cero claves Redis. La documentación `422` en el OpenAPI global y el alta de `chart.js` fueron **autorizadas por el equipo y aplicadas** (T019/T020); no se modifica ningún fichero de spec-007 ni el plan global. | PASS |
 | IV | Disponibilidad en tiempo real ≤ 30 s | **No aplica a esta spec**: la analítica es histórica (viajes finalizados, R11/R14); no lee ni escribe el estado en vivo de Redis. El contrato `estacion:{id}:estado` queda intacto. | N/A |
 | V | Independencia por especificación | Paquetes, página y fichero de rutas propios; los puntos comunes son líneas de una entrada cada uno (`register.go`, `routes.tsx`, `index.tsx`) o bloques puramente aditivos (`models.go`, `seed`). Las pruebas usan fixtures propias. La HU-08 se desarrolla y prueba sin esperar a otras ramas. | PASS |
 
@@ -52,7 +52,7 @@ Exponer al gestor municipal la analítica de uso de la red sobre viajes finaliza
 |---|---|---|
 | I | Autoridad del backend | PASS — [data-model.md](./data-model.md) define V1–V8 (validación de rango, filtro, agrupación, consistencia, formato CSV); quickstart T8a–T8f verifican consistencia, bordes del rango, exclusiones y 422. |
 | II | Pila | PASS — los artifacts Phase 1 no introducen tecnologías nuevas (Chart.js ya designado en R14). |
-| III | Modelo compartido | PASS — [data-model.md](./data-model.md) **no aplica ningún cambio** de esquema; los puntos que tocan ficheros compartidos quedan en la sección "⚠ PENDIENTES DE ACUERDO DEL EQUIPO" y no se aplican en esta spec salvo las adiciones triviales ya previstas por el plan global. |
+| III | Modelo compartido | PASS — [data-model.md](./data-model.md) confirma cero cambios de esquema; los cambios compartidos de OpenAPI/dependencia fueron autorizados por el equipo y aplicados (T019/T020). Las adiciones de modelos, seed, rutas y navegación de HU-08 ya están aplicadas. |
 | IV | Frescura ≤ 30 s | N/A — sin uso de Redis ni estado en vivo; los artifacts no lo requieren. |
 | V | Independencia | PASS — [contracts/analitica.md](./contracts/analitica.md) detalla únicamente los 2 endpoints propios, alineados con el OpenAPI global sin modificarlo; fixtures de tests y seed propios. |
 
@@ -98,7 +98,7 @@ specs/spec-008/
 │       └── analitica_test.go     # Integración T8a–T8i contra la BD del compose (fixtures propias)
 │
 └── frontend/                     # SolidJS + Tailwind + Vite (base de spec-003/spec-004/spec-007)
-    ├── package.json              # Compartido: añadir dependencia chart.js (R14 — pendiente de equipo)
+    ├── package.json              # Compartido: dependencia chart.js (R14 — T020 autorizada y aplicada)
     └── src/
         ├── pages/analitica/      # spec-008 — panel del gestor
         │   ├── index.tsx         # Selector de rango + 2 gráficos Chart.js + descarga + estados
@@ -119,15 +119,9 @@ specs/spec-008/
 
 Detalle de payloads, formato CSV y códigos de error: [contracts/analitica.md](./contracts/analitica.md) (alineado con `specs/spec-001/contracts/openapi.yaml`, tag `spec-008`, operationIds `analiticaViajes` y `exportarCSV`).
 
-## ⚠ Decisiones pendientes de acuerdo del equipo (constitución III / ficheros compartidos)
+## Integraciones compartidas
 
-La HU-08 es implementable y testeable sin esperar a ninguna de ellas; se listan para transparencia (patrón de spec-007):
-
-1. **Reflejar `422 ENTRADA_INVALIDA` en el OpenAPI global** para `/analitica/viajes` y `/analitica/export` (hoy solo enumera 200/403). La implementación responde 422 por el patrón ya consolidado en la rama; el YAML global no se modifica sin acuerdo.
-2. **Alta de `chart.js` en `frontend/package.json`** — dependencia ya designada globalmente para HU-08 (R14), pero al ser un fichero compartido el equipo debe conocerla en la revisión del PR (adición pura, sin sustituciones).
-3. **Bloques aditivos en ficheros compartidos** — `models/models.go` (struct `AnaliticaViajes`), `cmd/seed/main.go` (lote de viajes de demo) y las líneas de registro de rutas/nav: adiciones que no modifican lo existente; se revisan en el PR como cualquier merge de spec (spec-007 hizo lo propio con su seed y su worker).
-
-**Decisión de esta spec**: MVP sin cambios de esquema y sin tocar ficheros de otras specs; los puntos anteriores se someten a revisión del equipo en el PR (const. III y Acuerdos de Colaboración).
+La documentación de `422 ENTRADA_INVALIDA` en el OpenAPI global (T019) y el alta de `chart.js` en `frontend/package.json`/lockfile (T020) fueron **autorizadas por el equipo y aplicadas**. No alteran esquema ni Redis. Las integraciones aditivas de modelos, seed, rutas y navegación ya están aplicadas y quedan sujetas a la revisión normal del PR.
 
 ## Complexity Tracking
 
