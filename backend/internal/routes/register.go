@@ -17,4 +17,5 @@ func Register(rg *gin.RouterGroup, d deps.Deps) {
 	RegisterSpec003(rg, d)   // spec-003 (Alex Morell): HU-03 devolución y tarificación
 	RegisterSpec004(rg, d)   // spec-004 (Alex Morell): HU-04 historial de viajes
 	RegisterSpec007(rg, d)   // spec-007 (HU-07): alertas de balanceo y traslados
+	RegisterSpec008(rg, d)   // spec-008 (HU-08): analítica de uso y exportación CSV
 }

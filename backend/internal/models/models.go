@@ -75,6 +75,19 @@ type TrasladoRequest struct {
 	Unidades          int   `json:"unidades"`
 }
 
+// AnaliticaViajes es la respuesta del panel HU-08 (espejo JSON del schema
+// global AnaliticaViajes de specs/spec-001/contracts/openapi.yaml):
+// por_hora con 24 posiciones (00–23) y por_dia_semana con 7 (lunes=0 …
+// domingo=6), siempre inicializados a 0 en el servicio (research D2).
+type AnaliticaViajes struct {
+	Desde        string  `json:"desde"`
+	Hasta        string  `json:"hasta"`
+	TotalViajes  int     `json:"total_viajes"`
+	TotalCoste   float64 `json:"total_coste"`
+	PorHora      []int   `json:"por_hora"`
+	PorDiaSemana []int   `json:"por_dia_semana"`
+}
+
 // EstacionEstado es el estado recalculado de una estación (schema global;
 // latitud/longitud NUMERIC(9,6) → float64 con cast ::float8 en SQL).
 type EstacionEstado struct {

@@ -201,10 +201,10 @@ func run() error {
 		// fecha_fin, estacion_destino_id y duracion_minutos NOT NULL.
 		ana := ids["ana@si16.test"]
 		filas := []struct {
-			mes      int // 0 = mes actual, -1 = anterior, -2 = anteactual
-			dia      int
-			minutos  int
-			coste    string
+			mes     int // 0 = mes actual, -1 = anterior, -2 = anteactual
+			dia     int
+			minutos int
+			coste   string
 		}{
 			{0, 5, 12, "0.00"},   // ≤ 30 min → tramo gratuito → etiqueta
 			{0, 10, 40, "2.00"},  // 10 min excedente × 0,20
@@ -286,6 +286,51 @@ func run() error {
 			ancl := anclajesExt[e4][0] + int64(i)
 			if _, err := crearBici(codigo, "disponible", &ancl); err != nil {
 				return fmt.Errorf("bicicleta %s: %w", codigo, err)
+			}
+		}
+
+		// ---- HU-08: lote de viajes finalizados de demo para la analítica ----
+		// research D7: ~40 viajes de Ana repartidos deterministamente en las
+		// últimas 4 semanas (28 días), patrón de horas locales {7,8,9,12,17,
+		// 18,20,22} y distintos días de la semana, para que las 24 barras y
+		// los 7 días tengan forma reconocible en el panel. Duración y coste
+		// siguen la tarifa HU-03 (≤ 30 min → 0,00; excedente × 0,20).
+		// Insertados DESPUÉS de los viajes HU-04: no alteran sus ids.
+		// Nota: la bicicleta B-200 del enunciado ya existe anclada en
+		// Estació Nord (HU-07); se usa B-300 (disponible, sin anclaje).
+		bDemo, err := crearBici("B-300", "disponible", nil)
+		if err != nil {
+			return fmt.Errorf("bicicleta B-300: %w", err)
+		}
+		madrid, err := time.LoadLocation("Europe/Madrid")
+		if err != nil {
+			return fmt.Errorf("carga Europe/Madrid: %w", err)
+		}
+		horasDemo := []int{7, 8, 9, 12, 17, 18, 20, 22}
+		for i := 0; i < 40; i++ {
+			diasAtras := 1 + (i % 27)           // 1..27 días atrás (4 semanas)
+			hora := horasDemo[i%len(horasDemo)] // horas locales repartidas
+			dia := time.Now().In(madrid).AddDate(0, 0, -diasAtras)
+			inicio := time.Date(dia.Year(), dia.Month(), dia.Day(), hora,
+				(i*7)%60, 0, 0, madrid)
+			minutos := 10 + (i*7)%60 // 10..69 min
+			fin := inicio.Add(time.Duration(minutos) * time.Minute)
+			coste := 0.0
+			if minutos > 30 {
+				coste = float64(minutos-30) * 0.20
+			}
+			destino := e1
+			if i%2 == 1 {
+				destino = e2
+			}
+			if _, err := tx.Exec(ctx,
+				`INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id,
+				                     estacion_destino_id, fecha_inicio, fecha_fin,
+				                     duracion_minutos, coste_total, estado)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8::numeric, 'finalizado')`,
+				ana, bDemo, e2, destino, inicio, fin, minutos,
+				fmt.Sprintf("%.2f", coste)); err != nil {
+				return fmt.Errorf("viaje demo HU-08 %d: %w", i+1, err)
 			}
 		}
 

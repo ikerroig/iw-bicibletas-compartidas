@@ -85,4 +85,33 @@ Invoke-WebRequest -Uri "http://localhost:8080/api/v1/analitica/export?desde=$des
 
 ## 5. Resultados de la validación
 
-**Pendiente de la implementación** (Phase 2, `/speckit.tasks` + código): completar esta sección con los resultados de `go test`, `npm test` y el escenario S8 en vivo, al estilo de [spec-007 §5](../spec-007/quickstart.md).
+**Fecha**: 2026-11-01 | **Rama**: `spec-008` | **Commit base**: rama con T001–T018 implementadas (T019/T020 bloqueadas, pendientes de acuerdo del equipo)
+
+### 5.1 Pruebas automatizadas
+
+| Suite | Resultado |
+|---|---|
+| `go test ./...` (backend) | ✅ en verde — `services/analitica` (unit servicio + CSV) y `tests` (T8a–T8i, 9/9) incluidos |
+| `go vet ./...` | ✅ limpio |
+| `gofmt -l` | ✅ sin avisos reales (el listado del working tree es CRLF preexistente de Windows; ficheros nuevos sin avisos) |
+| `npm test` (frontend) | ✅ 19/19 — página de analítica (6 tests: datos, vacío, descarga, doble clic, 403, 422), cliente API, viajes y devolución |
+| `npm run build` | ⚠️ falla **solo** con `TS2307 Cannot find module 'chart.js'` en `GraficoBarras.tsx` — comportamiento esperado hasta T020 (`"chart.js": "^4"` pendiente de acuerdo del equipo); sin ningún otro error de tipos |
+
+### 5.2 Escenario S8 en vivo (API real, server :8080 + seed T003)
+
+Ejecutado el 2026-11-01 con `gestor@si16.test` / `password`:
+
+| Paso | Resultado |
+|---|---|
+| Agregados últimos 30 días | ✅ `200` — `total_viajes: 41`, `total_coste: 101.4`, `por_hora` 24 pos., `por_dia_semana` 7 pos., latencia 5 ms (< 5 s, SC-001) |
+| Export del mismo rango | ✅ `200` — 41 filas de datos (consistencia SC-002: filas == `total_viajes`; suma `coste_eur` == 101.4 == `total_coste`), BOM UTF-8, CRLF, cabecera de 6 columnas, `Content-Disposition: attachment; filename=viajes_AAAAMMDD_AAAAMMDD.csv`, nombres con ñ/tildes intactos (SC-004) |
+| Rango con bordes (`2026-10-01`…`2026-10-15`) | ✅ `200` — 12 viajes; export consistente |
+| Rango futuro (2099) | ✅ `200` — arrays a 0, `total_viajes: 0`, CSV de solo cabecera |
+| Rango anual (SC-001) | ✅ `200` — 42 viajes, respuesta instantánea |
+| Rango invertido (`desde > hasta`) | ✅ `422 ENTRADA_INVALIDA` en ambos endpoints (agregados y export), sin cabeceras de descarga |
+| Rol `usuario` (carla@si16.test) | ✅ `403 ROL_NO_PERMITIDO` en ambos endpoints (SC-003) |
+| Sin token | ✅ `401 NO_AUTENTICADO` |
+
+### 5.3 Página (`localhost:5173/analitica`)
+
+Los comportamientos de UI (totales, aviso "sin datos en el periodo", descarga autenticada con Blob/`<a download>`, botón deshabilitado durante la descarga, mensajes `role="alert"` para 403/422) están verificados por los 6 tests de `frontend/src/pages/analitica/index.test.tsx` (wrapper del gráfico mockeado). El renderizado **visual de las barras con chart.js en navegador** queda pendiente de la aprobación de T020 (`npm install` de `chart.js` + `npm run build`); la ruta `/analitica` está dada de alta en `routes.tsx` y el nav.

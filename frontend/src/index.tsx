@@ -22,6 +22,8 @@ function Layout(props: RouteSectionProps) {
         <A href="/viajes">Mis viajes</A>
         {/* spec-007 (T017): HU-07 */}
         <A href="/balanceo">Balanceo</A>
+        {/* spec-008 (HU-08): analítica y exportación CSV */}
+        <A href="/analitica">Analítica</A>
       </nav>
       <main class="p-4">{props.children}</main>
     </>
