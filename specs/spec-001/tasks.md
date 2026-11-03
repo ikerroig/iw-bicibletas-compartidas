@@ -58,7 +58,7 @@
 - [ ] T017 Implementar auth base: `POST /auth/login` y `GET /auth/me` en `backend/internal/handlers/auth/handler.go` + test mínimo de contrato
 - [ ] T018 `backend/cmd/server/main.go`: wiring de config, db, cache, hooks, registro de rutas y workers (cada spec añadirá tras fusionar una única línea para su worker)
 - [ ] T019 [P] `backend/cmd/seed/main.go`: ~60 estaciones geolocalizadas (incl. alguna `fuera_de_servicio` y extremos de ocupación para S7), anclajes = capacidad, flota (algunas `averiada`), usuarios de **todos los roles** con/sin abono vigente (hashes bcrypt)
-- [ ] T020 `backend/internal/services/estacion/estado.go`: `RecalcularEstacion` (consulta agregada de disponibilidad excluyendo averiadas y estaciones fuera de servicio — R9 — + HSET del hash + invocación de `hooks.EstacionCambiada`); **helper compartido** que importarán US2/US3/US5/US6/US7 (propiedad del paquete de Iker)
+- [ ] T020 `backend/internal/services/estacion/estado.go`: `RecalcularEstacion` (consulta agregada R9/R19: `bicis_disponibles` = anclajes con bicicleta en estado `disponible`; `anclajes_libres` = anclajes en estado `libre`; un anclaje con bicicleta `averiada`/`en_taller` **no suma en ninguno de los dos**; `ocupacion_pct = 0` si la estación está `fuera_de_servicio`, pero sus contadores enteros se calculan y guardan igualmente; **no** validar `bicis_disponibles + anclajes_libres = capacidad_total` + HSET del hash + invocación de `hooks.EstacionCambiada`). Si la escritura en Redis falla tras el commit, registrar en el log y **no** revertir la transacción (lo corrige el barrido, R16); **helper compartido** que importarán US2/US3/US5/US6/US7 (propiedad del paquete de Iker)
 - [ ] T021 [P] Frontend base: `frontend/src/services/api.ts` (fetch wrapper con Bearer y envelope de error), `frontend/src/stores/sesion.ts` (login/logout, token) y `frontend/src/pages/Login.tsx`
 - [ ] T022 `frontend/src/routes.tsx` (**único archivo de rutas compartido**) + `frontend/src/components/Layout.tsx` (navegación por áreas con guard de rol)
 - [ ] T023 [P] Configurar Vitest + @solidjs/testing-library + MSW en `frontend/vitest.config.ts` y `frontend/tests/setup.ts` con handlers derivados de `contracts/openapi.yaml`
@@ -69,24 +69,31 @@
 
 ## Phase 3: User Story 1 — Consulta de disponibilidad en tiempo real (spec-001, HU-01, P1) 🎯 MVP
 
-**Goal**: Mapa en vivo de las ~60 estaciones con contadores fiables desde Redis, frescura ≤ 30 s (Iker Roig).
+**Goal**: Mapa en vivo de las ~60 estaciones con contadores fiables desde Redis, frescura ≤ 30 s extremo a extremo (del commit al pintado), aviso de «datos desactualizados» y estados visuales accesibles «sin bicicletas», «sin anclajes libres» y «fuera de servicio» (Iker Roig). Cubre FR-001…FR-009 y SC-001…SC-007.
 
-**Independent Test**: Dar de alta estaciones con estados variados, abrir el mapa, verificar contadores contra la BD real y medir que un cambio se refleja en ≤ 30 s (escenario S1 del quickstart).
+**Independent Test**: Dar de alta estaciones con estados variados, abrir el mapa, verificar contadores contra la BD real y medir que un cambio se refleja en ≤ 30 s; cortar la conexión y ver el aviso a los > 30 s; comprobar los estados sin bicis, sin anclajes y fuera de servicio (escenarios S1 y S1a–S1d del quickstart).
+
+**Orden de ejecución dentro de la fase** (las tareas T095–T099 se añadieron el 2026-11-03 tras `/speckit.clarify`; conservan la numeración del resto del equipo): T024, T025, T099, T096, T098 (tests, fallando) → T026, T027 → T028, T029, T095 → T030, T097 → T031 → T032.
 
 ### Tests for User Story 1
 
 - [ ] T024 [P] [US1] Test de contrato `GET /estaciones` y `GET /estaciones/{id}` contra `contracts/openapi.yaml` en `backend/tests/contract/spec001_test.go`
-- [ ] T025 [P] [US1] Test de integración de frescura en `backend/tests/integration/spec001_frescura_test.go`: mutación → hash `estacion:{id}:estado` actualizado post-commit; clave expirada → fallback a PostgreSQL y repoblado; averiadas excluidas de `bicis_disponibles`; estación `fuera_de_servicio` marcada (FR-005/FR-006)
+- [ ] T025 [P] [US1] Test de integración de frescura en `backend/tests/integration/spec001_frescura_test.go`: mutación → hash `estacion:{id}:estado` actualizado post-commit; clave expirada → fallback a PostgreSQL y repoblado; averiadas excluidas de `bicis_disponibles`; estación `fuera_de_servicio` marcada (FR-005/FR-006). Además (R19): un anclaje con bici `averiada` no cuenta como libre; una estación con todos sus anclajes ocupados por averiadas da `bicis_disponibles = 0` y `anclajes_libres = 0`; se acepta `bicis_disponibles + anclajes_libres < capacidad_total`; una estación `fuera_de_servicio` sigue devolviendo contadores enteros en la API (el contrato `EstacionEstado` no cambia, R18)
+- [ ] T099 [P] [US1] Test de integración del camino de respaldo en `backend/tests/integration/spec001_latencia_test.go` (R16, FR-003, SC-002): `UPDATE` directo de `anclajes`/`bicicletas`/`estaciones.estado` en PostgreSQL **sin** pasar por `hooks.EstacionCambiada` → el hash `estacion:{id}:estado` refleja el cambio en ≤ 10 s gracias al worker; con Redis caído durante la escritura síncrona, la transacción SQL queda confirmada y el barrido repara el hash al volver Redis
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] `backend/internal/workers/refresco_estado/worker.go`: barrido ≤ 15 s de las ~60 estaciones con una única consulta agregada (red de seguridad de frescura) + línea de wiring en `backend/cmd/server/main.go`
+- [ ] T026 [US1] `backend/internal/workers/refresco_estado/worker.go`: barrido **cada 10 s** (R16; antes 15 s) de las ~60 estaciones con una única consulta agregada (red de seguridad de frescura; con polling de 15 s deja el peor caso extremo a extremo en ≈ 28 s < 30 s) + escritura de `si16:worker:refresco:ultimo` + línea de wiring en `backend/cmd/server/main.go`; intervalo como constante en el paquete
 - [ ] T027 [US1] `backend/internal/handlers/estacion/handler.go` + `backend/internal/routes/spec_001_routes.go`: snapshot `GET /estaciones` (con `actualizado_en`) y detalle `GET /estaciones/{id}` (con anclajes)
 - [ ] T028 [P] [US1] `frontend/src/services/api/estaciones.ts`: tipos `EstacionEstado`/`EstacionDetalle` y cliente
-- [ ] T029 [P] [US1] `frontend/src/stores/red.ts`: polling de `GET /estaciones` cada 15 s, reintentos automáticos, marca de última actualización y pausa con pestaña oculta (edge cases HU-01)
-- [ ] T030 [US1] `frontend/src/components/MapaBase.tsx`: Leaflet + tiles OpenStreetMap, marcadores con estado por estación
-- [ ] T031 [US1] `frontend/src/pages/mapa/MapaRed.tsx`: mapa completo (< 5 s), panel de detalle (< 2 s) con contadores, estado de servicio, `actualizado_en` y aviso de desconexión conservando el último estado conocido
-- [ ] T032 [P] [US1] Tests frontend en `frontend/tests/mapa/`: render con datos MSW, estación fuera de servicio, estado vacío y desconexión (Vitest + MSW)
+- [ ] T029 [P] [US1] `frontend/src/stores/red.ts`: polling de `GET /estaciones` cada 15 s, reintentos automáticos en el siguiente ciclo **sin borrar el último estado conocido**, pausa con pestaña oculta (al volver a mostrarla, petición inmediata) y, según R17: señal `ultimaActualizacionOk` con el **reloj del cliente** al recibir una respuesta 2xx; temporizador de 1 s que expone `desactualizado = ahora − ultimaActualizacionOk > 30 s` (estrictamente mayor); `desactualizado` vuelve a `false` en cuanto llega una respuesta correcta (FR-007)
+- [ ] T095 [P] [US1] `frontend/src/pages/mapa/estadoVisual.ts`: función pura `estadoVisual(e: EstacionEstado)` con prioridad R18: (1) `estado = 'fuera_de_servicio'` → `'fuera_de_servicio'`; (2) `bicis_disponibles = 0` y `anclajes_libres = 0` → `'sin_bicis_y_sin_anclajes'`; (3) `bicis_disponibles = 0` → `'sin_bicis'`; (4) `anclajes_libres = 0` → `'sin_anclajes'`; (5) si no → `'normal'`. Exporta también, para cada estado, su icono, su etiqueta corta («Fuera de servicio», «Sin bicicletas», «Sin anclajes libres», ambos) y su clase Tailwind de color (FR-008, FR-009)
+- [ ] T030 [US1] `frontend/src/components/MapaBase.tsx`: Leaflet + tiles OpenStreetMap; marcadores `L.divIcon` que reciben el estado de `estadoVisual` (T095) y muestran **icono + texto corto además del color** (FR-008: la distinción MUST NOT depender solo del color) con `aria-label` descriptivo; todos los marcadores, también los de estaciones fuera de servicio, son seleccionables (FR-009); el componente es genérico, la lógica de estados vive en `pages/mapa/`
+- [ ] T097 [US1] `frontend/src/pages/mapa/AvisoDesactualizado.tsx`: muestra siempre «Actualizado a las HH:MM:SS» (hora local de `ultimaActualizacionOk`) y, cuando `desactualizado` (T029), un banner visible con `role="status"`, icono y texto «Datos desactualizados» (no solo color); no oculta ni vacía los contadores (FR-007, SC-005)
+- [ ] T031 [US1] `frontend/src/pages/mapa/MapaRed.tsx`: mapa completo (< 5 s) con `AvisoDesactualizado` (T097) y panel de detalle (< 2 s) `frontend/src/pages/mapa/DetalleEstacion.tsx`: estación operativa → contadores de bicis disponibles y anclajes libres; un contador a 0 se muestra como «0 · Sin bicicletas» / «0 · Sin anclajes libres» (FR-008); **solo estos dos contadores, sin desglose de averiadas** (FR-006); estación `fuera_de_servicio` → texto «Fuera de servicio» y «—» en lugar de ambos contadores, sin ninguna acción de recogida ni devolución (FR-009); conserva el último estado conocido si falla la conexión
+- [ ] T032 [P] [US1] Tests frontend en `frontend/tests/mapa/`: render con datos MSW, estado vacío y desconexión (Vitest + MSW); `DetalleEstacion` operativa con 0 bicis, con 0 anclajes y con ambos a 0 (textos de FR-008), fuera de servicio con «—» y sin acciones (FR-009); marcadores con texto/`aria-label` distinto por estado (no solo clase de color); marcador fuera de servicio seleccionable
+- [ ] T096 [P] [US1] Tests unitarios de `estadoVisual` en `frontend/tests/mapa/estadoVisual.test.ts`: tabla con todas las combinaciones de `estado` × (`bicis_disponibles` 0/>0) × (`anclajes_libres` 0/>0), incluido fuera de servicio con 0 bicis (debe ganar `'fuera_de_servicio'`) y suma de contadores < capacidad (R18, R19)
+- [ ] T098 [P] [US1] Tests del aviso en `frontend/tests/mapa/desactualizado.test.ts` con temporizadores falsos de Vitest + MSW devolviendo error de red: a los 30 s exactos **no** hay aviso; a los 31 s aparece «Datos desactualizados» y los contadores siguen en pantalla; la primera respuesta 2xx lo quita y actualiza «Actualizado a las…» (FR-007, SC-005)
 
 **Checkpoint**: HU-01 funcional y testeable de forma independiente (MVP del sistema).
 
@@ -263,7 +270,7 @@
 
 **Purpose**: Validación global del sistema y endurecimiento (todo el equipo, tras fusionar las specs)
 
-- [ ] T088 [P] Ejecutar los escenarios **S1–S8** de [quickstart.md](./quickstart.md) end-to-end en local (docker compose + seed + backend + frontend) y registrar resultados por spec en la PR correspondiente
+- [ ] T088 [P] Ejecutar los escenarios **S1–S8** (incluidos S1a–S1d de HU-01) de [quickstart.md](./quickstart.md) end-to-end en local (docker compose + seed + backend + frontend) y registrar resultados por spec en la PR correspondiente
 - [ ] T089 Re-ejecutar el gate **T1–T5** (reglas críticas, const. I) en local/CI antes de cada fusión de spec — checklist obligatoria de PR
 - [ ] T090 [P] Optimización de rendimiento: `EXPLAIN ANALYZE` de las consultas calientes (snapshot de estaciones, historial paginado, agregados de analítica) contra objetivos de `plan.md` (< 5 s mapa, < 3 s historial, < 5 s analítica)
 - [ ] T091 [P] Security hardening: rate limiting en `POST /auth/login` y `POST /alquileres/desbloqueo`, cabeceras HTTP (CSP, X-Content-Type-Options), validación de entrada en todos los handlers
@@ -328,7 +335,7 @@ Task: "T036 services/alquiler/service.go (transacción + FOR UPDATE)"
 1. Completar Phase 1: Setup
 2. Completar Phase 2: Foundational (**CRÍTICO — bloquea todas las stories**)
 3. Completar Phase 3 (US1, spec-001)
-4. **PARAR y VALIDAR**: escenario S1 del quickstart + frescura ≤ 30 s medido
+4. **PARAR y VALIDAR**: escenarios S1 y S1a–S1d del quickstart + frescura ≤ 30 s medida de extremo a extremo (también por el camino de respaldo)
 5. Demo/despliegue si está listo (mapa en vivo = valor demostrable)
 
 ### Incremental Delivery (por spec y rama)
@@ -350,6 +357,7 @@ Task: "T036 services/alquiler/service.go (transacción + FOR UPDATE)"
 
 - `[P]` = ficheros distintos, sin dependencias → paralelo seguro
 - `[Story]` = trazabilidad US_n ↔ HU_n ↔ spec-00N ↔ integrante
+- IDs T095–T099 (US1) añadidos el 2026-11-03 al final de la numeración para no renumerar las tareas del resto del equipo; su orden real está al inicio de la Phase 3
 - Gate de calidad: los tests T1–T5 (const. I) son **obligatorios** en las fases 4, 5, 7 y 9 y se re-ejecutan en T089
 - Esquema compartido: 0001 es la única migración aportada; cambios futuros exigen ordinal acordado (T093, const. III)
 - Commit tras cada tarea o grupo lógico; parar en cada Checkpoint para validar la historia de forma independiente
