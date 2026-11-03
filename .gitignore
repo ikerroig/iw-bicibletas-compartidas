@@ -1,3 +1,32 @@
 # Configuración local de Claude Code (personal, no se comparte)
 .claude/settings.local.json
 .claude/*.local.*
+
+# Entorno (secretos locales; se versiona solo .env.example)
+.env
+.env.*
+!.env.example
+
+# Go (backend)
+*.exe
+*.exe~
+*.test
+*.out
+backend/bin/
+backend/vendor/
+coverage.txt
+
+# Node (frontend)
+node_modules/
+frontend/dist/
+frontend/coverage/
+*.log
+npm-debug.log*
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/

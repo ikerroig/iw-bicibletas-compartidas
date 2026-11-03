@@ -7,7 +7,7 @@ Guía de validación **end-to-end** del sistema completo (8 specs). Es una guía
 ## 0. Prerrequisitos
 
 - Docker Desktop (con `docker compose` v2)
-- Go ≥ 1.22
+- Go ≥ 1.26 (lo exigen las versiones actuales de gin, pgx y x/crypto; ver `backend/go.mod`)
 - Node.js ≥ 20 (npm ≥ 10)
 - Puerto libres: 5432 (PostgreSQL), 6379 (Redis), 8080 (backend), 5173 (frontend)
 

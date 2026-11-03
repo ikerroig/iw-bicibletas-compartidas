@@ -14,7 +14,7 @@ El SI-16 necesita una única base técnica coherente para las 8 historias: la co
 
 ## Technical Context
 
-**Language/Version**: Go 1.22+ (backend); TypeScript 5.x + SolidJS 1.9+ (frontend).
+**Language/Version**: Go 1.26+ (backend; mínimo fijado por las dependencias en `backend/go.mod`, antes 1.22+); TypeScript 5.x + SolidJS 1.9+ (frontend).
 
 **Primary Dependencies**: Gin v1.10, pgx/v5 (driver PostgreSQL), go-redis/v9, goose (migraciones), golang-jwt/v5, bcrypt (x/crypto); Vite 6, Tailwind CSS, @solidjs/router, Leaflet + tiles OpenStreetMap (mapa HU-01), Chart.js (gráficos HU-08).
 

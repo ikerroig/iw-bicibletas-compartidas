@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Marcadores del mapa (HU-01): el color nunca es el único indicador (FR-008). */
+.marcador-estacion {
+  background: transparent;
+  border: 0;
+}
