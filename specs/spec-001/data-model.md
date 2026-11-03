@@ -26,7 +26,7 @@ erDiagram
 |---|---|---|---|
 | `id` | BIGSERIAL | PRIMARY KEY | pedido |
 | `nombre` | TEXT | NOT NULL | pedido |
-| `email` | TEXT | NOT NULL, UNIQUE | pedido |
+| `email` | TEXT | NOT NULL, UNIQUE sobre `lower(email)` (índice `ux_usuarios_email`) | pedido |
 | `password_hash` | TEXT | NOT NULL | ⚠ ADICIÓN (R15: sesión iniciada) |
 | `rol` | TEXT | NOT NULL DEFAULT 'usuario', CHECK IN ('usuario','operario_taller','operario_logistica','gestor') | pedido (enum derivado de R5) |
 | `abono_activo` | BOOLEAN | NOT NULL DEFAULT FALSE | pedido |
@@ -37,7 +37,7 @@ erDiagram
 CREATE TABLE usuarios (
   id                      BIGSERIAL PRIMARY KEY,
   nombre                  TEXT        NOT NULL,
-  email                   TEXT        NOT NULL UNIQUE,
+  email                   TEXT        NOT NULL,
   password_hash           TEXT        NOT NULL,
   rol                     TEXT        NOT NULL DEFAULT 'usuario'
                           CHECK (rol IN ('usuario','operario_taller','operario_logistica','gestor')),
@@ -45,6 +45,8 @@ CREATE TABLE usuarios (
   fecha_vencimiento_abono DATE,
   creado_en               TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Único sin distinguir mayúsculas: el login busca por lower(email).
+CREATE UNIQUE INDEX ux_usuarios_email ON usuarios (lower(email));
 ```
 
 - **Regla de negocio (const. I)** — *abono vigente*: es vigente ⇔ `abono_activo = TRUE AND fecha_vencimiento_abono >= CURRENT_DATE`. Si los campos son incoherentes (activo sin fecha o fecha pasada) se trata como **caducado** (decisión conservadora, R8/HU-02 FR-002).
@@ -281,7 +283,7 @@ Detalle completo del contrato en [contracts/redis-state.md](./contracts/redis-st
 |---|---|---|---|
 | `estacion:{id}:estado` | HASH | `bicis_disponibles`, `anclajes_libres`, `ocupacion_pct`, `estado`, `actualizado_en` (RFC3339 UTC) | 120 s (refrescado en cada escritura) |
 
-- Escritura: (a) síncrona post-commit en cada mutación de estaciones/bicicletas/anclajes; (b) barrido de las ~60 estaciones cada 15 s (worker `refresco_estado`) → cota dura de frescura 15 s < 30 s.
+- Escritura: (a) síncrona post-commit en cada mutación de estaciones/bicicletas/anclajes; (b) barrido de las ~60 estaciones cada 10 s (worker `refresco_estado`) → peor caso extremo a extremo ≈ 28 s < 30 s (R16). Anclajes con bicicleta averiada no suman en ningún contador: `bicis_disponibles + anclajes_libres ≤ capacidad_total` (R19).
 - Lectura: `GET /estaciones` sirve el HASH; si la clave falta/expiró (parada del worker), se recalcula desde PostgreSQL y se repuebla (FR-005: nunca datos sin expiración/marca de tiempo).
 
 ## Reglas de negocio críticas (constitución I) → dónde se garantizan

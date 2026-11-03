@@ -7,7 +7,7 @@ Guía de validación **end-to-end** del sistema completo (8 specs). Es una guía
 ## 0. Prerrequisitos
 
 - Docker Desktop (con `docker compose` v2)
-- Go ≥ 1.22
+- Go ≥ 1.26 (lo exigen las versiones actuales de gin, pgx y x/crypto; ver `backend/go.mod`)
 - Node.js ≥ 20 (npm ≥ 10)
 - Puerto libres: 5432 (PostgreSQL), 6379 (Redis), 8080 (backend), 5173 (frontend)
 
@@ -68,6 +68,11 @@ Invoke-RestMethod -Uri http://localhost:8080/api/v1/estaciones -Headers $h | Con
 | # | Spec | Escenario | Esperado |
 |---|---|---|---|
 | S1 | HU-01 (spec-001) | Abrir el mapa / `GET /estaciones` | ~60 estaciones geolocalizadas con contadores; seleccionar una → detalle < 2 s. Provocar un cambio (una devolución, S3) y refrescar: el contador cambia en **≤ 30 s** (medir con `actualizado_en`) |
+| S1a | HU-01 (spec-001) | Cortar el backend (o la red en DevTools) con el mapa abierto; esperar > 30 s; volver a levantarlo | Los contadores siguen visibles con «Actualizado a las HH:MM:SS»; a los > 30 s aparece el aviso «Datos desactualizados»; desaparece con la primera respuesta correcta (FR-007, SC-005) |
+| S1b | HU-01 (spec-001) | Con SQL, dejar una estación con 0 bicis disponibles, otra con 0 anclajes libres y otra con todos los anclajes ocupados por bicis averiadas | Cada marcador muestra su estado con icono y texto (no solo color); el detalle muestra «0 · Sin bicicletas» / «0 · Sin anclajes libres», o ambos; al devolver disponibilidad vuelve a normal en ≤ 30 s; la suma de contadores puede ser menor que la capacidad (FR-006, FR-008, SC-006) |
+| S1c | HU-01 (spec-001) | `UPDATE estaciones SET estado='fuera_de_servicio'` en una estación con 0 bicis; después revertir | En ≤ 30 s el marcador pasa a «Fuera de servicio» (prevalece sobre «sin bicicletas»), sigue siendo seleccionable y su detalle muestra «—» sin contadores ni acciones; al revertir vuelve a operativa en ≤ 30 s (FR-009, SC-007) |
+| S1d | HU-01 (spec-001) | Parar las escrituras síncronas (p. ej. un `UPDATE` directo en `anclajes`, sin pasar por la API) y medir | El contador cambia en pantalla en ≤ 30 s solo gracias al barrido de 10 s (camino de respaldo, R16) |
+| S1e | HU-01 (spec-001) | Chrome DevTools: perfil de red «Fast 4G», caché vacía, pestaña Performance; recargar el mapa y hacer clic en un marcador. Repetir denegando el permiso de ubicación | Todos los marcadores pintados en < 5 s y detalle visible en < 2 s desde el clic (SC-004); con la ubicación denegada el mapa se encuadra en toda la red sin errores (caso límite) |
 | S2 | HU-02 (spec-002) | Desbloquear con código de anclaje válido | 201 con viaje activo; usuario caducado → 403 con causa; usuario con viaje activo → 409; código inexistente/estación fuera de servicio/anclaje sin bici → 404/409 **sin** modificar nada |
 | S3 | HU-03 (spec-003) | Devolver en anclaje libre; repetir con viaje forzado > 30 min (ajustar `fecha_inicio` en BD o esperar) | Viaje finalizado con hora de llegada, usuario liberado (puede desbloquear de nuevo), bici anclada; ≤ 30 min → `coste_total = 0.00` con etiqueta "Tramo gratuito (0,00 €)"; > 30 min → solo excedente |
 | S4 | HU-04 (spec-004) | Sección "Mis Viajes" con filtro mes/año | Lista cronológica (origen, destino, duración, coste), sumatorio correcto, viajes de 0,00 € etiquetados, viaje activo ausente del historial |

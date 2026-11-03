@@ -20,8 +20,8 @@ Investigación asociada al Technical Context de `plan.md`. Cada entrada resuelve
 
 ## R3. Estrategia de frescura ≤ 30 s en tiempo real
 
-- **Decisión**: Redis es la fuente de lectura del estado en vivo. Doble mecanismo: (a) **actualización síncrona post-commit**: cada operación que muta estaciones/bicicletas/anclajes (desbloqueo, devolución, avería, traslado, ubicación de taller) reescribe las claves `estacion:{id}:estado` afectadas justo después de confirmar la transacción SQL; (b) **barrido de seguridad** cada 15 s en un worker Go que recalcula las ~60 estaciones con una única consulta agregada, garantía de cota ≤ 30 s aunque un camino de escritura se olvide de invalidar. El frontend hace *polling* de `GET /estaciones` cada 15 s y muestra `actualizado_en` (edge case de desconexión de HU-01).
-- **Racional**: Satisface constitución IV y SC-002/SC-003 de HU-01 con margen (15 s < 30 s). El barrido de 60 claves cada 15 s es despreciable de coste y convierte el TTL/olvido en fallo degradado, no en datos estáticos (FR-005: prohibido mostrar datos sin expiración → cada clave lleva `actualizado_en` y TTL de seguridad de 120 s; si expira, el endpoint recalcula desde PostgreSQL).
+- **Decisión**: Redis es la fuente de lectura del estado en vivo. Doble mecanismo: (a) **actualización síncrona post-commit**: cada operación que muta estaciones/bicicletas/anclajes (desbloqueo, devolución, avería, traslado, ubicación de taller) reescribe las claves `estacion:{id}:estado` afectadas justo después de confirmar la transacción SQL; (b) **barrido de seguridad** cada **10 s** (antes 15 s; ajustado por R16) en un worker Go que recalcula las ~60 estaciones con una única consulta agregada, garantía de cota ≤ 30 s extremo a extremo aunque un camino de escritura se olvide de invalidar. El frontend hace *polling* de `GET /estaciones` cada 15 s y muestra `actualizado_en` (edge case de desconexión de HU-01).
+- **Racional**: Satisface constitución IV y SC-002/SC-003 de HU-01 con margen (presupuesto detallado en R16). El barrido de 60 claves cada 15 s es despreciable de coste y convierte el TTL/olvido en fallo degradado, no en datos estáticos (FR-005: prohibido mostrar datos sin expiración → cada clave lleva `actualizado_en` y TTL de seguridad de 120 s; si expira, el endpoint recalcula desde PostgreSQL).
 - **Alternativas consideradas**: SSE o WebSockets: rechazados para el MVP (más complejidad de conexión/Reparto; el presupuesto de 30 s no lo exige) — el contrato REST deja la puerta abierta a añadirlos sin romper nada; solo polling sin actualización síncrona: rechazado porque el desbloqueo/devolución tardaría hasta 30 s en reflejarse en paneles de operarios (HU-07 exige recálculo inmediato).
 
 ## R4. Modelo de claves Redis
@@ -75,7 +75,7 @@ Investigación asociada al Technical Context de `plan.md`. Cada entrada resuelve
 
 ## R10. Generación de alertas de balanceo (HU-07)
 
-- **Decisión**: doble mecanismo espejo de R3: (a) tras cada mutación de estación, el servicio correspondiente evalúa los umbrales de las estaciones afectadas y crea/resuelve alertas; (b) worker `alertas` cada 60 s recalcula toda la red (garantía SC-001 < 1 min). Umbrales **estrictos**: alerta si `ocupación < 10` o `> 90` exactamente (10,00 y 90,00 no alertan). Índice `UNIQUE (estacion_id, tipo_alerta) WHERE NOT resuelta` impide duplicados por umbral (FR-003); al volver al rango normal se pone `resuelta = true` (FR-004) y puede reabrirse una nueva.
+- **Decisión**: doble mecanismo espejo de R3: (a) tras cada mutación de estación, el servicio que muta llama a `estacion.RecalcularEstacion` y esta notifica `hooks.EstacionCambiada`; el paquete `balanceo` está suscrito (`hooks.Suscribir`) y evalúa los umbrales de las estaciones afectadas, creando o resolviendo alertas (flujo único sin ciclos: el suscriptor nunca vuelve a recalcular); (b) worker `alertas` cada 60 s recalcula toda la red (garantía SC-001 < 1 min). Umbrales **estrictos**: alerta si `ocupación < 10` o `> 90` exactamente (10,00 y 90,00 no alertan). Índice `UNIQUE (estacion_id, tipo_alerta) WHERE NOT resuelta` impide duplicados por umbral (FR-003); al volver al rango normal se pone `resuelta = true` (FR-004) y puede reabrirse una nueva.
 - **Racional**: constitución I (alertas = regla crítica server-side); cobertura inmediata + red de seguridad temporal cubre ambos SC sin dependencia de que todas las specs llamen al hook.
 - **Alternativas consideradas**: solo triggers post-commit (sin barrido): un write-path olvidado deja alertas obsoletas; solo cron cada minuto: HU-07 exige recálculo inmediato tras confirmar traslado (SC-003).
 
@@ -112,6 +112,46 @@ Investigación asociada al Technical Context de `plan.md`. Cada entrada resuelve
 - **Racional**: cumplir el requisito sin romper el modelo compartido: las adiciones se someten a acuerdo de equipo antes de migrar (principio III).
 - **Alternativas consideradas**: inventar estados o tablas extra (rechazado: fuera de lo pedido); no añadir nada (imposible: HU-01/HU-07 y la autenticación no serían implementables).
 
+## R16. Presupuesto de latencia extremo a extremo (HU-01 FR-003, SC-002) — *añadido 2026-11-03*
+
+- **Decisión**: la cota de 30 s se mide desde el commit SQL hasta que el contador aparece en pantalla. Presupuesto de peor caso:
+
+  | Tramo | Camino normal (escritura síncrona) | Camino de respaldo (escritura síncrona fallida) |
+  |---|---|---|
+  | Commit → Redis | ≈ 0 s (post-commit) | ≤ 10 s (barrido del worker) |
+  | Redis → respuesta en cliente | ≤ 15 s (intervalo de polling) + < 2 s (petición) | ≤ 15 s + < 2 s |
+  | Respuesta → pintado | < 1 s (actualización reactiva de SolidJS) | < 1 s |
+  | **Total** | **≤ 18 s** | **≤ 28 s** |
+
+  Por eso el barrido del worker baja de 15 s a 10 s (con 15 s el camino de respaldo sumaba ~33 s). El polling se mantiene en 15 s. Un fallo de escritura en Redis tras el commit **no** revierte la transacción: se registra en el log y el barrido lo corrige.
+- **Racional**: SC-002 exige el 100 % de los cambios, también cuando falla un camino de escritura; 10 s de barrido cuesta lo mismo (~6 consultas agregadas/min) y deja ~2 s de margen.
+- **Alternativas consideradas**: polling a 10 s (más carga por cliente, que escala con los usuarios; el barrido escala solo con las estaciones); SSE/WebSockets (ver R3, siguen fuera del MVP).
+
+## R17. Aviso de «datos desactualizados» (HU-01 FR-007, SC-005) — *añadido 2026-11-03*
+
+- **Decisión**: el store de red en vivo (`frontend/src/stores/`) guarda `ultimaActualizacionOk` con el **reloj del cliente** en el momento en que llega una respuesta 2xx de `GET /estaciones`. Un temporizador de 1 s calcula `desactualizado = ahora − ultimaActualizacionOk > 30 s`. La vista muestra siempre «Actualizado a las HH:MM:SS» y, si `desactualizado`, un banner visible (`role="status"`, icono y texto, no solo color) «Datos desactualizados». Los últimos contadores siguen visibles. Si una petición falla, se reintenta en el siguiente ciclo de polling sin borrar el estado. Una respuesta correcta quita el aviso al instante.
+- **Racional**: usar el reloj del cliente evita falsos avisos por desfase de reloj entre servidor y cliente; `actualizado_en` del servidor sigue expuesto para medir la frescura en las pruebas (R16).
+- **Alternativas consideradas**: comparar `actualizado_en` del servidor con el reloj del cliente (frágil por el desfase entre relojes); avisar solo tras N fallos (no se ajusta a la regla de 30 s de la spec).
+
+## R18. Estados visuales de estación (HU-01 FR-008, FR-009, SC-006, SC-007) — *añadido 2026-11-03*
+
+- **Decisión**: una función pura del frontend `estadoVisual(estacion)` (en `pages/mapa/`) deriva el estado de presentación con este orden de prioridad:
+  1. `estado = fuera_de_servicio` → `fuera_de_servicio` (prevalece sobre todo);
+  2. `bicis_disponibles = 0` **y** `anclajes_libres = 0` → `sin_bicis_y_sin_anclajes` (se señalan los dos);
+  3. `bicis_disponibles = 0` → `sin_bicis`;
+  4. `anclajes_libres = 0` → `sin_anclajes`;
+  5. si no → `normal`.
+
+  Los marcadores son `L.divIcon` de Leaflet con un **icono y una etiqueta corta** (p. ej. «0 🚲», «Llena», «Fuera de servicio») además del color, y `aria-label` descriptivo. En el detalle, una estación fuera de servicio muestra «Fuera de servicio» y «—» en lugar de los contadores, sin acciones de recogida ni devolución; una estación operativa con un contador a 0 muestra «0 · Sin bicicletas» / «0 · Sin anclajes libres».
+- **Racional**: es lógica de **presentación**, no una regla de negocio (los contadores siguen siendo los del backend, constitución I). Al ser una función pura se puede probar con Vitest para todas las combinaciones. **El contrato de API no cambia**: `EstacionEstado` sigue devolviendo enteros también para estaciones fuera de servicio, porque spec-007 lo consume; es la UI la que oculta los contadores (FR-009).
+- **Alternativas consideradas**: añadir un campo `estado_visual` calculado en el backend (cambia un contrato compartido, principio III, sin aportar nada); devolver `null` en los contadores cuando la estación está fuera de servicio (rompe a los consumidores de spec-007).
+
+## R19. Contadores con bicicletas averiadas (HU-01 FR-006, SC-003) — *añadido 2026-11-03*
+
+- **Decisión**: confirma R9 sin cambios: un anclaje con bicicleta `averiada`/`en_taller` no suma ni en `bicis_disponibles` ni en `anclajes_libres`, y el detalle muestra solo esos dos contadores, sin desglose de averías. Por eso `bicis_disponibles + anclajes_libres ≤ capacidad_total` (la igualdad no es una invariante y **no** debe validarse ni en las pruebas ni en la UI).
+- **Racional**: lo deja fijado la aclaración de la spec; evita que alguien añada una comprobación «suma = capacidad» que fallaría.
+- **Alternativas consideradas**: mostrar un tercer contador de «averiadas» (descartado en la aclaración).
+
 ---
 
-**Resumen de resolución**: 15 decisiones, 0 NEEDS CLARIFICATION. Pendiente de acuerdo de equipo (principio III): adiciones R15 y numeración de migraciones R6.
+**Resumen de resolución**: 19 decisiones (R16–R19 añadidas el 2026-11-03 tras `/speckit.clarify`), 0 NEEDS CLARIFICATION. Pendiente de acuerdo de equipo (principio III): adiciones R15 y numeración de migraciones R6. El cambio del barrido a 10 s (R16) es interno de spec-001 y no altera ningún contrato.

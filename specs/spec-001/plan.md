@@ -1,6 +1,6 @@
 # Implementation Plan: Plan técnico global y modelo de datos compartido SI-16 (8 especificaciones)
 
-**Branch**: `spec-001` | **Date**: 2026-10-20 | **Spec**: [spec.md](./spec.md)
+**Branch**: `spec-001` | **Date**: 2026-10-20 (actualizado 2026-11-03 tras `/speckit.clarify`) | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/spec-001/spec.md` + contexto global: `historia.md` (HU-01…HU-08), `.specify/memory/constitution.md` (SI-16 v1.0.1) y la instrucción de plan global del equipo.
 
@@ -10,9 +10,11 @@
 
 El SI-16 necesita una única base técnica coherente para las 8 historias: la constitución fija la pila (SolidJS + Tailwind en frontend, Go/Gin en backend, PostgreSQL como modelo único y Redis como estado en vivo con frescura ≤ 30 s) y exige arquitectura separada en `/backend` y `/frontend` con modelo de datos compartido. Este plan define: (1) la pila completa con versiones y un `docker-compose.yml` raíz para levantar PostgreSQL y Redis; (2) el esquema PostgreSQL unificado de 7 tablas (usuarios, estaciones, bicicletas, anclajes, viajes, incidencias_mantenimientos, alertas_balanceo) con restricciones, índices y máquinas de estado que satisfacen los 8 conjuntos de FRs; (3) el contrato de claves Redis `estacion:{id}:estado` actualizadas en < 30 s; y (4) el árbol de carpetas `/backend` + `/frontend` con paquetes y rutas API `/api/v1/...` particionados por spec para que los 4 integrantes trabajen sin colisiones de fusión. El backend es la única autoridad de las reglas críticas (abono, un solo viaje activo, 30 min gratis, bloqueo por avería, umbrales de alerta).
 
+**Actualización 2026-11-03 (aclaraciones de HU-01)**: la cota de 30 s pasa a medirse de extremo a extremo (del commit al pintado), así que el barrido del worker baja de 15 s a 10 s (R16). Se añaden a la UI del mapa el aviso de «datos desactualizados» a los > 30 s sin actualización correcta (R17) y estados visuales accesibles, no solo de color, para «sin bicicletas», «sin anclajes libres» y «fuera de servicio» (este último prevalece y oculta los contadores) (R18). Se confirma que los anclajes con bicicleta averiada no suman en ningún contador (R19). Ningún contrato compartido (API, Redis, esquema) cambia.
+
 ## Technical Context
 
-**Language/Version**: Go 1.22+ (backend); TypeScript 5.x + SolidJS 1.9+ (frontend).
+**Language/Version**: Go 1.26+ (backend; mínimo fijado por las dependencias en `backend/go.mod`, antes 1.22+); TypeScript 5.x + SolidJS 1.9+ (frontend).
 
 **Primary Dependencies**: Gin v1.10, pgx/v5 (driver PostgreSQL), go-redis/v9, goose (migraciones), golang-jwt/v5, bcrypt (x/crypto); Vite 6, Tailwind CSS, @solidjs/router, Leaflet + tiles OpenStreetMap (mapa HU-01), Chart.js (gráficos HU-08).
 
@@ -24,7 +26,7 @@ El SI-16 necesita una única base técnica coherente para las 8 historias: la co
 
 **Project Type**: Monorepo web: servicio REST (Go/Gin) + SPA (SolidJS), infraestructura compartida en raíz.
 
-**Performance Goals**: Frescura de disponibilidad ≤ 30 s (const. IV); mapa completo < 5 s; detalle de estación < 2 s; desbloqueo y devolución < 10 s; historial < 3 s; gráficos analítica < 5 s; alerta de balanceo generada < 60 s.
+**Performance Goals**: Frescura de disponibilidad ≤ 30 s extremo a extremo, del commit al pintado (const. IV, HU-01 FR-003; peor caso ≈ 28 s según R16); aviso de datos desactualizados a los > 30 s sin actualización correcta (HU-01 FR-007); mapa completo < 5 s; detalle de estación < 2 s; desbloqueo y devolución < 10 s; historial < 3 s; gráficos analítica < 5 s; alerta de balanceo generada < 60 s.
 
 **Constraints**: Reglas de negocio exclusivamente server-side (const. I); stack fijado por constitución (const. II); todo cambio de esquema PostgreSQL/Redis requiere acuerdo previo del equipo (const. III); cada spec debe fusionarse de forma independiente (const. V) → carpetas y rutas particionadas por spec.
 
@@ -41,7 +43,7 @@ El SI-16 necesita una única base técnica coherente para las 8 historias: la co
 | I | Autoridad del backend en reglas de negocio (NON-NEGOTIABLE) | Validación de abono vigente, unicidad de viaje activo, tarifa 30 min, bloqueo por avería y umbrales de alerta se implementan **solo** en servicios Go; restricciones DB de refuerzo (índices únicos parciales, CHECKs). El frontend solo replica UX. | PASS |
 | II | Pila tecnológica acordada | SolidJS + Tailwind (frontend), Go + Gin (backend), PostgreSQL, Redis ≤ 30 s: exactamente lo definido, sin sustituciones. | PASS |
 | III | Arquitectura separada con modelo de datos compartido | Código solo en `/backend` y `/frontend`; `docker-compose.yml`, docs y specs en raíz (infraestructura, no funcionalidad). Un único esquema PostgreSQL y un único formato de claves Redis documentados en [data-model.md](./data-model.md); adiciones al modelo base se marcan explícitamente para acuerdo de equipo. | PASS |
-| IV | Disponibilidad en tiempo real con frescura ≤ 30 s | Estado vivo servido desde Redis (`estacion:{id}:estado`), actualización síncrona en cada mutación + barrido ≤ 15 s; frontend con polling ≤ 15 s y marca de última actualización; TTL de seguridad con fallback a PostgreSQL. | PASS |
+| IV | Disponibilidad en tiempo real con frescura ≤ 30 s | Estado vivo servido desde Redis (`estacion:{id}:estado`), actualización síncrona en cada mutación + barrido ≤ 10 s; frontend con polling ≤ 15 s, marca de última actualización y aviso de datos desactualizados a los > 30 s; TTL de seguridad con fallback a PostgreSQL. Peor caso extremo a extremo ≈ 28 s (R16). | PASS |
 | V | Independencia por especificación | Paquetes backend (`services/`, `handlers/`, `routes/` por spec) y páginas frontend particionados por spec; registro de rutas en un único archivo trivial; migraciones numeradas por acuerdo. Cada spec se desarrolla y prueba sin esperar a las demás. | PASS |
 
 **Gate de calidad (Acuerdos de Colaboración)**: las 5 reglas críticas del principio I se cubren con pruebas automatizadas obligatorias antes de fusionar (mapeadas en [data-model.md](./data-model.md) y validadas en [quickstart.md](./quickstart.md)). Rama por spec, PR revisado por otro integrante: proceso del equipo, fuera del alcance técnico de este plan.
@@ -55,7 +57,8 @@ El SI-16 necesita una única base técnica coherente para las 8 historias: la co
 | I | Autoridad del backend | PASS — cada regla crítica tiene su endpoint/servicio Go + restricción DB + prueba en quickstart. |
 | II | Pila | PASS — artifacts Phase 1 no introducen tecnologías nuevas. |
 | III | Modelo compartido | PASS — `data-model.md` es la fuente única; adiciones señaladas (`password_hash`, `estado` en estaciones, índices) requieren acuerdo de equipo antes de migrar. |
-| IV | Frescura ≤ 30 s | PASS — contrato Redis en `contracts/redis-state.md` + endpoint `GET /estaciones` con `actualizado_en`; quickstart mide la ventana. |
+| IV | Frescura ≤ 30 s | PASS — contrato Redis en `contracts/redis-state.md` + endpoint `GET /estaciones` con `actualizado_en`; quickstart mide la ventana (S1, S1a–S1d, incluido el camino de respaldo). |
+| I (re-check 2026-11-03) | Autoridad del backend | PASS — los estados visuales de R18 son presentación derivada de los contadores del backend; no se toma ninguna decisión de negocio en el cliente. |
 | V | Independencia | PASS — `contracts/openapi.yaml` particiona endpoints por tag/spec; propiedad de carpetas sin solapes. |
 
 **Veredicto final**: **PASS (0 violaciones, 0 justificaciones necesarias)**.
@@ -111,7 +114,7 @@ specs/spec-001/
 │   │   │   ├── register.go       # Único archivo compartido: llama a las 8 funcs
 │   │   │   └── spec_00N_*.go     # RegisterSpec00N(rg, deps) — uno por spec
 │   │   └── workers/
-│   │       ├── refresco_estado/  # Recalcula estacion:{id}:estado cada ≤15 s
+│   │       ├── refresco_estado/  # Recalcula estacion:{id}:estado cada ≤10 s (R16)
 │   │       └── alertas/          # Barrido de umbrales <10% / >90% cada 60 s
 │   ├── migrations/               # 0001_esquema_base.sql (acordado) + 000N_spec-00X_*.sql
 │   └── tests/                    # integración (DB de pruebas Docker)
@@ -120,7 +123,7 @@ specs/spec-001/
     ├── src/
     │   ├── components/           # Compartidos: Layout, MapaBase, tabla, UI atómica
     │   ├── pages/
-    │   │   ├── mapa/             # spec-001  (Iker)
+    │   │   ├── mapa/             # spec-001  (Iker): MapaPage, DetalleEstacion, AvisoDesactualizado, estadoVisual.ts (R17/R18)
     │   │   ├── alquiler/         # spec-002  (Iker)
     │   │   ├── devolucion/       # spec-003  (Alex)
     │   │   ├── historial/        # spec-004  (Alex)
@@ -129,7 +132,7 @@ specs/spec-001/
     │   │   ├── balanceo/         # spec-007  (Alberto)
     │   │   └── analitica/        # spec-008  (Alberto)
     │   ├── services/             # api.ts (cliente fetch) + api/<spec>.ts por spec
-    │   ├── stores/               # sesión, estado de la red en vivo (polling 15 s)
+    │   ├── stores/               # sesión, estado de la red en vivo (polling 15 s, ultimaActualizacionOk, desactualizado > 30 s)
     │   └── routes.tsx            # Único archivo compartido: rutas de páginas
     └── tests/
 ```

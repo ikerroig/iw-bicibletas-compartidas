@@ -83,7 +83,7 @@ paths:
     get:
       tags: [spec-001]
       operationId: detalleEstacion
-      summary: Detalle de una estación (HU-001 FR-004)
+      summary: Detalle de una estación (HU-01 FR-004, FR-009)
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
       responses:
@@ -92,6 +92,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/EstacionDetalle' }
+        '401': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
 
   # ---------------------------------------------------------------- spec-002
@@ -226,7 +227,7 @@ paths:
                   incidencia: { $ref: '#/components/schemas/Incidencia' }
                   duplicada: { type: boolean, default: false }
         '200':
-          description: Ya estaba averiada (duplicada: true, sin efectos nuevos)
+          description: 'Ya estaba averiada (duplicada: true, sin efectos nuevos)'
           content:
             application/json:
               schema:

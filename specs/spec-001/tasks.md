@@ -30,12 +30,12 @@
 
 **Purpose**: Estructura raíz e infraestructura compartida (equipo; cualquier integrante puede ejecutarla coordinándose — son ficheros únicos, no de dominio)
 
-- [ ] T001 Crear la estructura raíz según `plan.md`: carpetas `backend/` y `frontend/` con sus árboles (`cmd/`, `internal/`, `migrations/`, `src/`…) y `.gitignore` combinado (Go + Node)
-- [ ] T002 Crear `docker-compose.yml` en la raíz: `postgres:16-alpine` (5432, volumen `pgdata`, healthcheck `pg_isready`) y `redis:7-alpine` (6379, `--appendonly yes`, healthcheck `redis-cli ping`); credenciales vía `.env` (R12, aprobado por unanimidad)
-- [ ] T003 [P] Crear `.env.example` en la raíz: `DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO=0.20`, `PUERTO=8080`
-- [ ] T004 [P] Inicializar `backend/go.mod` (Go 1.22) con dependencias: gin, pgx/v5, go-redis/v9, golang-jwt/v5, x/crypto, goose
-- [ ] T005 [P] Inicializar `frontend/`: Vite + SolidJS + TypeScript + Tailwind (`frontend/package.json`, `frontend/vite.config.ts`, `frontend/tsconfig.json`, `frontend/tailwind.config.js`)
-- [ ] T006 [P] Configurar lint/format: `backend/.golangci.yml` (gofmt/vet) y `frontend/.eslintrc.cjs` + `frontend/.prettierrc`
+- [X] T001 Crear la estructura raíz según `plan.md`: carpetas `backend/` y `frontend/` con sus árboles (`cmd/`, `internal/`, `migrations/`, `src/`…) y `.gitignore` combinado (Go + Node)
+- [X] T002 Crear `docker-compose.yml` en la raíz: `postgres:16-alpine` (5432, volumen `pgdata`, healthcheck `pg_isready`) y `redis:7-alpine` (6379, `--appendonly yes`, healthcheck `redis-cli ping`); credenciales vía `.env` (R12, aprobado por unanimidad)
+- [X] T003 [P] Crear `.env.example` en la raíz: `DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO=0.20`, `PUERTO=8080`
+- [X] T004 [P] Inicializar `backend/go.mod` (Go 1.22) con dependencias: gin, pgx/v5, go-redis/v9, golang-jwt/v5, x/crypto, goose
+- [X] T005 [P] Inicializar `frontend/`: Vite + SolidJS + TypeScript + Tailwind (`frontend/package.json`, `frontend/vite.config.ts`, `frontend/tsconfig.json`, `frontend/tailwind.config.js`)
+- [X] T006 [P] Configurar lint/format: `backend/.golangci.yml` (gofmt/vet) y `frontend/.eslintrc.cjs` + `frontend/.prettierrc` — *Hecho con ESLint 9 en formato «flat» (`frontend/eslint.config.js`) en lugar de `.eslintrc.cjs`, que ESLint 9 ya no usa por defecto.*
 
 ---
 
@@ -45,23 +45,23 @@
 
 **⚠️ CRITICAL**: Ninguna historia puede empezar hasta completar esta fase.
 
-- [ ] T007 Escribir `backend/migrations/0001_esquema_base.sql` con **íntegro** el modelo de `data-model.md`: tablas `usuarios`, `estaciones`, `bicicletas`, `anclajes`, `viajes`, `incidencias_mantenimientos`, `alertas_balanceo`; CHECKs, FKs e índices (`ux_viajes_usuario_activo`, `ux_viajes_bicicleta_activa`, `ux_anclaje_bicicleta` vía UNIQUE, `ux_alerta_abierta`, índices de HU-04/HU-08)
-- [ ] T008 Implementar `backend/cmd/migrate/main.go` (goose up/down sobre `backend/migrations/`)
-- [ ] T009 [P] `backend/internal/config/config.go`: carga `.env` (`DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO`, `PUERTO`)
-- [ ] T010 [P] `backend/internal/db/db.go`: pool pgx + helper de transacción con `SELECT … FOR UPDATE` (usado por US2/US3/US5/US6/US7)
-- [ ] T011 [P] `backend/internal/cache/client.go` + `backend/internal/cache/keys.go`: cliente go-redis y contrato `estacion:{id}:estado` (HSET+EXPIRE 120s, HGETALL, SCAN de snapshot, fallback a PostgreSQL) — `contracts/redis-state.md`
-- [ ] T012 [P] `backend/internal/hooks/estacion.go`: registro `OnEstacionCambiada(ids)` invocado tras cada commit que muta estaciones/bicicletas/anclajes; desacopla las specs que mutan (US2/US3/US5/US6/US7) de las que reaccionan (US1 recálculo, US7 umbrales) — clave del principio V
-- [ ] T013 `backend/internal/models/`: structs compartidos (`Usuario`, `Estacion`, `Anclaje`, `Bicicleta`, `Viaje`, `Incidencia`, `AlertaBalanceo`), enums de estado y helper `AbonoVigente(u)` (`abono_activo AND fecha_vencimiento_abono >= hoy`, R15)
-- [ ] T014 `backend/internal/auth/`: bcrypt, emisión de JWT HS256 (exp 24 h, claims `sub`/`rol`/`nombre`) y middlewares `RequireAuth` / `RequireRole(...)` (R5)
-- [ ] T015 [P] `backend/internal/httperr/`: envelope `{error:{codigo,mensaje}}` y códigos de `contracts/README.md` (`ABONO_VENCIDO`, `VIAJE_ACTIVO`, …)
-- [ ] T016 `backend/internal/routes/register.go`: router base `/api/v1` y patrón `RegisterSpec00N(rg, deps)` — **único archivo de rutas compartido** (merges triviales)
-- [ ] T017 Implementar auth base: `POST /auth/login` y `GET /auth/me` en `backend/internal/handlers/auth/handler.go` + test mínimo de contrato
-- [ ] T018 `backend/cmd/server/main.go`: wiring de config, db, cache, hooks, registro de rutas y workers (cada spec añadirá tras fusionar una única línea para su worker)
-- [ ] T019 [P] `backend/cmd/seed/main.go`: ~60 estaciones geolocalizadas (incl. alguna `fuera_de_servicio` y extremos de ocupación para S7), anclajes = capacidad, flota (algunas `averiada`), usuarios de **todos los roles** con/sin abono vigente (hashes bcrypt)
-- [ ] T020 `backend/internal/services/estacion/estado.go`: `RecalcularEstacion` (consulta agregada de disponibilidad excluyendo averiadas y estaciones fuera de servicio — R9 — + HSET del hash + invocación de `hooks.EstacionCambiada`); **helper compartido** que importarán US2/US3/US5/US6/US7 (propiedad del paquete de Iker)
-- [ ] T021 [P] Frontend base: `frontend/src/services/api.ts` (fetch wrapper con Bearer y envelope de error), `frontend/src/stores/sesion.ts` (login/logout, token) y `frontend/src/pages/Login.tsx`
-- [ ] T022 `frontend/src/routes.tsx` (**único archivo de rutas compartido**) + `frontend/src/components/Layout.tsx` (navegación por áreas con guard de rol)
-- [ ] T023 [P] Configurar Vitest + @solidjs/testing-library + MSW en `frontend/vitest.config.ts` y `frontend/tests/setup.ts` con handlers derivados de `contracts/openapi.yaml`
+- [X] T007 Escribir `backend/migrations/0001_esquema_base.sql` con **íntegro** el modelo de `data-model.md`: tablas `usuarios`, `estaciones`, `bicicletas`, `anclajes`, `viajes`, `incidencias_mantenimientos`, `alertas_balanceo`; CHECKs, FKs e índices (`ux_viajes_usuario_activo`, `ux_viajes_bicicleta_activa`, `ux_anclaje_bicicleta` vía UNIQUE, `ux_alerta_abierta`, índices de HU-04/HU-08)
+- [X] T008 Implementar `backend/cmd/migrate/main.go` (goose up/down sobre `backend/migrations/`)
+- [X] T009 [P] `backend/internal/config/config.go`: carga `.env` (`DATABASE_URL`, `REDIS_ADDR`, `JWT_SECRET`, `TARIFA_MINUTO`, `PUERTO`)
+- [X] T010 [P] `backend/internal/db/db.go`: pool pgx + helper de transacción con `SELECT … FOR UPDATE` (usado por US2/US3/US5/US6/US7)
+- [X] T011 [P] `backend/internal/cache/client.go` + `backend/internal/cache/keys.go`: cliente go-redis y contrato `estacion:{id}:estado` (HSET+EXPIRE 120s, HGETALL, SCAN de snapshot, fallback a PostgreSQL) — `contracts/redis-state.md` — *El fallback a PostgreSQL vive en `services/estacion` (que es quien sabe calcular); `cache` solo lee y escribe el contrato. La lectura usa `HGETALL` en pipeline por id (sin `SCAN`), y la escritura un script Lua que no pisa un estado más reciente.*
+- [X] T012 [P] `backend/internal/hooks/estacion.go`: publicador de eventos con `hooks.Suscribir(fn func(ctx, ids []int64))` y `hooks.EstacionCambiada(ctx, ids)`. **Flujo único, sin ciclos**: las specs que mutan (US2/US3/US5/US6/US7) llaman tras el commit **solo** a `estacion.RecalcularEstacion(ctx, ids)` (T020); esta reescribe Redis y, al final, llama a `hooks.EstacionCambiada(ctx, ids)` para avisar a los suscriptores (hoy US7 umbrales). Ningún suscriptor MUST volver a llamar a `RecalcularEstacion` (evita bucles); un error de un suscriptor se registra en el log y no corta a los demás — clave del principio V
+- [X] T013 `backend/internal/models/`: structs compartidos (`Usuario`, `Estacion`, `Anclaje`, `Bicicleta`, `Viaje`, `Incidencia`, `AlertaBalanceo`), enums de estado y helper `AbonoVigente(u)` (`abono_activo AND fecha_vencimiento_abono >= hoy`, R15)
+- [X] T014 `backend/internal/auth/`: bcrypt, emisión de JWT HS256 (exp 24 h, claims `sub`/`rol`/`nombre`) y middlewares `RequireAuth` / `RequireRole(...)` (R5)
+- [X] T015 [P] `backend/internal/httperr/`: envelope `{error:{codigo,mensaje}}` y códigos de `contracts/README.md` (`ABONO_VENCIDO`, `VIAJE_ACTIVO`, …)
+- [X] T016 `backend/internal/routes/register.go`: router base `/api/v1` y patrón `RegisterSpec00N(rg, deps)` — **único archivo de rutas compartido** (merges triviales)
+- [X] T017 Implementar auth base: `POST /auth/login` y `GET /auth/me` en `backend/internal/handlers/auth/handler.go` + test mínimo de contrato
+- [X] T018 `backend/cmd/server/main.go`: wiring de config, db, cache, hooks, registro de rutas y workers (cada spec añadirá tras fusionar una única línea para su worker)
+- [X] T019 [P] `backend/cmd/seed/main.go`: ~60 estaciones geolocalizadas (incl. alguna `fuera_de_servicio` y extremos de ocupación para S7), anclajes = capacidad, flota (algunas `averiada`), usuarios de **todos los roles** con/sin abono vigente (hashes bcrypt)
+- [X] T020 `backend/internal/services/estacion/estado.go`: `RecalcularEstacion` (consulta agregada R9/R19: `bicis_disponibles` = anclajes con bicicleta en estado `disponible`; `anclajes_libres` = anclajes en estado `libre`; un anclaje con bicicleta `averiada`/`en_taller` **no suma en ninguno de los dos**; `ocupacion_pct = 0` si la estación está `fuera_de_servicio`, pero sus contadores enteros se calculan y guardan igualmente; **no** validar `bicis_disponibles + anclajes_libres = capacidad_total` + HSET del hash + al final, notificación `hooks.EstacionCambiada(ctx, ids)` (T012); firma `RecalcularEstacion(ctx, ids []int64) error`, es el **único** punto de entrada que llaman las specs tras el commit). Si la escritura en Redis falla tras el commit, registrar en el log y **no** revertir la transacción (lo corrige el barrido, R16); **helper compartido** que importarán US2/US3/US5/US6/US7 (propiedad del paquete de Iker)
+- [X] T021 [P] Frontend base: `frontend/src/services/api.ts` (fetch wrapper con Bearer y envelope de error), `frontend/src/stores/sesion.ts` (login/logout, token) y `frontend/src/pages/Login.tsx`
+- [X] T022 `frontend/src/routes.tsx` (**único archivo de rutas compartido**) + `frontend/src/components/Layout.tsx` (navegación por áreas con guard de rol)
+- [X] T023 [P] Configurar Vitest + @solidjs/testing-library + MSW en `frontend/vitest.config.ts` y `frontend/tests/setup.ts` con handlers derivados de `contracts/openapi.yaml`
 
 **Checkpoint**: fundación lista — las 8 stories pueden empezar en paralelo, cada una en su rama `spec-00N`.
 
@@ -69,24 +69,32 @@
 
 ## Phase 3: User Story 1 — Consulta de disponibilidad en tiempo real (spec-001, HU-01, P1) 🎯 MVP
 
-**Goal**: Mapa en vivo de las ~60 estaciones con contadores fiables desde Redis, frescura ≤ 30 s (Iker Roig).
+**Goal**: Mapa en vivo de las ~60 estaciones con contadores fiables desde Redis, frescura ≤ 30 s extremo a extremo (del commit al pintado), aviso de «datos desactualizados» y estados visuales accesibles «sin bicicletas», «sin anclajes libres» y «fuera de servicio» (Iker Roig). Cubre FR-001…FR-009 y SC-001…SC-007.
 
-**Independent Test**: Dar de alta estaciones con estados variados, abrir el mapa, verificar contadores contra la BD real y medir que un cambio se refleja en ≤ 30 s (escenario S1 del quickstart).
+**Independent Test**: Dar de alta estaciones con estados variados, abrir el mapa, verificar contadores contra la BD real y medir que un cambio se refleja en ≤ 30 s; cortar la conexión y ver el aviso a los > 30 s; comprobar los estados sin bicis, sin anclajes y fuera de servicio (escenarios S1 y S1a–S1d del quickstart).
+
+**Orden de ejecución dentro de la fase** (las tareas T095–T100 se añadieron el 2026-11-03 tras `/speckit.clarify`; conservan la numeración del resto del equipo): T024, T025, T099, T096, T098 (tests, fallando) → T026, T027 → T028, T029, T095 → T030, T097 → T031 → T032 → T100 (validación de rendimiento).
 
 ### Tests for User Story 1
 
-- [ ] T024 [P] [US1] Test de contrato `GET /estaciones` y `GET /estaciones/{id}` contra `contracts/openapi.yaml` en `backend/tests/contract/spec001_test.go`
-- [ ] T025 [P] [US1] Test de integración de frescura en `backend/tests/integration/spec001_frescura_test.go`: mutación → hash `estacion:{id}:estado` actualizado post-commit; clave expirada → fallback a PostgreSQL y repoblado; averiadas excluidas de `bicis_disponibles`; estación `fuera_de_servicio` marcada (FR-005/FR-006)
+- [X] T024 [P] [US1] Test de contrato `GET /estaciones` y `GET /estaciones/{id}` contra `contracts/openapi.yaml` en `backend/tests/contract/spec001_test.go`
+- [X] T025 [P] [US1] Test de integración de frescura en `backend/tests/integration/spec001_frescura_test.go`: mutación → hash `estacion:{id}:estado` actualizado post-commit; clave expirada → fallback a PostgreSQL y repoblado; averiadas excluidas de `bicis_disponibles`; estación `fuera_de_servicio` marcada (FR-005/FR-006). Además (R19): un anclaje con bici `averiada` no cuenta como libre; una estación con todos sus anclajes ocupados por averiadas da `bicis_disponibles = 0` y `anclajes_libres = 0`; se acepta `bicis_disponibles + anclajes_libres < capacidad_total`; un anclaje `fuera_de_servicio` sin bici **no** cuenta como libre (SC-003); dos cambios sucesivos en la misma estación → el hash termina con el estado final más reciente (caso límite de la spec); `RecalcularEstacion` notifica una sola vez a un suscriptor de prueba y no se reentra (T012); una estación `fuera_de_servicio` sigue devolviendo contadores enteros en la API (el contrato `EstacionEstado` no cambia, R18)
+- [X] T099 [P] [US1] Test de integración del camino de respaldo en `backend/tests/integration/spec001_latencia_test.go` (R16, FR-003, SC-002): `UPDATE` directo de `anclajes`/`bicicletas`/`estaciones.estado` en PostgreSQL **sin** llamar a `RecalcularEstacion` → el hash `estacion:{id}:estado` refleja el cambio en el siguiente barrido del worker. Para que el test sea determinista, el worker acepta el intervalo como parámetro (en producción 10 s, T026): el test lo arranca con 1 s y espera hasta 1 s + 2 s de margen; aparte, un test unitario comprueba que la constante de producción es `10 * time.Second`; con Redis caído durante la escritura síncrona, la transacción SQL queda confirmada y el barrido repara el hash al volver Redis
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] `backend/internal/workers/refresco_estado/worker.go`: barrido ≤ 15 s de las ~60 estaciones con una única consulta agregada (red de seguridad de frescura) + línea de wiring en `backend/cmd/server/main.go`
-- [ ] T027 [US1] `backend/internal/handlers/estacion/handler.go` + `backend/internal/routes/spec_001_routes.go`: snapshot `GET /estaciones` (con `actualizado_en`) y detalle `GET /estaciones/{id}` (con anclajes)
-- [ ] T028 [P] [US1] `frontend/src/services/api/estaciones.ts`: tipos `EstacionEstado`/`EstacionDetalle` y cliente
-- [ ] T029 [P] [US1] `frontend/src/stores/red.ts`: polling de `GET /estaciones` cada 15 s, reintentos automáticos, marca de última actualización y pausa con pestaña oculta (edge cases HU-01)
-- [ ] T030 [US1] `frontend/src/components/MapaBase.tsx`: Leaflet + tiles OpenStreetMap, marcadores con estado por estación
-- [ ] T031 [US1] `frontend/src/pages/mapa/MapaRed.tsx`: mapa completo (< 5 s), panel de detalle (< 2 s) con contadores, estado de servicio, `actualizado_en` y aviso de desconexión conservando el último estado conocido
-- [ ] T032 [P] [US1] Tests frontend en `frontend/tests/mapa/`: render con datos MSW, estación fuera de servicio, estado vacío y desconexión (Vitest + MSW)
+- [X] T026 [US1] `backend/internal/workers/refresco_estado/worker.go`: barrido **cada 10 s** (R16; antes 15 s) de las ~60 estaciones con una única consulta agregada (red de seguridad de frescura; con polling de 15 s deja el peor caso extremo a extremo en ≈ 28 s < 30 s) + escritura de `si16:worker:refresco:ultimo` + línea de wiring en `backend/cmd/server/main.go`; constante `IntervaloBarrido = 10 * time.Second` en el paquete y constructor `Nuevo(deps, intervalo time.Duration)` para que los tests usen un intervalo corto (T099)
+- [X] T027 [US1] `backend/internal/handlers/estacion/handler.go` + `backend/internal/routes/spec_001_routes.go`: snapshot `GET /estaciones` (con `actualizado_en`) y detalle `GET /estaciones/{id}` (con anclajes) — FR-001, FR-002, FR-004
+- [X] T028 [P] [US1] `frontend/src/services/api/estaciones.ts`: tipos `EstacionEstado`/`EstacionDetalle` y cliente
+- [X] T029 [P] [US1] `frontend/src/stores/red.ts`: polling de `GET /estaciones` cada 15 s, reintentos automáticos en el siguiente ciclo **sin borrar el último estado conocido**, pausa con pestaña oculta (al volver a mostrarla, petición inmediata; mientras esa petición está en curso y durante un máximo de 2 s no se muestra el aviso, para evitar un parpadeo si la respuesta llega bien) y, según R17: señal `ultimaActualizacionOk` con el **reloj del cliente** al recibir una respuesta 2xx; temporizador de 1 s que expone `desactualizado = ahora − ultimaActualizacionOk > 30 s` (estrictamente mayor); `desactualizado` vuelve a `false` en cuanto llega una respuesta correcta (FR-007)
+- [X] T095 [P] [US1] `frontend/src/pages/mapa/estadoVisual.ts`: función pura `estadoVisual(e: EstacionEstado)` con prioridad R18: (1) `estado = 'fuera_de_servicio'` → `'fuera_de_servicio'`; (2) `bicis_disponibles = 0` y `anclajes_libres = 0` → `'sin_bicis_y_sin_anclajes'`; (3) `bicis_disponibles = 0` → `'sin_bicis'`; (4) `anclajes_libres = 0` → `'sin_anclajes'`; (5) si no → `'normal'`. Exporta también, para cada estado, su icono, su etiqueta corta («Fuera de servicio», «Sin bicicletas», «Sin anclajes libres», ambos) y su clase Tailwind de color (FR-008, FR-009)
+- [X] T030 [US1] `frontend/src/components/MapaBase.tsx`: Leaflet + tiles OpenStreetMap; marcadores `L.divIcon` que reciben el estado de `estadoVisual` (T095) y muestran **icono + texto corto además del color** (FR-008: la distinción MUST NOT depender solo del color) con `aria-label` descriptivo; todos los marcadores, también los de estaciones fuera de servicio, son seleccionables (FR-009); geolocalización (caso límite de la spec): si el usuario concede permiso, `navigator.geolocation` centra el mapa en su posición; si lo deniega, no está disponible o tarda más de 5 s, el mapa se queda encuadrado en toda la red (`fitBounds` de las estaciones) sin errores bloqueantes; el componente es genérico, la lógica de estados vive en `pages/mapa/`
+- [X] T097 [US1] `frontend/src/pages/mapa/AvisoDesactualizado.tsx`: muestra siempre «Actualizado a las HH:MM:SS» (hora local de `ultimaActualizacionOk`) y, cuando `desactualizado` (T029), un banner visible con `role="status"`, icono y texto «Datos desactualizados» (no solo color); no oculta ni vacía los contadores (FR-007, SC-005)
+- [X] T031 [US1] `frontend/src/pages/mapa/MapaRed.tsx`: mapa completo (< 5 s) con `AvisoDesactualizado` (T097) y panel de detalle (< 2 s) `frontend/src/pages/mapa/DetalleEstacion.tsx`: estación operativa → contadores de bicis disponibles y anclajes libres; un contador a 0 se muestra como «0 · Sin bicicletas» / «0 · Sin anclajes libres» (FR-008); **solo estos dos contadores, sin desglose de averiadas** (FR-006); estación `fuera_de_servicio` → texto «Fuera de servicio» y «—» en lugar de ambos contadores, sin ninguna acción de recogida ni devolución (FR-009); conserva el último estado conocido si falla la conexión
+- [X] T032 [P] [US1] Tests frontend en `frontend/tests/mapa/`: render con datos MSW, estado vacío y desconexión (Vitest + MSW); `DetalleEstacion` operativa con 0 bicis, con 0 anclajes y con ambos a 0 (textos de FR-008), fuera de servicio con «—» y sin acciones (FR-009); marcadores con texto/`aria-label` distinto por estado (no solo clase de color); marcador fuera de servicio seleccionable; se pintan **todas** las estaciones devueltas por la API (SC-001); geolocalización denegada (mock de `navigator.geolocation` con error) → el mapa se muestra encuadrado en la red sin error
+- [X] T096 [P] [US1] Tests unitarios de `estadoVisual` en `frontend/tests/mapa/estadoVisual.test.ts`: tabla con todas las combinaciones de `estado` × (`bicis_disponibles` 0/>0) × (`anclajes_libres` 0/>0), incluido fuera de servicio con 0 bicis (debe ganar `'fuera_de_servicio'`) y suma de contadores < capacidad (R18, R19)
+- [X] T098 [P] [US1] Tests del aviso en `frontend/tests/mapa/desactualizado.test.ts` con temporizadores falsos de Vitest + MSW devolviendo error de red: a los 30 s exactos **no** hay aviso; a los 31 s aparece «Datos desactualizados» y los contadores siguen en pantalla; la primera respuesta 2xx lo quita y actualiza «Actualizado a las…» (FR-007, SC-005)
+- [x] T100 [US1] Validación de rendimiento SC-004 (escenario S1e de `specs/spec-001/quickstart.md`): con el seed de ~60 estaciones, Chrome DevTools en perfil «Fast 4G» y caché vacía, medir con la pestaña Performance el tiempo hasta que todos los marcadores están pintados (< 5 s) y desde el clic en un marcador hasta que el detalle muestra los datos (< 2 s); registrar los tiempos en la PR de spec-001. Si no se cumple, optimizar `GET /estaciones` (T027) o el pintado de marcadores (T030) antes de fusionar
 
 **Checkpoint**: HU-01 funcional y testeable de forma independiente (MVP del sistema).
 
@@ -106,7 +114,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] `backend/internal/services/alquiler/service.go`: transacción única con `SELECT … FOR UPDATE` del anclaje; valida abono vigente, ausencia de viaje activo, estación operativa, anclaje en servicio y bicicleta `disponible`; crea viaje `en_curso` con `fecha_inicio`; desacopla anclaje (→ `libre`), bici → `en_uso`; tras commit `RecalcularEstacion` + `hooks.EstacionCambiada` (T020)
+- [ ] T036 [US2] `backend/internal/services/alquiler/service.go`: transacción única con `SELECT … FOR UPDATE` del anclaje; valida abono vigente, ausencia de viaje activo, estación operativa, anclaje en servicio y bicicleta `disponible`; crea viaje `en_curso` con `fecha_inicio`; desacopla anclaje (→ `libre`), bici → `en_uso`; tras commit `estacion.RecalcularEstacion(ctx, ids)` (T020), que ya notifica el hook — no llamar a `hooks.EstacionCambiada` directamente
 - [ ] T037 [US2] `backend/internal/handlers/alquiler/handler.go` + `backend/internal/routes/spec_002_routes.go` (403/404/409 con envelope de `httperr`)
 - [ ] T038 [P] [US2] `frontend/src/services/api/alquiler.ts`
 - [ ] T039 [US2] `frontend/src/pages/alquiler/Desbloqueo.tsx`: entrada de código de anclaje, mensajes de causa legibles, estado de viaje activo actual
@@ -223,9 +231,9 @@
 
 ### Implementation for User Story 7
 
-- [ ] T073 [US7] `backend/internal/services/balanceo/umbrales.go`: `EvaluarEstacion` (crear alerta si cruza umbral y no hay abierta; resolver si vuelve a rango); se registra en `hooks.EstacionCambiada` (T012) vía `init()` de su paquete — sin tocar ficheros de otras specs
+- [ ] T073 [US7] `backend/internal/services/balanceo/umbrales.go`: `EvaluarEstacion` (crear alerta si cruza umbral y no hay abierta; resolver si vuelve a rango); se suscribe con `hooks.Suscribir(...)` (T012) vía `init()` de su paquete — sin tocar ficheros de otras specs y sin llamar a `RecalcularEstacion` desde el suscriptor (evita bucles)
 - [ ] T074 [US7] `backend/internal/workers/alertas/worker.go`: barrido de toda la red cada 60 s (garantía SC-001 < 1 min) + línea de wiring en `backend/cmd/server/main.go`
-- [ ] T075 [US7] `backend/internal/services/balanceo/traslados.go`: valida unidades ≤ disponibles en origen y estaciones operativas; mueve las bicis en transacción; recalcula ambas estaciones y evalúa umbrales
+- [ ] T075 [US7] `backend/internal/services/balanceo/traslados.go`: valida unidades ≤ disponibles en origen y estaciones operativas; mueve las bicis en transacción; tras el commit llama a `estacion.RecalcularEstacion(ctx, [origen, destino])` (T020), que dispara la evaluación de umbrales de T073 vía hook (no evaluarlos dos veces)
 - [ ] T076 [US7] `backend/internal/handlers/balanceo/handler.go` + `backend/internal/routes/spec_007_routes.go` (panel ordenado por urgencia: extremos primero)
 - [ ] T077 [P] [US7] `frontend/src/services/api/balanceo.ts`
 - [ ] T078 [US7] `frontend/src/pages/balanceo/PanelBalanceo.tsx`: lista de alertas abiertas por urgencia con severidad/fecha y formulario de traslado (origen, destino, unidades) con estado recalculado de ambas estaciones
@@ -263,7 +271,7 @@
 
 **Purpose**: Validación global del sistema y endurecimiento (todo el equipo, tras fusionar las specs)
 
-- [ ] T088 [P] Ejecutar los escenarios **S1–S8** de [quickstart.md](./quickstart.md) end-to-end en local (docker compose + seed + backend + frontend) y registrar resultados por spec en la PR correspondiente
+- [ ] T088 [P] Ejecutar los escenarios **S1–S8** (incluidos S1a–S1d de HU-01) de [quickstart.md](./quickstart.md) end-to-end en local (docker compose + seed + backend + frontend) y registrar resultados por spec en la PR correspondiente
 - [ ] T089 Re-ejecutar el gate **T1–T5** (reglas críticas, const. I) en local/CI antes de cada fusión de spec — checklist obligatoria de PR
 - [ ] T090 [P] Optimización de rendimiento: `EXPLAIN ANALYZE` de las consultas calientes (snapshot de estaciones, historial paginado, agregados de analítica) contra objetivos de `plan.md` (< 5 s mapa, < 3 s historial, < 5 s analítica)
 - [ ] T091 [P] Security hardening: rate limiting en `POST /auth/login` y `POST /alquileres/desbloqueo`, cabeceras HTTP (CSP, X-Content-Type-Options), validación de entrada en todos los handlers
@@ -290,14 +298,14 @@
 - **US4 (spec-004, Alex)**: arranca tras Phase 2; independiente vía fixtures de viajes finalizados
 - **US5 (spec-005, Josep)**: arranca tras Phase 2; independiente vía fixture de bicicleta anclada; consume el helper `RecalcularEstacion` (T020)
 - **US6 (spec-006, Josep)**: arranca tras Phase 2; independiente vía fixture de incidencia abierta; consume T020
-- **US7 (spec-007, Alberto)**: arranca tras Phase 2; independiente vía fixtures de estaciones en extremos de ocupación; se engancha a `hooks.EstacionCambiada` (T012) sin modificar ficheros ajenos
+- **US7 (spec-007, Alberto)**: arranca tras Phase 2; independiente vía fixtures de estaciones en extremos de ocupación; se suscribe con `hooks.Suscribir` (T012) sin modificar ficheros ajenos
 - **US8 (spec-008, Alberto)**: arranca tras Phase 2; independiente vía fixtures de viajes finalizados de toda la red
 
 ### Within Each User Story
 
 1. Tests (T1–T5 y contrato) escritos **antes** de la implementación y fallando
 2. Servicio (lógica de negocio y transacciones) → handlers + `routes/spec_00N_routes.go` → cliente frontend → páginas → tests frontend
-3. Recálculo de estaciones post-commit siempre vía `RecalcularEstacion` (T020) — nunca duplicar cómputos
+3. Recálculo de estaciones post-commit siempre vía `RecalcularEstacion` (T020), que notifica a los suscriptores del hook (T012) — nunca duplicar cómputos ni llamar al hook directamente
 4. Historia completa y validada (su escenario S_n del quickstart) antes de fusionar
 
 ### Parallel Opportunities (estrategia del equipo de 4)
@@ -328,7 +336,7 @@ Task: "T036 services/alquiler/service.go (transacción + FOR UPDATE)"
 1. Completar Phase 1: Setup
 2. Completar Phase 2: Foundational (**CRÍTICO — bloquea todas las stories**)
 3. Completar Phase 3 (US1, spec-001)
-4. **PARAR y VALIDAR**: escenario S1 del quickstart + frescura ≤ 30 s medido
+4. **PARAR y VALIDAR**: escenarios S1 y S1a–S1d del quickstart + frescura ≤ 30 s medida de extremo a extremo (también por el camino de respaldo)
 5. Demo/despliegue si está listo (mapa en vivo = valor demostrable)
 
 ### Incremental Delivery (por spec y rama)
@@ -350,6 +358,8 @@ Task: "T036 services/alquiler/service.go (transacción + FOR UPDATE)"
 
 - `[P]` = ficheros distintos, sin dependencias → paralelo seguro
 - `[Story]` = trazabilidad US_n ↔ HU_n ↔ spec-00N ↔ integrante
+- IDs T095–T100 (US1) añadidos el 2026-11-03 al final de la numeración para no renumerar las tareas del resto del equipo; su orden real está al inicio de la Phase 3
+- Cambios en helpers compartidos (T012 flujo único del hook, T020 «no revertir el commit si falla Redis»): comunicarlos al equipo en la PR de spec-001 (const. III y acuerdos de colaboración), aunque no cambien esquema ni claves
 - Gate de calidad: los tests T1–T5 (const. I) son **obligatorios** en las fases 4, 5, 7 y 9 y se re-ejecutan en T089
 - Esquema compartido: 0001 es la única migración aportada; cambios futuros exigen ordinal acordado (T093, const. III)
 - Commit tras cada tarea o grupo lógico; parar en cada Checkpoint para validar la historia de forma independiente
