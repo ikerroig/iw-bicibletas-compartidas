@@ -127,9 +127,12 @@ en una estación y medir que se refleja en ≤ 30 s.
 - **Estación**: Punto físico de la red; ubicación geográfica, capacidad total,
   estado de servicio y sus anclajes asociados.
 - **Anclaje**: Hueco individual de una estación; código identificador y estado
-  (ocupado por una bicicleta o libre).
-- **Bicicleta**: Unidad de la flota; estado (operativa, averiada) y anclaje en
-  el que se encuentra cuando está estacionada.
+  (libre, ocupado por una bicicleta o fuera de servicio; solo los libres
+  cuentan como anclajes libres).
+- **Bicicleta**: Unidad de la flota; estado (operativa —disponible para
+  alquilar—, en uso, averiada o en taller) y anclaje en el que se encuentra
+  cuando está estacionada. Solo las operativas ancladas cuentan como
+  bicicletas disponibles.
 
 ## Success Criteria *(mandatory)*
 
@@ -144,11 +147,13 @@ en una estación y medir que se refleja en ≤ 30 s.
 - **SC-003**: En el 100 % de las consultas de detalle, los contadores de
   bicicletas disponibles y anclajes libres coinciden con el estado real del
   sistema, donde bicicletas disponibles = anclajes con bicicleta operativa y
-  anclajes libres = anclajes sin bicicleta (los anclajes con bicicleta
-  averiada no suman en ninguno de los dos).
+  anclajes libres = anclajes en servicio sin bicicleta (los anclajes con
+  bicicleta averiada no suman en ninguno de los dos, y los anclajes fuera de
+  servicio no cuentan como libres).
 - **SC-004**: El mapa completo de la red se muestra en menos de 5 segundos en
-  una conexión estándar, y seleccionar una estación resuelve en menos de
-  2 segundos.
+  una conexión estándar (referencia: perfil de red «Fast 4G» de Chrome
+  DevTools, con caché vacía), y seleccionar una estación resuelve en menos de
+  2 segundos en las mismas condiciones.
 - **SC-005**: Con la conexión cortada, el aviso de «datos desactualizados»
   aparece en el 100 % de los casos en cuanto pasan más de 30 s desde la última
   actualización correcta y desaparece al restablecerse la conexión y
