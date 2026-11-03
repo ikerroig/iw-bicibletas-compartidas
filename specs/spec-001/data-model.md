@@ -281,7 +281,7 @@ Detalle completo del contrato en [contracts/redis-state.md](./contracts/redis-st
 |---|---|---|---|
 | `estacion:{id}:estado` | HASH | `bicis_disponibles`, `anclajes_libres`, `ocupacion_pct`, `estado`, `actualizado_en` (RFC3339 UTC) | 120 s (refrescado en cada escritura) |
 
-- Escritura: (a) síncrona post-commit en cada mutación de estaciones/bicicletas/anclajes; (b) barrido de las ~60 estaciones cada 15 s (worker `refresco_estado`) → cota dura de frescura 15 s < 30 s.
+- Escritura: (a) síncrona post-commit en cada mutación de estaciones/bicicletas/anclajes; (b) barrido de las ~60 estaciones cada 10 s (worker `refresco_estado`) → peor caso extremo a extremo ≈ 28 s < 30 s (R16). Anclajes con bicicleta averiada no suman en ningún contador: `bicis_disponibles + anclajes_libres ≤ capacidad_total` (R19).
 - Lectura: `GET /estaciones` sirve el HASH; si la clave falta/expiró (parada del worker), se recalcula desde PostgreSQL y se repuebla (FR-005: nunca datos sin expiración/marca de tiempo).
 
 ## Reglas de negocio críticas (constitución I) → dónde se garantizan

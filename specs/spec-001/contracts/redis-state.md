@@ -34,8 +34,10 @@ Estado en vivo de una estación, espejo exacto de los cómputos de `data-model.m
 | Mecanismo | Frecuencia | Garantiza |
 |---|---|---|
 | Escritura síncrona post-commit (desbloqueo, devolución, avería, traslado, ubicación) | En el acto | Reflejo inmediato para el actor y los paneles de operarios (HU-07 SC-003) |
-| Worker `refresco_estado` (recalcula las ~60 estaciones con una consulta agregada) | ≤ 15 s | Cota dura de 15 s < 30 s aunque algún camino de escritura falte (HU-01 FR-003, SC-002) |
-| Frontend (`stores/`, hook de red) | Polling `GET /estaciones` cada 15 s | ≤ 30 s en pantalla; muestra `actualizado_en` y reintenta si la conexión falla |
+| Worker `refresco_estado` (recalcula las ~60 estaciones con una consulta agregada) | ≤ 10 s | Respaldo si falla algún camino de escritura: 10 s + 15 s de polling + red/render ≤ 28 s extremo a extremo (HU-01 FR-003, SC-002; presupuesto en R16) |
+| Frontend (`stores/`, hook de red) | Polling `GET /estaciones` cada 15 s | ≤ 30 s del commit al pintado; muestra la hora de la última actualización correcta, reintenta si la conexión falla y avisa de «datos desactualizados» a los > 30 s (HU-01 FR-007, R17) |
+
+Los contadores cumplen `bicis_disponibles + anclajes_libres ≤ capacidad_total`: los anclajes con bicicleta averiada no suman en ninguno de los dos (R19). Una estación `fuera_de_servicio` sigue teniendo contadores enteros en Redis y en la API; es la UI de HU-01 la que los oculta (R18).
 
 ## Lectura desde el backend
 
