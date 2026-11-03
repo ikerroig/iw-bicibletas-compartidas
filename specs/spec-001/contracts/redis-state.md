@@ -16,10 +16,10 @@ Estado en vivo de una estación, espejo exacto de los cómputos de `data-model.m
 | `anclajes_libres` | string(int) | Anclajes en estado `libre` (un anclaje ocupado por una bicicleta averiada **no** es libre). |
 | `ocupacion_pct` | string(float, 2 dec.) | `100 × bicis_disponibles / capacidad_total`; `0` si la estación está `fuera_de_servicio`. |
 | `estado` | string | `operativa` \| `fuera_de_servicio` (HU-01: se muestra al usuario). |
-| `actualizado_en` | string(RFC3339 UTC) | Instante del último recálculo; lo expone `GET /estaciones` para el edge case de desconexión (HU-01). |
+| `actualizado_en` | string(RFC3339 UTC, sufijo `Z`, fracción opcional) | Instante del último recálculo; lo expone `GET /estaciones` para el edge case de desconexión (HU-01). El backend escribe nanosegundos de ancho fijo (`…T10:15:32.123456789Z`); se admite también sin fracción (`…T10:15:32Z`). |
 
 - **TTL**: 120 s, refrescado en cada escritura. La expiración es una red de seguridad: si ocurre (p. ej., parada del worker), `GET /estaciones` recalcula desde PostgreSQL y repuebla la clave — nunca se sirven datos sin marca de tiempo (FR-005).
-- **Atomicidad**: escrituras con `HSET` + `EXPIRE` en pipeline (todo el hash se reescribe; es el estado completo de la estación).
+- **Atomicidad**: escrituras con `HSET` + `EXPIRE` en un script Lua por estación (todo el hash se reescribe; es el estado completo de la estación). El script **descarta** la escritura si el hash ya guarda un `actualizado_en` más reciente; compara instantes normalizados, no texto, así que cualquier ancho de fracción es válido. Escribid siempre a través de `cache.GuardarEstados`.
 
 ### Claves auxiliares del worker (internas, no consumir desde specs)
 

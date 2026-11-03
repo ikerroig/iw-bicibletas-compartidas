@@ -9,7 +9,7 @@
 CREATE TABLE usuarios (
   id                      BIGSERIAL PRIMARY KEY,
   nombre                  TEXT        NOT NULL,
-  email                   TEXT        NOT NULL UNIQUE,
+  email                   TEXT        NOT NULL,
   password_hash           TEXT        NOT NULL,
   rol                     TEXT        NOT NULL DEFAULT 'usuario'
                           CHECK (rol IN ('usuario','operario_taller','operario_logistica','gestor')),
@@ -17,6 +17,8 @@ CREATE TABLE usuarios (
   fecha_vencimiento_abono DATE,
   creado_en               TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Único sin distinguir mayúsculas: el login busca por lower(email).
+CREATE UNIQUE INDEX ux_usuarios_email ON usuarios (lower(email));
 
 CREATE TABLE estaciones (
   id              BIGSERIAL PRIMARY KEY,

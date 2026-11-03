@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -66,7 +67,13 @@ func Migrar(ctx context.Context, url, direccion string) error {
 	defer func(c *sql.DB) { _ = c.Close() }(sqlDB)
 
 	goose.SetBaseFS(migrations.FS)
-	goose.SetLogger(goose.NopLogger())
+	// up/down en silencio (los tests migran en cada ejecución); status necesita
+	// el logger porque goose imprime la tabla de versiones a través de él.
+	if direccion == "status" {
+		goose.SetLogger(log.Default())
+	} else {
+		goose.SetLogger(goose.NopLogger())
+	}
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}

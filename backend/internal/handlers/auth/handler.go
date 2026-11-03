@@ -64,8 +64,14 @@ func (h *Handler) login(c *gin.Context) {
 		httperr.ErrorInterno(c)
 		return
 	}
-	// Mismo mensaje para email inexistente y contraseña errónea.
-	if err != nil || !auth.PasswordCorrecta(u.PasswordHash, req.Password) {
+	// Mismo mensaje y mismo coste (bcrypt contra un hash de relleno) para email
+	// inexistente y contraseña errónea: ni el texto ni el tiempo de respuesta
+	// revelan qué emails están registrados.
+	hash := auth.HashRelleno
+	if err == nil {
+		hash = u.PasswordHash
+	}
+	if !auth.PasswordCorrecta(hash, req.Password) || err != nil {
 		httperr.Responder(c, http.StatusUnauthorized, httperr.CredencialesInvalidas, "Email o contraseña incorrectos")
 		return
 	}

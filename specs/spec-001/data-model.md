@@ -26,7 +26,7 @@ erDiagram
 |---|---|---|---|
 | `id` | BIGSERIAL | PRIMARY KEY | pedido |
 | `nombre` | TEXT | NOT NULL | pedido |
-| `email` | TEXT | NOT NULL, UNIQUE | pedido |
+| `email` | TEXT | NOT NULL, UNIQUE sobre `lower(email)` (índice `ux_usuarios_email`) | pedido |
 | `password_hash` | TEXT | NOT NULL | ⚠ ADICIÓN (R15: sesión iniciada) |
 | `rol` | TEXT | NOT NULL DEFAULT 'usuario', CHECK IN ('usuario','operario_taller','operario_logistica','gestor') | pedido (enum derivado de R5) |
 | `abono_activo` | BOOLEAN | NOT NULL DEFAULT FALSE | pedido |
@@ -37,7 +37,7 @@ erDiagram
 CREATE TABLE usuarios (
   id                      BIGSERIAL PRIMARY KEY,
   nombre                  TEXT        NOT NULL,
-  email                   TEXT        NOT NULL UNIQUE,
+  email                   TEXT        NOT NULL,
   password_hash           TEXT        NOT NULL,
   rol                     TEXT        NOT NULL DEFAULT 'usuario'
                           CHECK (rol IN ('usuario','operario_taller','operario_logistica','gestor')),
@@ -45,6 +45,8 @@ CREATE TABLE usuarios (
   fecha_vencimiento_abono DATE,
   creado_en               TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Único sin distinguir mayúsculas: el login busca por lower(email).
+CREATE UNIQUE INDEX ux_usuarios_email ON usuarios (lower(email));
 ```
 
 - **Regla de negocio (const. I)** — *abono vigente*: es vigente ⇔ `abono_activo = TRUE AND fecha_vencimiento_abono >= CURRENT_DATE`. Si los campos son incoherentes (activo sin fecha o fecha pasada) se trata como **caducado** (decisión conservadora, R8/HU-02 FR-002).

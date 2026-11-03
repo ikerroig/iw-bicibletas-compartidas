@@ -22,9 +22,9 @@ const (
 	CampoEstado           = "estado"
 	CampoActualizadoEn    = "actualizado_en"
 
-	// FormatoActualizadoEn es RFC 3339 en UTC con nanosegundos de ancho fijo:
-	// sigue siendo RFC 3339 válido y permite comparar instantes como texto
-	// (lo usa el script de escritura para no pisar un estado más reciente).
+	// FormatoActualizadoEn es RFC 3339 en UTC con nanosegundos de ancho fijo.
+	// Cualquier escritor puede usar RFC 3339 UTC con o sin fracción (contrato):
+	// el script de escritura normaliza ambos antes de comparar.
 	FormatoActualizadoEn = "2006-01-02T15:04:05.000000000Z07:00"
 )
 

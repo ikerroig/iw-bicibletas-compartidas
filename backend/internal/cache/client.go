@@ -46,9 +46,18 @@ func (c *Cliente) Redis() *redis.Client { return c.rdb }
 // el estado ya guardado sea MÁS reciente que el nuevo. Así dos recálculos
 // concurrentes nunca dejan en Redis el más antiguo (caso límite de HU-01:
 // "dos cambios sucesivos → la vista termina con el estado final").
+//
+// Los instantes se comparan normalizados (fecha-hora de 19 caracteres + fracción
+// rellenada a 9 dígitos), no como texto crudo: así funciona igual con el
+// formato del contrato ("…T10:15:32Z") que con fracciones de cualquier ancho.
+// Requiere UTC con sufijo Z, como fija el contrato.
 var scriptGuardar = redis.NewScript(`
+local function norm(t)
+  local frac = string.match(t, '^.-%.(%d+)') or ''
+  return string.sub(t, 1, 19) .. string.sub(frac .. '000000000', 1, 9)
+end
 local actual = redis.call('HGET', KEYS[1], 'actualizado_en')
-if actual and actual > ARGV[5] then
+if actual and norm(actual) > norm(ARGV[5]) then
   return 0
 end
 redis.call('HSET', KEYS[1],
@@ -66,9 +75,23 @@ func (c *Cliente) GuardarEstados(ctx context.Context, estados []EstadoEstacion) 
 	if len(estados) == 0 {
 		return nil
 	}
+	err := c.ejecutarGuardar(ctx, estados)
+	if err != nil && redis.HasErrorPrefix(err, "NOSCRIPT") {
+		// Primer uso del script en este Redis: cargarlo y reintentar UNA vez.
+		if err = scriptGuardar.Load(ctx, c.rdb).Err(); err == nil {
+			err = c.ejecutarGuardar(ctx, estados)
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("cache: guardar estados: %w", err)
+	}
+	return nil
+}
+
+func (c *Cliente) ejecutarGuardar(ctx context.Context, estados []EstadoEstacion) error {
 	pipe := c.rdb.Pipeline()
 	for _, e := range estados {
-		scriptGuardar.Run(ctx, pipe, []string{ClaveEstado(e.EstacionID)},
+		scriptGuardar.EvalSha(ctx, pipe, []string{ClaveEstado(e.EstacionID)},
 			strconv.Itoa(e.BicisDisponibles),
 			strconv.Itoa(e.AnclajesLibres),
 			strconv.FormatFloat(e.OcupacionPct, 'f', 2, 64),
@@ -78,16 +101,7 @@ func (c *Cliente) GuardarEstados(ctx context.Context, estados []EstadoEstacion) 
 		)
 	}
 	_, err := pipe.Exec(ctx)
-	if err != nil && isNoScript(err) {
-		// Primer uso del script en este Redis: cargarlo y reintentar.
-		if err = scriptGuardar.Load(ctx, c.rdb).Err(); err == nil {
-			return c.GuardarEstados(ctx, estados)
-		}
-	}
-	if err != nil {
-		return fmt.Errorf("cache: guardar estados: %w", err)
-	}
-	return nil
+	return err
 }
 
 // LeerEstados devuelve los estados presentes en Redis para los ids dados (un
@@ -137,8 +151,4 @@ func parsear(id int64, m map[string]string) (EstadoEstacion, bool) {
 		EstacionID: id, BicisDisponibles: bicis, AnclajesLibres: libres,
 		OcupacionPct: ocup, Estado: estado, ActualizadoEn: t.UTC(),
 	}, true
-}
-
-func isNoScript(err error) bool {
-	return err != nil && len(err.Error()) >= 8 && err.Error()[:8] == "NOSCRIPT"
 }

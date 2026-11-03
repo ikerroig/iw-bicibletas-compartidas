@@ -128,6 +128,16 @@ func TestContratoAuth(t *testing.T) {
 	if rec := llamar(t, e, http.MethodPost, "/auth/login", "", fmt.Sprintf(`{"email":%q,"password":"mala"}`, email)); rec.Code != http.StatusUnauthorized {
 		t.Errorf("contraseña errónea = %d; quiero 401", rec.Code)
 	}
+	// El email no distingue mayúsculas (índice ux_usuarios_email sobre lower(email)).
+	if rec := llamar(t, e, http.MethodPost, "/auth/login", "", fmt.Sprintf(`{"email":%q,"password":"password"}`, strings.ToUpper(email))); rec.Code != http.StatusOK {
+		t.Errorf("login con email en mayúsculas = %d; quiero 200", rec.Code)
+	}
+	if rec := llamar(t, e, http.MethodPost, "/auth/login", "", `{"email":"nadie@si16.test","password":"password"}`); rec.Code != http.StatusUnauthorized {
+		t.Errorf("email inexistente = %d; quiero 401", rec.Code)
+	}
+	if _, err := e.Pool.Exec(e.Ctx, `INSERT INTO usuarios (nombre, email, password_hash) VALUES ('dup', $1, 'x')`, strings.ToUpper(email)); err == nil {
+		t.Error("se admitió un email que solo cambia en mayúsculas")
+	}
 	if rec := llamar(t, e, http.MethodGet, "/auth/me", token, ""); rec.Code != http.StatusOK {
 		t.Errorf("/auth/me = %d %s", rec.Code, rec.Body)
 	}

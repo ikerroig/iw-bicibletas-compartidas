@@ -41,6 +41,17 @@ func HashPassword(pw string) (string, error) {
 	return string(h), err
 }
 
+// HashRelleno es un hash bcrypt válido (de una contraseña aleatoria descartada)
+// con el coste por defecto. El login lo compara cuando el email no existe para
+// que la respuesta tarde lo mismo que con una contraseña errónea.
+var HashRelleno = func() string {
+	h, err := bcrypt.GenerateFromPassword([]byte("relleno-sin-uso-"+time.Now().String()), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	return string(h)
+}()
+
 // PasswordCorrecta compara en tiempo constante.
 func PasswordCorrecta(hash, pw string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(pw)) == nil

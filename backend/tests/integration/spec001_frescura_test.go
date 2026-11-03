@@ -177,6 +177,43 @@ func TestDosCambiosSucesivosTerminanEnElEstadoFinal(t *testing.T) {
 	}
 }
 
+// Un escritor que sigue el contrato (RFC 3339 sin fracción, "…T10:15:32Z") no
+// debe bloquear escrituras posteriores del mismo segundo ni ganar a ellas.
+func TestFormatoDelContratoSinFraccionSeComparaPorInstante(t *testing.T) {
+	e := iniciar(t)
+	id := e.CrearEstacion(t, "Formato", models.EstacionOperativa, tu.ConBici, tu.Libre)
+	clave := cache.ClaveEstado(id)
+	segundo := time.Now().UTC().Truncate(time.Second)
+	escribirContrato := func() {
+		t.Helper()
+		if err := e.Cache.Redis().HSet(e.Ctx, clave, map[string]any{
+			"bicis_disponibles": 7, "anclajes_libres": 7, "ocupacion_pct": "50.00",
+			"estado": "operativa", "actualizado_en": segundo.Format(time.RFC3339),
+		}).Err(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	guardar := func(t0 time.Time, bicis int) {
+		t.Helper()
+		if err := e.Cache.GuardarEstados(e.Ctx, []cache.EstadoEstacion{{EstacionID: id,
+			BicisDisponibles: bicis, AnclajesLibres: 1, Estado: "operativa", ActualizadoEn: t0}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	escribirContrato()
+	guardar(segundo.Add(500*time.Millisecond), 1) // más reciente → debe escribirse
+	if s, _ := leerHash(t, e, id); s.BicisDisponibles != 1 {
+		t.Fatalf("una escritura más reciente fue descartada frente a %q: %+v", segundo.Format(time.RFC3339), s)
+	}
+
+	escribirContrato()
+	guardar(segundo.Add(-500*time.Millisecond), 2) // más antigua → no debe pisar
+	if s, _ := leerHash(t, e, id); s.BicisDisponibles != 7 {
+		t.Fatalf("una escritura más antigua pisó al estado del contrato: %+v", s)
+	}
+}
+
 func TestRecalcularNotificaUnaVezSinReentrar(t *testing.T) {
 	e := iniciar(t)
 	id := e.CrearEstacion(t, "Hook", models.EstacionOperativa, tu.ConBici, tu.Libre)

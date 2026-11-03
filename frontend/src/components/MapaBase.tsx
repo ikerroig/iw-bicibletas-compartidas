@@ -58,7 +58,11 @@ export default function MapaBase(props: Props) {
     if (props.centrarEnUsuario !== false && navigator.geolocation) {
       let vencido = false;
       const plazo = setTimeout(() => (vencido = true), props.timeoutGeolocalizacionMs ?? 5_000);
-      onCleanup(() => clearTimeout(plazo));
+      // Al desmontar, una respuesta posterior se ignora: el mapa ya no existe.
+      onCleanup(() => {
+        vencido = true;
+        clearTimeout(plazo);
+      });
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           clearTimeout(plazo);
@@ -94,12 +98,20 @@ export default function MapaBase(props: Props) {
           continue;
         }
         actual.marcador.setLatLng([m.lat, m.lng]);
+        // setIcon reconstruye el icono con options.title: se actualiza antes para
+        // que el tooltip nativo no vuelva a la etiqueta del primer pintado.
+        actual.marcador.options.title = m.ariaLabel;
         if (actual.html !== m.html) {
           actual.marcador.setIcon(icono(m.html));
           actual.html = m.html;
         }
         const el = actual.marcador.getElement();
-        if (el && (actual.aria !== m.ariaLabel || el.getAttribute('aria-label') !== m.ariaLabel)) {
+        if (
+          el &&
+          (actual.aria !== m.ariaLabel ||
+            el.getAttribute('aria-label') !== m.ariaLabel ||
+            el.getAttribute('title') !== m.ariaLabel)
+        ) {
           el.setAttribute('aria-label', m.ariaLabel);
           el.setAttribute('title', m.ariaLabel);
           actual.aria = m.ariaLabel;

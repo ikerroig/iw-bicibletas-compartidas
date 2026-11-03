@@ -246,7 +246,8 @@ func (s *Servicio) leer(ctx context.Context, ids []int64) ([]EstacionEstado, err
 		todos[i] = e.ID
 	}
 	vivos, err := s.cache.LeerEstados(ctx, todos)
-	if err != nil {
+	redisOK := err == nil
+	if !redisOK {
 		s.log.Warn("estacion: Redis no disponible; se sirve el cálculo de PostgreSQL", "error", err)
 		vivos = map[int64]cache.EstadoEstacion{}
 	}
@@ -266,8 +267,12 @@ func (s *Servicio) leer(ctx context.Context, ids []int64) ([]EstacionEstado, err
 		for _, e := range calc {
 			recalculados[e.ID] = e
 		}
-		if err := s.cache.GuardarEstados(ctx, aCache(calc)); err != nil {
-			s.log.Warn("estacion: no se pudo repoblar Redis", "ids", faltan, "error", err)
+		// Solo se repuebla si la lectura funcionó: con Redis caído, escribir
+		// añadiría otro timeout a la respuesta (el worker repuebla al volver).
+		if redisOK {
+			if err := s.cache.GuardarEstados(ctx, aCache(calc)); err != nil {
+				s.log.Warn("estacion: no se pudo repoblar Redis", "ids", faltan, "error", err)
+			}
 		}
 	}
 
