@@ -112,7 +112,7 @@ Sin tareas: autenticación, `httperr`, `db.EnTransaccion`, `RecalcularEstacion` 
 - [X] T024 [P] Actualizar la regla de abono de `specs/spec-001/data-model.md` (línea de `CURRENT_DATE`) para indicar la fecha actual en `Europe/Madrid`
 - [X] T025 Ejecutar `go vet ./...`, `go test -count=1 ./...` en `backend/` y `npx tsc --noEmit`, `npm run lint`, `npm test` en `frontend/`; repetir 10 veces los tests de concurrencia de `backend/tests/integration/spec002_concurrencia_test.go`
 - [X] T026 Ejecutar V1–V8 de `specs/spec-002/quickstart.md` en navegador y API, y anotar el resultado en la PR
-- [ ] T027 Incluir en la PR los cambios aditivos de `specs/spec-002/contracts/alquileres.md`, la zona horaria del abono (a revisar por spec-004 y spec-008) y la nota de trazabilidad de `specs/spec-002/plan.md`
+- [X] T027 Incluir en la PR los cambios aditivos de `specs/spec-002/contracts/alquileres.md`, la zona horaria del abono (a revisar por spec-004 y spec-008) y la nota de trazabilidad de `specs/spec-002/plan.md`
 
 ---
 
