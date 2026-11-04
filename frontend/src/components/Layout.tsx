@@ -8,6 +8,7 @@ const TODOS: Rol[] = ['usuario', 'operario_taller', 'operario_logistica', 'gesto
 
 const AREAS: { ruta: string; etiqueta: string; roles: Rol[] }[] = [
   { ruta: '/', etiqueta: 'Mapa', roles: TODOS }, // spec-001
+  { ruta: '/alquiler', etiqueta: 'Desbloquear', roles: ['usuario'] }, // spec-002
 ];
 
 export default function Layout(props: ParentProps) {

@@ -4,6 +4,7 @@ import { Route, Router } from '@solidjs/router';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import MapaRed from './pages/mapa/MapaRed';
+import Desbloqueo from './pages/alquiler/Desbloqueo';
 
 export default function Rutas() {
   return (
@@ -11,6 +12,7 @@ export default function Rutas() {
       <Route path="/login" component={Login} />
       <Route path="/" component={Layout}>
         <Route path="/" component={() => <MapaRed />} /> {/* spec-001 */}
+        <Route path="/alquiler" component={Desbloqueo} /> {/* spec-002 */}
       </Route>
     </Router>
   );

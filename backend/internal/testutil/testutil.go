@@ -228,6 +228,38 @@ func (e *Entorno) Token(t *testing.T, rol models.Rol) string {
 	return tok
 }
 
+// Usuario crea un usuario de rol `usuario` con el abono indicado (vencimiento
+// nil = sin fecha) y devuelve su id y su JWT.
+func (e *Entorno) Usuario(t *testing.T, activo bool, vencimiento *time.Time) (int64, string) {
+	t.Helper()
+	secuencia++
+	u := models.Usuario{Nombre: "Abonado", Rol: models.RolUsuario}
+	err := e.Pool.QueryRow(e.Ctx, `INSERT INTO usuarios (nombre, email, password_hash, rol, abono_activo, fecha_vencimiento_abono)
+		VALUES ($1, $2, 'x', $3, $4, $5) RETURNING id`,
+		u.Nombre, fmt.Sprintf("a%d@si16.test", secuencia), u.Rol, activo, vencimiento).Scan(&u.ID)
+	if err != nil {
+		t.Fatalf("crear usuario: %v", err)
+	}
+	tok, err := e.Emisor.Emitir(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u.ID, tok
+}
+
+// Post hace una petición POST JSON autenticada (token vacío = sin cabecera).
+func (e *Entorno) Post(t *testing.T, ruta, token, cuerpo string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "http://localhost:8080/api/v1"+ruta, strings.NewReader(cuerpo))
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	rec := httptest.NewRecorder()
+	e.Router.ServeHTTP(rec, req)
+	return rec
+}
+
 // Get hace una petición GET autenticada (token vacío = sin cabecera).
 func (e *Entorno) Get(t *testing.T, ruta, token string) *httptest.ResponseRecorder {
 	t.Helper()
