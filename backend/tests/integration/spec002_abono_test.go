@@ -49,8 +49,14 @@ func desbloquear(t *testing.T, e *tu.Entorno, token, cod string) (int, string) {
 	return rec.Code, r.Error.Codigo
 }
 
+// dias devuelve la fecha de hoy en España más n días: la misma que usa el servicio.
 func dias(n int) *time.Time {
-	v := time.Now().UTC().AddDate(0, 0, n)
+	madrid, err := time.LoadLocation("Europe/Madrid")
+	if err != nil {
+		panic(err)
+	}
+	a, m, d := time.Now().In(madrid).Date()
+	v := time.Date(a, m, d+n, 0, 0, 0, 0, time.UTC)
 	return &v
 }
 

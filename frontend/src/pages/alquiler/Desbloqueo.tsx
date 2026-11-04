@@ -3,7 +3,8 @@
 // devuelve. Con un viaje en curso enseña ese viaje en lugar del formulario.
 import { createResource, createSignal, Match, Show, Switch } from 'solid-js';
 import { ApiError } from '../../services/api';
-import { desbloquear, viajeActivo, type ViajeActivo } from '../../services/api/alquiler';
+import { desbloquear, type ViajeActivo } from '../../services/api/alquiler';
+import { cargarViajeEnCurso, fijarViajeEnCurso } from '../../stores/viaje';
 
 const horaLocal = (iso: string) =>
   new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
@@ -36,7 +37,7 @@ function ViajeEnCurso(props: { viaje: ViajeActivo }) {
 }
 
 export default function Desbloqueo() {
-  const [activo, { mutate }] = createResource(() => viajeActivo());
+  const [activo, { mutate }] = createResource(() => cargarViajeEnCurso());
   const [codigo, setCodigo] = createSignal('');
   const [error, setError] = createSignal<string | null>(null);
   const [enviando, setEnviando] = createSignal(false);
@@ -46,12 +47,14 @@ export default function Desbloqueo() {
     setError(null);
     setEnviando(true);
     try {
-      mutate(await desbloquear(codigo().trim()));
+      const viaje = await desbloquear(codigo().trim());
+      fijarViajeEnCurso(viaje);
+      mutate(viaje);
     } catch (e) {
       if (e instanceof ApiError && e.codigo === 'VIAJE_ACTIVO') {
         // El viaje se inició en otra pestaña o dispositivo: se muestra ese.
         try {
-          mutate(await viajeActivo());
+          mutate(await cargarViajeEnCurso());
         } catch {
           /* se queda el mensaje de abajo */
         }

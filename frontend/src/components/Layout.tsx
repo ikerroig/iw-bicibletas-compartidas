@@ -2,6 +2,7 @@
 // de sesión. Cada spec añade su entrada en AREAS.
 import { For, Show, type ParentProps } from 'solid-js';
 import { A, Navigate } from '@solidjs/router';
+import AvisoViaje from './AvisoViaje';
 import { cerrarSesion, sesion, type Rol } from '../stores/sesion';
 
 const TODOS: Rol[] = ['usuario', 'operario_taller', 'operario_logistica', 'gestor'];
@@ -37,6 +38,7 @@ export default function Layout(props: ParentProps) {
             Cerrar sesión
           </button>
         </header>
+        <AvisoViaje />
         <main class="relative min-h-0 flex-1">{props.children}</main>
       </div>
     </Show>

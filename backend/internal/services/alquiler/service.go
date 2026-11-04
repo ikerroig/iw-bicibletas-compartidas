@@ -36,6 +36,10 @@ const pgUniqueViolation = "23505"
 // petición: si el cliente se desconecta, el viaje existe y el mapa debe verlo.
 const recalculoTimeout = 2 * time.Second
 
+// plazoTransaccion acota la espera de bloqueos. Con recalculoTimeout y el plazo
+// del hook, el peor caso es 9 s, dentro de los 10 s de SC-003.
+const plazoTransaccion = 4 * time.Second
+
 const columnasViaje = `v.id, v.usuario_id, v.bicicleta_id, v.estacion_origen_id, v.estacion_destino_id,
 	v.fecha_inicio, v.fecha_fin, v.duracion_minutos, v.coste_total::float8, v.estado`
 
@@ -82,6 +86,10 @@ func Nuevo(pool *pgxpool.Pool, est *estacion.Servicio, log *slog.Logger) *Servic
 // desbloqueos del mismo usuario en anclajes distintos no se bloquean entre sí:
 // a esos los para el índice ux_viajes_usuario_activo.
 func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAnclaje string) (ViajeActivo, error) {
+	peticion := ctx
+	ctx, cancelar := context.WithTimeout(peticion, plazoTransaccion)
+	defer cancelar()
+
 	var viaje ViajeActivo
 	var estacionID int64
 	err := db.EnTransaccion(ctx, s.pool, func(tx pgx.Tx) error {
@@ -153,8 +161,8 @@ func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAncla
 	}
 
 	// El commit ya está hecho: un fallo aquí no revierte nada y lo repara el barrido.
-	rc, cancelar := context.WithTimeout(context.WithoutCancel(ctx), recalculoTimeout)
-	defer cancelar()
+	rc, cancelarRecalculo := context.WithTimeout(context.WithoutCancel(peticion), recalculoTimeout)
+	defer cancelarRecalculo()
 	if err := s.estacion.RecalcularEstacion(rc, []int64{estacionID}); err != nil {
 		s.log.Warn("alquiler: recálculo post-commit fallido", "estacion", estacionID, "error", err)
 	}
@@ -182,7 +190,7 @@ func (s *Servicio) Activo(ctx context.Context, usuarioID int64) (*ViajeActivo, e
 
 func validarUsuario(ctx context.Context, tx pgx.Tx, usuarioID int64) error {
 	var u models.Usuario
-	err := tx.QueryRow(ctx, `SELECT abono_activo, fecha_vencimiento_abono FROM usuarios WHERE id = $1`, usuarioID).
+	err := tx.QueryRow(ctx, `SELECT abono_activo, fecha_vencimiento_abono FROM usuarios WHERE id = $1 FOR SHARE`, usuarioID).
 		Scan(&u.AbonoActivo, &u.FechaVencimientoAbono)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrAbonoVencido // JWT de un usuario ya borrado: no hay abono que valga
