@@ -12,7 +12,12 @@ const AREAS: { ruta: string; etiqueta: string; roles: Rol[] }[] = [
 ];
 
 export default function Layout(props: ParentProps) {
-  const areas = () => AREAS.filter((a) => a.roles.includes(sesion.usuario()?.rol ?? 'usuario'));
+  const areas = () => {
+    const rol = sesion.usuario()?.rol;
+    return AREAS.filter(
+      (a) => a.roles === TODOS || (rol !== undefined && a.roles.includes(rol)),
+    );
+  };
   return (
     <Show when={sesion.autenticado()} fallback={<Navigate href="/login" />}>
       <div class="flex h-dvh flex-col">

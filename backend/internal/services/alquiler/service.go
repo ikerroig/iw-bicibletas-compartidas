@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+	_ "time/tzdata" // zona embebida: el binario no depende de la del sistema
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -33,10 +34,31 @@ const pgUniqueViolation = "23505"
 
 // recalculoTimeout acota el recálculo post-commit, que ya no depende de la
 // petición: si el cliente se desconecta, el viaje existe y el mapa debe verlo.
-const recalculoTimeout = 5 * time.Second
+const recalculoTimeout = 2 * time.Second
 
-const columnasViaje = `id, usuario_id, bicicleta_id, estacion_origen_id, estacion_destino_id,
-	fecha_inicio, fecha_fin, duracion_minutos, coste_total::float8, estado`
+const columnasViaje = `v.id, v.usuario_id, v.bicicleta_id, v.estacion_origen_id, v.estacion_destino_id,
+	v.fecha_inicio, v.fecha_fin, v.duracion_minutos, v.coste_total::float8, v.estado`
+
+// zonaNegocio es la zona del servicio: FR-002 fija el fin del abono a la
+// medianoche de España.
+var zonaNegocio = func() *time.Location {
+	z, err := time.LoadLocation("Europe/Madrid")
+	if err != nil {
+		panic(err)
+	}
+	return z
+}()
+
+// fechaNegocio expresa un instante en la zona del servicio.
+func fechaNegocio(instante time.Time) time.Time { return instante.In(zonaNegocio) }
+
+// ViajeActivo añade a Viaje los datos que el usuario ve durante el trayecto
+// (FR-008).
+type ViajeActivo struct {
+	models.Viaje
+	BicicletaCodigo      string `json:"bicicleta_codigo"`
+	EstacionOrigenNombre string `json:"estacion_origen_nombre"`
+}
 
 // Servicio agrupa las dependencias.
 type Servicio struct {
@@ -59,8 +81,8 @@ func Nuevo(pool *pgxpool.Pool, est *estacion.Servicio, log *slog.Logger) *Servic
 // anclaje, y cada SELECT posterior ve lo confirmado mientras se esperaba. Dos
 // desbloqueos del mismo usuario en anclajes distintos no se bloquean entre sí:
 // a esos los para el índice ux_viajes_usuario_activo.
-func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAnclaje string) (models.Viaje, error) {
-	var viaje models.Viaje
+func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAnclaje string) (ViajeActivo, error) {
+	var viaje ViajeActivo
 	var estacionID int64
 	err := db.EnTransaccion(ctx, s.pool, func(tx pgx.Tx) error {
 		var anclajeID int64
@@ -83,8 +105,11 @@ func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAncla
 			return ErrAnclajeNoExiste
 		}
 
+		// FOR SHARE espera a un cambio de estado en curso sin serializar los
+		// desbloqueos simultáneos de la misma estación.
 		var estadoEstacion string
-		if err := tx.QueryRow(ctx, `SELECT estado FROM estaciones WHERE id = $1`, estacionID).Scan(&estadoEstacion); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT estado, nombre FROM estaciones WHERE id = $1 FOR SHARE`, estacionID).
+			Scan(&estadoEstacion, &viaje.EstacionOrigenNombre); err != nil {
 			return fmt.Errorf("alquiler: leer estación: %w", err)
 		}
 		switch {
@@ -98,7 +123,8 @@ func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAncla
 
 		// El bloqueo evita desbloquear una bici que HU-05 está marcando averiada.
 		var estadoBici string
-		if err := tx.QueryRow(ctx, `SELECT estado FROM bicicletas WHERE id = $1 FOR UPDATE`, *bicicletaID).Scan(&estadoBici); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT estado, codigo FROM bicicletas WHERE id = $1 FOR UPDATE`, *bicicletaID).
+			Scan(&estadoBici, &viaje.BicicletaCodigo); err != nil {
 			return fmt.Errorf("alquiler: leer bicicleta: %w", err)
 		}
 		if estadoBici != models.BicicletaDisponible {
@@ -114,16 +140,16 @@ func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAncla
 			return fmt.Errorf("alquiler: bicicleta en uso: %w", err)
 		}
 		v, err := escanearViaje(tx.QueryRow(ctx, `
-			INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id)
+			INSERT INTO viajes AS v (usuario_id, bicicleta_id, estacion_origen_id)
 			VALUES ($1, $2, $3) RETURNING `+columnasViaje, usuarioID, *bicicletaID, estacionID))
 		if err != nil {
 			return traducirInsercion(err)
 		}
-		viaje = v
+		viaje.Viaje = v
 		return nil
 	})
 	if err != nil {
-		return models.Viaje{}, err
+		return ViajeActivo{}, err
 	}
 
 	// El commit ya está hecho: un fallo aquí no revierte nada y lo repara el barrido.
@@ -136,16 +162,22 @@ func (s *Servicio) Desbloquear(ctx context.Context, usuarioID int64, codigoAncla
 }
 
 // Activo devuelve el viaje en curso del usuario, o nil si no tiene.
-func (s *Servicio) Activo(ctx context.Context, usuarioID int64) (*models.Viaje, error) {
-	v, err := escanearViaje(s.pool.QueryRow(ctx, `SELECT `+columnasViaje+`
-		FROM viajes WHERE usuario_id = $1 AND estado = $2`, usuarioID, models.ViajeEnCurso))
+func (s *Servicio) Activo(ctx context.Context, usuarioID int64) (*ViajeActivo, error) {
+	var a ViajeActivo
+	v, err := escanearViaje(s.pool.QueryRow(ctx, `SELECT `+columnasViaje+`, b.codigo, e.nombre
+		FROM viajes v
+		JOIN bicicletas b ON b.id = v.bicicleta_id
+		JOIN estaciones e ON e.id = v.estacion_origen_id
+		WHERE v.usuario_id = $1 AND v.estado = $2`, usuarioID, models.ViajeEnCurso),
+		&a.BicicletaCodigo, &a.EstacionOrigenNombre)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("alquiler: viaje activo: %w", err)
 	}
-	return &v, nil
+	a.Viaje = v
+	return &a, nil
 }
 
 func validarUsuario(ctx context.Context, tx pgx.Tx, usuarioID int64) error {
@@ -158,7 +190,7 @@ func validarUsuario(ctx context.Context, tx pgx.Tx, usuarioID int64) error {
 	if err != nil {
 		return fmt.Errorf("alquiler: leer usuario: %w", err)
 	}
-	if !models.AbonoVigente(u, time.Now().UTC()) {
+	if !models.AbonoVigente(u, fechaNegocio(time.Now())) {
 		return ErrAbonoVencido
 	}
 
@@ -186,10 +218,11 @@ func traducirInsercion(err error) error {
 	return fmt.Errorf("alquiler: crear viaje: %w", err)
 }
 
-func escanearViaje(row pgx.Row) (models.Viaje, error) {
+func escanearViaje(row pgx.Row, extra ...any) (models.Viaje, error) {
 	var v models.Viaje
-	err := row.Scan(&v.ID, &v.UsuarioID, &v.BicicletaID, &v.EstacionOrigenID, &v.EstacionDestinoID,
-		&v.FechaInicio, &v.FechaFin, &v.DuracionMinutos, &v.CosteTotal, &v.Estado)
+	destinos := append([]any{&v.ID, &v.UsuarioID, &v.BicicletaID, &v.EstacionOrigenID, &v.EstacionDestinoID,
+		&v.FechaInicio, &v.FechaFin, &v.DuracionMinutos, &v.CosteTotal, &v.Estado}, extra...)
+	err := row.Scan(destinos...)
 	v.FechaInicio = v.FechaInicio.UTC()
 	return v, err
 }

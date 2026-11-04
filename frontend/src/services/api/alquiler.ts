@@ -15,14 +15,20 @@ export interface Viaje {
   estado: 'en_curso' | 'finalizado';
 }
 
-export function desbloquear(codigoAnclaje: string): Promise<Viaje> {
-  return apiFetch<Viaje>('/alquileres/desbloqueo', {
+/** Viaje con los datos que el usuario ve durante el trayecto (FR-008). */
+export interface ViajeActivo extends Viaje {
+  bicicleta_codigo: string;
+  estacion_origen_nombre: string;
+}
+
+export function desbloquear(codigoAnclaje: string): Promise<ViajeActivo> {
+  return apiFetch<ViajeActivo>('/alquileres/desbloqueo', {
     method: 'POST',
     body: JSON.stringify({ codigo_anclaje: codigoAnclaje }),
   });
 }
 
-export async function viajeActivo(signal?: AbortSignal): Promise<Viaje | null> {
-  const r = await apiFetch<{ viaje: Viaje | null }>('/alquileres/activo', { signal });
+export async function viajeActivo(): Promise<ViajeActivo | null> {
+  const r = await apiFetch<{ viaje: ViajeActivo | null }>('/alquileres/activo');
   return r.viaje;
 }

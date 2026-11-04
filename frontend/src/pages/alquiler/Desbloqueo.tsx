@@ -3,17 +3,12 @@
 // devuelve. Con un viaje en curso enseña ese viaje en lugar del formulario.
 import { createResource, createSignal, Match, Show, Switch } from 'solid-js';
 import { ApiError } from '../../services/api';
-import { desbloquear, viajeActivo, type Viaje } from '../../services/api/alquiler';
-import { detalleEstacion } from '../../services/api/estaciones';
+import { desbloquear, viajeActivo, type ViajeActivo } from '../../services/api/alquiler';
 
 const horaLocal = (iso: string) =>
   new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
 
-function ViajeEnCurso(props: { viaje: Viaje }) {
-  const [origen] = createResource(
-    () => props.viaje.estacion_origen_id,
-    async (id) => (await detalleEstacion(id)).nombre,
-  );
+function ViajeEnCurso(props: { viaje: ViajeActivo }) {
   return (
     <section aria-labelledby="titulo-viaje" class="space-y-2 rounded-xl bg-white p-6 shadow">
       <h1 id="titulo-viaje" class="text-xl font-semibold">
@@ -26,14 +21,12 @@ function ViajeEnCurso(props: { viaje: Viaje }) {
         </div>
         <div class="flex gap-2">
           <dt class="text-slate-600">Bicicleta:</dt>
-          <dd>n.º {props.viaje.bicicleta_id}</dd>
+          <dd>{props.viaje.bicicleta_codigo}</dd>
         </div>
-        <Show when={!origen.error && origen()}>
-          <div class="flex gap-2">
-            <dt class="text-slate-600">Estación de origen:</dt>
-            <dd>{origen()}</dd>
-          </div>
-        </Show>
+        <div class="flex gap-2">
+          <dt class="text-slate-600">Estación de origen:</dt>
+          <dd>{props.viaje.estacion_origen_nombre}</dd>
+        </div>
       </dl>
       <p class="text-sm text-slate-600">
         No puedes desbloquear otra bicicleta hasta devolver esta.

@@ -13,6 +13,12 @@ import (
 	tu "si16/backend/internal/testutil"
 )
 
+type viajeActivo struct {
+	models.Viaje
+	BicicletaCodigo      string `json:"bicicleta_codigo"`
+	EstacionOrigenNombre string `json:"estacion_origen_nombre"`
+}
+
 func TestContratoAlquileres(t *testing.T) {
 	e := tu.Iniciar(t, "contract", 14)
 	id := e.CrearEstacion(t, "Alquiler", models.EstacionOperativa, tu.ConBici, tu.ConBici, tu.Libre)
@@ -29,23 +35,37 @@ func TestContratoAlquileres(t *testing.T) {
 	if creado.Code != http.StatusCreated {
 		t.Fatalf("desbloqueo = %d %s", creado.Code, creado.Body)
 	}
-	var viaje models.Viaje
+	var viaje viajeActivo
 	if err := json.Unmarshal(creado.Body.Bytes(), &viaje); err != nil {
 		t.Fatal(err)
 	}
 	if viaje.UsuarioID != uid || viaje.EstacionOrigenID != id || viaje.Estado != models.ViajeEnCurso {
 		t.Errorf("viaje = %+v", viaje)
 	}
+	codigoBici := fmt.Sprintf("B-%d-0", id)
+	if viaje.BicicletaCodigo != codigoBici || viaje.EstacionOrigenNombre != "Alquiler" {
+		t.Errorf("datos del viaje (FR-008) = %q, %q", viaje.BicicletaCodigo, viaje.EstacionOrigenNombre)
+	}
 
 	activo := llamar(t, e, http.MethodGet, "/alquileres/activo", tok, "")
 	var r struct {
-		Viaje *models.Viaje `json:"viaje"`
+		Viaje *viajeActivo `json:"viaje"`
 	}
 	if err := json.Unmarshal(activo.Body.Bytes(), &r); err != nil {
 		t.Fatal(err)
 	}
 	if activo.Code != http.StatusOK || r.Viaje == nil || r.Viaje.ID != viaje.ID {
 		t.Fatalf("activo = %d %s", activo.Code, activo.Body)
+	}
+	if r.Viaje.BicicletaCodigo != codigoBici || r.Viaje.EstacionOrigenNombre != "Alquiler" {
+		t.Errorf("datos del viaje activo (FR-008) = %q, %q", r.Viaje.BicicletaCodigo, r.Viaje.EstacionOrigenNombre)
+	}
+
+	if rec := llamar(t, e, http.MethodGet, "/alquileres/activo", "", ""); rec.Code != http.StatusUnauthorized {
+		t.Errorf("activo sin token = %d; quiero 401", rec.Code)
+	}
+	if rec := llamar(t, e, http.MethodPost, "/alquileres/desbloqueo", "", cuerpo(2)); rec.Code != http.StatusUnauthorized {
+		t.Errorf("desbloqueo sin token = %d; quiero 401", rec.Code)
 	}
 
 	_, libre := e.Usuario(t, true, &venc)

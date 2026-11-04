@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 
@@ -37,22 +39,29 @@ var rechazos = []struct {
 	{svc.ErrBicicletaNoDisponible, http.StatusConflict, httperr.BicicletaNoDisponible, "La bicicleta de este anclaje no está disponible"},
 }
 
+// maxCodigo coincide con el límite de POST /devoluciones.
+const maxCodigo = 64
+
+// normalizarCodigo aplica FR-001: los códigos se guardan en mayúsculas. Los
+// caracteres de control se rechazan aquí porque PostgreSQL no admite NUL en texto.
+func normalizarCodigo(crudo string) (string, bool) {
+	codigo := strings.ToUpper(strings.TrimSpace(crudo))
+	n := utf8.RuneCountInString(codigo)
+	return codigo, n > 0 && n <= maxCodigo && !strings.ContainsFunc(codigo, unicode.IsControl)
+}
+
 // Desbloquear inicia un viaje con el código de un anclaje (FR-001, FR-005).
 func (h *Handler) Desbloquear(c *gin.Context) {
 	var cuerpo struct {
 		CodigoAnclaje string `json:"codigo_anclaje"`
 	}
 	err := c.ShouldBindJSON(&cuerpo)
-	codigo := strings.TrimSpace(cuerpo.CodigoAnclaje)
-	if err != nil || codigo == "" {
+	codigo, valido := normalizarCodigo(cuerpo.CodigoAnclaje)
+	if err != nil || !valido {
 		httperr.Responder(c, http.StatusUnprocessableEntity, httperr.Validacion, "Introduce el código del anclaje")
 		return
 	}
-	sesion, ok := auth.SesionDe(c)
-	if !ok {
-		httperr.Responder(c, http.StatusUnauthorized, httperr.Unautenticado, "Inicia sesión para continuar")
-		return
-	}
+	sesion, _ := auth.SesionDe(c)
 
 	viaje, err := h.Svc.Desbloquear(c.Request.Context(), sesion.UsuarioID, codigo)
 	if err != nil {
@@ -71,11 +80,7 @@ func (h *Handler) Desbloquear(c *gin.Context) {
 
 // Activo devuelve el viaje en curso de la sesión, o null.
 func (h *Handler) Activo(c *gin.Context) {
-	sesion, ok := auth.SesionDe(c)
-	if !ok {
-		httperr.Responder(c, http.StatusUnauthorized, httperr.Unautenticado, "Inicia sesión para continuar")
-		return
-	}
+	sesion, _ := auth.SesionDe(c)
 	viaje, err := h.Svc.Activo(c.Request.Context(), sesion.UsuarioID)
 	if err != nil {
 		h.Log.Error("GET /alquileres/activo", "usuario", sesion.UsuarioID, "error", err)

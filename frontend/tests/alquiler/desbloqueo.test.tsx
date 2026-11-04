@@ -4,14 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import Desbloqueo from '../../src/pages/alquiler/Desbloqueo';
-import type { Viaje } from '../../src/services/api/alquiler';
+import type { ViajeActivo } from '../../src/services/api/alquiler';
 import { server } from '../server';
 
-const VIAJE: Viaje = {
+const VIAJE: ViajeActivo = {
   id: 1,
   usuario_id: 7,
   bicicleta_id: 42,
+  bicicleta_codigo: 'BICI-0007',
   estacion_origen_id: 1,
+  estacion_origen_nombre: 'Colón',
   estacion_destino_id: null,
   fecha_inicio: '2026-11-04T09:15:00Z',
   fecha_fin: null,
@@ -20,7 +22,7 @@ const VIAJE: Viaje = {
   estado: 'en_curso',
 };
 
-const activo = (viaje: Viaje | null) =>
+const activo = (viaje: ViajeActivo | null) =>
   http.get('*/api/v1/alquileres/activo', () => HttpResponse.json({ viaje }));
 
 const rechazo = (status: number, codigo: string, mensaje: string) =>
@@ -40,6 +42,23 @@ describe('desbloqueo', () => {
     render(() => <Desbloqueo />);
     expect(await screen.findByRole('heading', { name: 'Viaje en curso' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Código de anclaje')).not.toBeInTheDocument();
+  });
+
+  it('muestra inicio, código de bicicleta y estación sin pedir el detalle de la estación', async () => {
+    let peticionesDetalle = 0;
+    server.use(
+      activo(VIAJE),
+      http.get('*/api/v1/estaciones/:id', () => {
+        peticionesDetalle++;
+        return HttpResponse.json({});
+      }),
+    );
+    render(() => <Desbloqueo />);
+    expect(await screen.findByText('BICI-0007')).toBeInTheDocument();
+    expect(screen.getByText('Colón')).toBeInTheDocument();
+    expect(screen.getByTestId('viaje-inicio')).not.toBeEmptyDOMElement();
+    expect(screen.queryByText(/n.º 42/)).not.toBeInTheDocument();
+    expect(peticionesDetalle).toBe(0);
   });
 
   it('envía el código sin espacios y pasa al viaje en curso', async () => {
