@@ -93,6 +93,8 @@ backend/
 frontend/
 ├── src/services/api/alquiler.ts
 ├── src/pages/alquiler/Desbloqueo.tsx
+├── src/components/AvisoViaje.tsx        # Aviso de viaje en curso (D14)
+├── src/stores/viaje.ts                  # Viaje en curso compartido
 ├── src/routes.tsx, src/components/Layout.tsx   # 1 línea compartida en cada uno
 └── tests/alquiler/desbloqueo.test.tsx
 ```
@@ -111,6 +113,10 @@ frontend/
 | D7 | Contrato | `401` declarado y ejemplo real de código |
 | D8 | Mantenimiento | Eliminar ramas inalcanzables y el `signal` sin usar |
 | D9 | FR-009 | Quitar el rol por defecto del menú |
+| D11 | SC-003 | Plazo de 4 s para la transacción |
+| D12 | FR-007 | Commit no cancelable en `db.EnTransaccion` |
+| D13 | FR-007 | `FOR SHARE` al leer el abono |
+| D14 | FR-008 | Aviso de viaje en curso en `Layout` |
 
 ## Complexity Tracking
 

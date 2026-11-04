@@ -52,8 +52,8 @@ Envelope uniforme `{"error":{"codigo","mensaje"}}`. Ningún rechazo tiene efecto
 | 403 | `ABONO_VENCIDO` | Abono inactivo, caducado o sin fecha |
 | 404 | `ANCLAJE_NO_EXISTE` | Ningún anclaje con ese código |
 | 409 | `VIAJE_ACTIVO` | El usuario ya tiene un viaje en curso |
-| 409 | `ANCLAJE_NO_DISPONIBLE` | Estación o anclaje fuera de servicio, o anclaje vacío |
-| 409 | `BICICLETA_NO_DISPONIBLE` | Bicicleta averiada, en taller o tomada a la vez por otro usuario |
+| 409 | `ANCLAJE_NO_DISPONIBLE` | Estación o anclaje fuera de servicio, o anclaje vacío (también si otro usuario acaba de llevarse la bicicleta) |
+| 409 | `BICICLETA_NO_DISPONIBLE` | Bicicleta averiada o en taller |
 | 422 | `VALIDACION` | Cuerpo inválido o código que no cumple la validación |
 
 Si coinciden varias causas, las reglas del usuario prevalecen sobre las del anclaje (research D4).

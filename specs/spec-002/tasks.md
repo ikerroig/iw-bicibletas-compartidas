@@ -79,7 +79,35 @@ Sin tareas: autenticación, `httperr`, `db.EnTransaccion`, `RecalcularEstacion` 
 
 ---
 
-## Phase 4: Polish & Cross-Cutting Concerns
+## Phase 4: Correcciones del segundo `/code-review`
+
+**Purpose**: resolver los hallazgos aprobados sobre `05ef865`. Tests antes que implementación (D11–D14 de [research.md](./research.md)).
+
+### Documentación
+
+- [X] T032 [US1] Registrar D11–D14 en `specs/spec-002/research.md` y `specs/spec-002/plan.md`, añadir V9 a `specs/spec-002/quickstart.md` y corregir los códigos de la carrera por una bicicleta en `specs/spec-002/contracts/alquileres.md`
+
+### Tests
+
+- [X] T033 [P] [US1] Calcular `dias()` con la fecha de `Europe/Madrid` en `backend/tests/integration/spec002_abono_test.go`
+- [X] T034 [P] [US1] Rehacer `backend/tests/integration/spec002_conexion_test.go`: cancelar con el `INSERT` del viaje en espera y las escrituras previas ya hechas; sin efectos tras el rollback y reintento con 201 (sustituye a T031)
+- [X] T035 [P] [US1] **SC-003 (D11)**: crear `backend/tests/integration/spec002_plazo_test.go`: con el anclaje bloqueado por otra transacción, el desbloqueo responde error en menos de 5 s y sin efectos
+- [X] T036 [P] [US1] **FR-007 (D12)**: crear `backend/tests/integration/spec002_commit_test.go`: cancelar el contexto al terminar `fn` no impide que `db.EnTransaccion` confirme
+- [X] T037 [US1] **FR-007 (D13)**: en `backend/tests/integration/spec002_estacion_test.go`, un desbloqueo espera a una revocación del abono en curso y responde 403 `ABONO_VENCIDO`
+- [X] T038 [P] [US1] **FR-008 (D14)**: crear `frontend/tests/alquiler/aviso.test.tsx`: con viaje se ve la hora, el código y el enlace a `/alquiler`; sin viaje, en `/alquiler` o con otro rol no se ve
+
+### Implementación
+
+- [X] T039 [US1] **D11, D13** en `backend/internal/services/alquiler/service.go`: plazo de 4 s para la transacción y `FOR SHARE` al leer el abono
+- [X] T040 [US1] **D12** en `backend/internal/db/db.go`: confirmar con `context.WithoutCancel` y plazo de 2 s
+- [X] T041 [US1] **D14**: crear `frontend/src/stores/viaje.ts` y usarlo en `frontend/src/pages/alquiler/Desbloqueo.tsx`
+- [X] T042 [US1] **D14**: crear `frontend/src/components/AvisoViaje.tsx`, montarlo en `frontend/src/components/Layout.tsx` y añadir el handler por defecto de `/alquileres/activo` en `frontend/tests/handlers.ts`
+
+**Checkpoint**: tests T033–T038 en verde y V9 comprobado en el navegador.
+
+---
+
+## Phase 5: Polish & Cross-Cutting Concerns
 
 - [X] T024 [P] Actualizar la regla de abono de `specs/spec-001/data-model.md` (línea de `CURRENT_DATE`) para indicar la fecha actual en `Europe/Madrid`
 - [X] T025 Ejecutar `go vet ./...`, `go test -count=1 ./...` en `backend/` y `npx tsc --noEmit`, `npm run lint`, `npm test` en `frontend/`; repetir 10 veces los tests de concurrencia de `backend/tests/integration/spec002_concurrencia_test.go`

@@ -41,6 +41,28 @@ Hereda del plan global R5 (autenticación y roles), R7 (integridad del alquiler)
 - **Racional**: si el cliente se desconecta, el viaje existe y el mapa debe reflejarlo. `cache.Nuevo` activa `ContextTimeoutEnabled`: sin él, go-redis ignora el plazo del contexto (5,6 s medidos frente a 2,3 s con Redis mudo). Con Redis lento, los suscriptores no deben recibir un contexto vencido. El peor caso añade unos 5 s, dentro de los 10 s de SC-003.
 - **Alternativas consideradas**: recálculo en segundo plano: rechazada porque el comportamiento síncrono es el contrato de R16 y los tests lo comprueban.
 
+## D11. Plazo de la transacción
+
+- **Decisión**: la transacción de desbloqueo tiene un plazo de 4 s, derivado del contexto de la petición. Si se agota, responde error interno sin efectos.
+- **Racional**: SC-003. Sin plazo, un bloqueo retenido dejaría la petición colgada y ocuparía conexiones del pool. Con D6, el peor caso es 4 + 2 + 3 = 9 s.
+- **Alternativas consideradas**: `SET LOCAL lock_timeout`: rechazada porque no acota el resto de la transacción.
+
+## D12. Commit tras una desconexión
+
+- **Decisión**: `db.EnTransaccion` confirma con `context.WithoutCancel` y un plazo propio de 2 s.
+- **Racional**: si el contexto se cancela durante el COMMIT, PostgreSQL puede confirmar mientras el cliente recibe error: el viaje existiría sin recálculo ni hook. Cuando `fn` termina bien, la decisión de confirmar ya está tomada.
+
+## D13. Lectura del abono
+
+- **Decisión**: `SELECT … FROM usuarios … FOR SHARE`.
+- **Racional**: FR-007, igual que D5. Una revocación simultánea espera o se ve antes de crear el viaje. `FOR SHARE` no bloquea desbloqueos paralelos.
+
+## D14. Aviso de viaje en curso
+
+- **Decisión**: `Layout` muestra a rol `usuario` un aviso con hora de inicio, código de bicicleta y enlace a `/alquiler`, en todas las páginas menos esa, que ya muestra el viaje. El estado vive en `stores/viaje.ts`, compartido con la página.
+- **Racional**: FR-008 pide mostrar el viaje al volver a abrir la aplicación, y tras el login se llega al mapa. Se consulta al entrar, sin polling: el viaje solo cambia por acciones del propio usuario.
+- **Dependencia con spec-003**: la devolución debe llamar a `fijarViajeEnCurso(null)` para que desaparezca el aviso.
+
 ## D7. Contrato
 
 - **Decisión**: declarar `401` en los dos endpoints y usar `E01-A01` como ejemplo.

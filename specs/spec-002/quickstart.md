@@ -32,6 +32,7 @@ Usa en cada caso un anclaje del tipo indicado; se localizan en el detalle de est
 | V5 | FR-004 | Otro usuario con abono prueba un código inexistente, una bici averiada y una estación fuera de servicio | 404 o 409 con causa, sin cambios |
 | V6 | FR-009 | El gestor no ve «Desbloquear» en el menú y llama a la API | 403 `ROL_INSUFICIENTE` |
 | V7 | FR-001 | Código con 65 caracteres o con `\u0000` | 422 `VALIDACION`, nunca 500 |
+| V9 | FR-008 | Con viaje activo, Ana cierra sesión, vuelve a entrar y queda en el mapa | Aviso con hora de inicio y código de bicicleta; «Ver» lleva a `/alquiler`; desaparece al entrar otro usuario sin viaje |
 | V8 | Const. IV | Mirar `bicis_disponibles` de la estación antes y después de V2 | Baja en 1 y `anclajes_libres` sube en 1, en ≤ 30 s |
 
 ## Vencimiento del abono (FR-002)
