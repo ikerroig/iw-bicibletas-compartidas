@@ -113,13 +113,14 @@ paths:
               type: object
               required: [codigo_anclaje]
               properties:
-                codigo_anclaje: { type: string, example: "AN-00123" }
+                codigo_anclaje: { type: string, maxLength: 64, example: "E01-A01" }
       responses:
         '201':
           description: Viaje activo creado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Viaje' }
+        '401': { $ref: '#/components/responses/Error' }
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
@@ -141,6 +142,7 @@ paths:
                     oneOf:
                       - { $ref: '#/components/schemas/Viaje' }
                       - { type: 'null' }
+        '401': { $ref: '#/components/responses/Error' }
 
   # ---------------------------------------------------------------- spec-003
   /devoluciones:
@@ -491,7 +493,9 @@ components:
         id: { type: integer, format: int64 }
         usuario_id: { type: integer, format: int64 }
         bicicleta_id: { type: integer, format: int64 }
+        bicicleta_codigo: { type: [string, 'null'], description: "Código de la bicicleta (viaje activo, HU-02)" }
         estacion_origen_id: { type: integer, format: int64 }
+        estacion_origen_nombre: { type: [string, 'null'], description: "Nombre de la estación de origen" }
         estacion_destino_id: { type: [integer, 'null'], format: int64 }
         fecha_inicio: { type: string, format: date-time }
         fecha_fin: { type: [string, 'null'], format: date-time }
