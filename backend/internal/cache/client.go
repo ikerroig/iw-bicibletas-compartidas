@@ -30,7 +30,7 @@ type Cliente struct {
 
 // Nuevo crea el cliente (db = base lógica de Redis; 0 en desarrollo).
 func Nuevo(addr string, db int) *Cliente {
-	return &Cliente{rdb: redis.NewClient(&redis.Options{Addr: addr, DB: db})}
+	return &Cliente{rdb: redis.NewClient(&redis.Options{Addr: addr, DB: db, ContextTimeoutEnabled: true})}
 }
 
 // Ping comprueba la conexión.

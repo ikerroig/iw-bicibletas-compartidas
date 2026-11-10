@@ -2,16 +2,23 @@
 // de sesión. Cada spec añade su entrada en AREAS.
 import { For, Show, type ParentProps } from 'solid-js';
 import { A, Navigate } from '@solidjs/router';
+import AvisoViaje from './AvisoViaje';
 import { cerrarSesion, sesion, type Rol } from '../stores/sesion';
 
 const TODOS: Rol[] = ['usuario', 'operario_taller', 'operario_logistica', 'gestor'];
 
 const AREAS: { ruta: string; etiqueta: string; roles: Rol[] }[] = [
   { ruta: '/', etiqueta: 'Mapa', roles: TODOS }, // spec-001
+  { ruta: '/alquiler', etiqueta: 'Desbloquear', roles: ['usuario'] }, // spec-002
 ];
 
 export default function Layout(props: ParentProps) {
-  const areas = () => AREAS.filter((a) => a.roles.includes(sesion.usuario()?.rol ?? 'usuario'));
+  const areas = () => {
+    const rol = sesion.usuario()?.rol;
+    return AREAS.filter(
+      (a) => a.roles === TODOS || (rol !== undefined && a.roles.includes(rol)),
+    );
+  };
   return (
     <Show when={sesion.autenticado()} fallback={<Navigate href="/login" />}>
       <div class="flex h-dvh flex-col">
@@ -31,6 +38,7 @@ export default function Layout(props: ParentProps) {
             Cerrar sesión
           </button>
         </header>
+        <AvisoViaje />
         <main class="relative min-h-0 flex-1">{props.children}</main>
       </div>
     </Show>

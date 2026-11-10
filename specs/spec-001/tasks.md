@@ -108,16 +108,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T033 [P] [US2] **T1 (const. I)**: `backend/tests/integration/spec002_abono_test.go` — desbloqueo con abono caducado/ incoherente → 403 `ABONO_VENCIDO` y cero efectos sobre anclaje, bici y viajes
-- [ ] T034 [P] [US2] **T2 (const. I)**: `backend/tests/integration/spec002_concurrencia_test.go` — segundo desbloqueo → 409 `VIAJE_ACTIVO`; dos desbloqueos concurrentes (goroutines) → exactamente 1 viaje creado (red `ux_viajes_usuario_activo`); código inexistente/estación fuera de servicio/anclaje sin bici operativa → 404/409 sin efectos
-- [ ] T035 [P] [US2] Test de contrato `POST /alquileres/desbloqueo` y `GET /alquileres/activo` en `backend/tests/contract/spec002_test.go`
+- [X] T033 [P] [US2] **T1 (const. I)**: `backend/tests/integration/spec002_abono_test.go` — desbloqueo con abono caducado/ incoherente → 403 `ABONO_VENCIDO` y cero efectos sobre anclaje, bici y viajes
+- [X] T034 [P] [US2] **T2 (const. I)**: `backend/tests/integration/spec002_concurrencia_test.go` — segundo desbloqueo → 409 `VIAJE_ACTIVO`; dos desbloqueos concurrentes (goroutines) → exactamente 1 viaje creado (red `ux_viajes_usuario_activo`); código inexistente/estación fuera de servicio/anclaje sin bici operativa → 404/409 sin efectos
+- [X] T035 [P] [US2] Test de contrato `POST /alquileres/desbloqueo` y `GET /alquileres/activo` en `backend/tests/contract/spec002_test.go`
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] `backend/internal/services/alquiler/service.go`: transacción única con `SELECT … FOR UPDATE` del anclaje; valida abono vigente, ausencia de viaje activo, estación operativa, anclaje en servicio y bicicleta `disponible`; crea viaje `en_curso` con `fecha_inicio`; desacopla anclaje (→ `libre`), bici → `en_uso`; tras commit `estacion.RecalcularEstacion(ctx, ids)` (T020), que ya notifica el hook — no llamar a `hooks.EstacionCambiada` directamente
-- [ ] T037 [US2] `backend/internal/handlers/alquiler/handler.go` + `backend/internal/routes/spec_002_routes.go` (403/404/409 con envelope de `httperr`)
-- [ ] T038 [P] [US2] `frontend/src/services/api/alquiler.ts`
-- [ ] T039 [US2] `frontend/src/pages/alquiler/Desbloqueo.tsx`: entrada de código de anclaje, mensajes de causa legibles, estado de viaje activo actual
+- [X] T036 [US2] `backend/internal/services/alquiler/service.go`: transacción única con `SELECT … FOR UPDATE` del anclaje; valida abono vigente, ausencia de viaje activo, estación operativa, anclaje en servicio y bicicleta `disponible`; crea viaje `en_curso` con `fecha_inicio`; desacopla anclaje (→ `libre`), bici → `en_uso`; tras commit `estacion.RecalcularEstacion(ctx, ids)` (T020), que ya notifica el hook — no llamar a `hooks.EstacionCambiada` directamente
+- [X] T037 [US2] `backend/internal/handlers/alquiler/handler.go` + `backend/internal/routes/spec_002_routes.go` (403/404/409 con envelope de `httperr`)
+- [X] T038 [P] [US2] `frontend/src/services/api/alquiler.ts`
+- [X] T039 [US2] `frontend/src/pages/alquiler/Desbloqueo.tsx`: entrada de código de anclaje, mensajes de causa legibles, estado de viaje activo actual
 
 **Checkpoint**: HU-02 funcional; US1+US2 = ciclo de apertura de viaje completo.
 

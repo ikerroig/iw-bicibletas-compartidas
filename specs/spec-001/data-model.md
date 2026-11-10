@@ -49,7 +49,7 @@ CREATE TABLE usuarios (
 CREATE UNIQUE INDEX ux_usuarios_email ON usuarios (lower(email));
 ```
 
-- **Regla de negocio (const. I)** — *abono vigente*: es vigente ⇔ `abono_activo = TRUE AND fecha_vencimiento_abono >= CURRENT_DATE`. Si los campos son incoherentes (activo sin fecha o fecha pasada) se trata como **caducado** (decisión conservadora, R8/HU-02 FR-002).
+- **Regla de negocio (const. I)** — *abono vigente*: es vigente ⇔ `abono_activo = TRUE AND fecha_vencimiento_abono >= fecha actual en Europe/Madrid` (precisado en HU-02 FR-002). Si los campos son incoherentes (activo sin fecha o fecha pasada) se trata como **caducado** (decisión conservadora, R8/HU-02 FR-002).
 - **Roles → permisos** (aplican los middlewares del backend; detalle en [contracts/openapi.yaml](./contracts/openapi.yaml)):
   - `usuario`: mapa (HU-01), desbloqueo (HU-02), devolución (HU-03), su historial (HU-04), reportar avería (HU-05).
   - `operario_taller`: panel de incidencias (HU-05) y fichas/taller (HU-06).

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,6 +17,9 @@ import (
 
 	"si16/backend/migrations"
 )
+
+// plazoCommit acota el COMMIT, que no depende del contexto de la petición.
+const plazoCommit = 2 * time.Second
 
 // Conectar abre el pool y comprueba la conexión.
 func Conectar(ctx context.Context, url string) (*pgxpool.Pool, error) {
@@ -53,7 +57,11 @@ func EnTransaccion(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) erro
 	if err = fn(tx); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	// fn ha terminado bien: cancelar ahora podría confirmar en PostgreSQL y aun
+	// así devolver error, y el llamador se saltaría su trabajo post-commit.
+	commitCtx, cancelar := context.WithTimeout(context.WithoutCancel(ctx), plazoCommit)
+	defer cancelar()
+	return tx.Commit(commitCtx)
 }
 
 // Migrar aplica (direccion "up") o revierte la última ("down") migración

@@ -56,6 +56,7 @@ export const handlers = [
     }),
   ),
   http.get('*/api/v1/estaciones', () => HttpResponse.json(snapshot())),
+  http.get('*/api/v1/alquileres/activo', () => HttpResponse.json({ viaje: null })),
   http.get('*/api/v1/estaciones/:id', ({ params }) => {
     const e = ESTACIONES.find((x) => x.id === Number(params.id));
     return e

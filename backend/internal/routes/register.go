@@ -38,6 +38,7 @@ func NuevoRouter(d Deps) *gin.Engine {
 
 	// --- Una línea por spec (no reordenar; añadir al final) ---
 	RegisterSpec001(rg, d)
+	RegisterSpec002(rg, d)
 
 	return r
 }

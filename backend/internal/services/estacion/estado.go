@@ -21,6 +21,10 @@ import (
 	"si16/backend/internal/models"
 )
 
+// timeoutHook acota a los suscriptores, con presupuesto propio: el cambio ya está
+// confirmado y no deben heredar un contexto cancelado o agotado por Redis.
+const timeoutHook = 3 * time.Second
+
 // ErrNoEncontrada se devuelve cuando la estación no existe.
 var ErrNoEncontrada = errors.New("estacion: no encontrada")
 
@@ -143,7 +147,11 @@ func (s *Servicio) RecalcularEstacion(ctx context.Context, ids []int64) error {
 	}
 	// Los suscriptores se notifican siempre: el cambio ya está confirmado en
 	// PostgreSQL, aunque falle el cálculo o la escritura del estado en vivo.
-	defer hooks.EstacionCambiada(ctx, ids)
+	defer func() {
+		hookCtx, cancelar := context.WithTimeout(context.WithoutCancel(ctx), timeoutHook)
+		defer cancelar()
+		hooks.EstacionCambiada(hookCtx, ids)
+	}()
 
 	estados, err := s.calcular(ctx, ids)
 	if err != nil {
