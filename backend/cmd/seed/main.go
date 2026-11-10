@@ -1,9 +1,11 @@
-// Comando seed: datos de prueba para los escenarios S1–S8 del quickstart.
+// Comando seed: datos de prueba para los escenarios S1–S8 del quickstart y
+// las demostraciones de las HU-03 (viaje activo), HU-04 (historial), HU-07
+// (estaciones en extremos) y HU-08 (lote de analítica).
 //
 //	go run ./cmd/seed
 //
-// BORRA y recrea todos los datos (no el esquema). Es determinista: misma
-// salida en cada ejecución. Contraseña de todos los usuarios: "password".
+// BORRA y recrea todos los datos (no el esquema). Contraseña de todos los
+// usuarios: "password".
 package main
 
 import (
@@ -67,8 +69,8 @@ const (
 	sinBicis       // 0 disponibles (S1b)
 	llena          // 0 anclajes libres (S1b)
 	todasAveriadas // 0 disponibles y 0 libres: anclajes ocupados por averiadas (S1b)
-	casiVacia      // ~5 % de ocupación (S7)
-	casiLlena      // ~95 % de ocupación (S7)
+	casiVacia      // ~5 % de ocupación (S7 / HU-07)
+	casiLlena      // ~95 % de ocupación (S7 / HU-07)
 	conAnclajeRoto // un anclaje fuera de servicio sin bici (SC-003)
 )
 
@@ -107,7 +109,10 @@ func main() {
 		if err := sembrarUsuarios(ctx, tx, hash, hoy); err != nil {
 			return err
 		}
-		return sembrarRed(ctx, tx, rnd)
+		if err := sembrarRed(ctx, tx, rnd); err != nil {
+			return err
+		}
+		return sembrarViajesDemo(ctx, tx, hoy)
 	})
 	if err != nil {
 		log.Fatalf("seed: %v", err)
@@ -126,6 +131,8 @@ func main() {
 	for _, u := range usuarios {
 		fmt.Printf("  %-26s %-19s %s\n", u.email, u.rol, u.nota)
 	}
+	fmt.Println("Demo: viaje activo de Ana (HU-03), 5 viajes finalizados de Ana (HU-04),")
+	fmt.Println("      40 viajes demo de Carla (HU-08), estaciones al 5 % y 95 % (HU-07).")
 }
 
 var usuarios = []struct {
@@ -133,9 +140,10 @@ var usuarios = []struct {
 	abono                    bool
 	diasVencimiento          int // relativo a hoy; 0 = sin fecha
 }{
-	{"Ana García", "ana@si16.test", "usuario", "abono vigente", true, 200},
+	{"Ana García", "ana@si16.test", "usuario", "abono vigente, viaje activo (HU-03)", true, 200},
 	{"Bruno Caducado", "bruno@si16.test", "usuario", "abono caducado", true, -10},
-	{"Carla Sin Abono", "carla@si16.test", "usuario", "sin abono", false, 0},
+	{"Carla Sin Abono", "carla@si16.test", "usuario", "sin abono (viajes demo HU-08)", false, 0},
+	{"Diego Expirado", "diego@si16.test", "usuario", "abono caducado (activo con fecha pasada)", true, -10},
 	{"Tomás Taller", "taller@si16.test", "operario_taller", "", true, 365},
 	{"Laura Logística", "logistica@si16.test", "operario_logistica", "", true, 365},
 	{"Gema Gestora", "gestor@si16.test", "gestor", "", true, 365},
@@ -241,5 +249,125 @@ func sembrarRed(ctx context.Context, tx pgx.Tx, rnd *rand.Rand) error {
 		}
 	}
 	log.Printf("Red: %d estaciones, %d bicicletas", len(lugares), numBici)
+	return nil
+}
+
+// sembrarViajesDemo añade los datos de demostración de las HU-03/HU-04/HU-08.
+// Estaciones: tras TRUNCATE RESTART IDENTITY, los ids son 1..60 en el orden de
+// `lugares` (1 = Plaça de l'Ajuntament, 2 = Estació del Nord, 3 = Plaça de la
+// Reina; ninguna de las tres tiene perfil forzado).
+func sembrarViajesDemo(ctx context.Context, tx pgx.Tx, hoy time.Time) error {
+	ids := map[string]int64{}
+	for _, email := range []string{"ana@si16.test", "carla@si16.test"} {
+		var id int64
+		if err := tx.QueryRow(ctx, `SELECT id FROM usuarios WHERE email = $1`, email).Scan(&id); err != nil {
+			return fmt.Errorf("usuario %s: %w", email, err)
+		}
+		ids[email] = id
+	}
+	ana, carla := ids["ana@si16.test"], ids["carla@si16.test"]
+	est1, est2, est3 := int64(1), int64(2), int64(3)
+
+	crearBici := func(codigo, estado string) (int64, error) {
+		var id int64
+		err := tx.QueryRow(ctx, `INSERT INTO bicicletas (codigo, estado) VALUES ($1,$2) RETURNING id`,
+			codigo, estado).Scan(&id)
+		return id, err
+	}
+
+	// ---- HU-03: viaje ACTIVO de Ana (para probar la devolución) ----
+	bActiva, err := crearBici("BICI-9001", "en_uso")
+	if err != nil {
+		return fmt.Errorf("bicicleta BICI-9001: %w", err)
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id, fecha_inicio)
+		 VALUES ($1,$2,$3, now() - interval '15 minutes')`, ana, bActiva, est1); err != nil {
+		return fmt.Errorf("viaje activo de Ana: %w", err)
+	}
+
+	// ---- HU-04: 5 viajes finalizados de Ana (research D8) ----
+	// Repartidos en ≥ 2 meses (actual, anterior y anteactual): uno con coste
+	// 0,00 (etiqueta de tramo gratuito), otros con coste > 0. Los costes siguen
+	// la tarifa HU-03 (0,20 €/min tras los 30 primeros minutos gratis) para que
+	// duración y precio no se contradigan. Día 15 mediodía UTC = tarde en
+	// Europe/Madrid (evita bordes de zona horaria y de fin de mes). Cumple el
+	// CHECK de 'finalizado': fecha_fin, estacion_destino_id y duracion_minutos
+	// NOT NULL. Suma total 14,00 € (5,00 € en el mes en curso).
+	bHist, err := crearBici("BICI-9002", "disponible")
+	if err != nil {
+		return fmt.Errorf("bicicleta BICI-9002: %w", err)
+	}
+	filas := []struct {
+		mes     int // 0 = mes actual, -1 = anterior, -2 = anteactual
+		dia     int
+		minutos int
+		coste   string
+	}{
+		{0, 5, 12, "0.00"},   // ≤ 30 min → tramo gratuito → etiqueta
+		{0, 10, 40, "2.00"},  // 10 min excedente × 0,20
+		{0, 20, 45, "3.00"},  // 15 min excedente × 0,20
+		{-1, 15, 50, "4.00"}, // mes anterior: 20 min excedente × 0,20
+		{-2, 15, 55, "5.00"}, // dos meses atrás: 25 min excedente × 0,20
+	}
+	for i, f := range filas {
+		inicio := time.Date(hoy.Year(), hoy.Month()+time.Month(f.mes), f.dia,
+			12, 0, 0, 0, time.UTC)
+		fin := inicio.Add(time.Duration(f.minutos) * time.Minute)
+		destino := est2
+		if i%2 == 1 {
+			destino = est3
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id,
+			                     estacion_destino_id, fecha_inicio, fecha_fin,
+			                     duracion_minutos, coste_total, estado)
+			 VALUES ($1,$2,$3,$4,$5,$6,$7,$8::numeric, 'finalizado')`,
+			ana, bHist, est1, destino, inicio, fin, f.minutos, f.coste); err != nil {
+			return fmt.Errorf("viaje finalizado %d de Ana: %w", i+1, err)
+		}
+	}
+
+	// ---- HU-08: 40 viajes demo para la analítica ----
+	// research D7: repartidos deterministamente en las últimas 4 semanas (28
+	// días), patrón de horas locales {7,8,9,12,17,18,20,22} y distintos días
+	// de la semana, para que las 24 barras y los 7 días tengan forma
+	// reconocible. Asignados a Carla para no alterar las cifras del historial
+	// de Ana (HU-04). Duración y coste siguen la tarifa HU-03.
+	bDemo, err := crearBici("BICI-9003", "disponible")
+	if err != nil {
+		return fmt.Errorf("bicicleta BICI-9003: %w", err)
+	}
+	madrid, err := time.LoadLocation("Europe/Madrid")
+	if err != nil {
+		return fmt.Errorf("carga Europe/Madrid: %w", err)
+	}
+	horasDemo := []int{7, 8, 9, 12, 17, 18, 20, 22}
+	for i := 0; i < 40; i++ {
+		diasAtras := 1 + (i % 27)           // 1..27 días atrás (4 semanas)
+		hora := horasDemo[i%len(horasDemo)] // horas locales repartidas
+		dia := time.Now().In(madrid).AddDate(0, 0, -diasAtras)
+		inicio := time.Date(dia.Year(), dia.Month(), dia.Day(), hora,
+			(i*7)%60, 0, 0, madrid)
+		minutos := 10 + (i*7)%60 // 10..69 min
+		fin := inicio.Add(time.Duration(minutos) * time.Minute)
+		coste := 0.0
+		if minutos > 30 {
+			coste = float64(minutos-30) * 0.20
+		}
+		destino := est2
+		if i%2 == 1 {
+			destino = est3
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id,
+			                     estacion_destino_id, fecha_inicio, fecha_fin,
+			                     duracion_minutos, coste_total, estado)
+			 VALUES ($1,$2,$3,$4,$5,$6,$7,$8::numeric, 'finalizado')`,
+			carla, bDemo, est1, destino, inicio, fin, minutos,
+			fmt.Sprintf("%.2f", coste)); err != nil {
+			return fmt.Errorf("viaje demo HU-08 %d: %w", i+1, err)
+		}
+	}
 	return nil
 }

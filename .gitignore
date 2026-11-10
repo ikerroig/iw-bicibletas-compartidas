@@ -10,18 +10,25 @@
 # Go (backend)
 *.exe
 *.exe~
+*.dll
+*.so
+*.dylib
 *.test
 *.out
 backend/bin/
 backend/vendor/
+/vendor/
 coverage.txt
 
 # Node (frontend)
 node_modules/
+dist/
+build/
 frontend/dist/
 frontend/coverage/
 *.log
 npm-debug.log*
+*.tsbuildinfo
 
 # Sistema / editores
 .DS_Store

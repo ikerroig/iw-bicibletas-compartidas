@@ -53,6 +53,15 @@ func Cargar() (Config, error) {
 	return cfg, nil
 }
 
+// Load es el alias histórico que usan los tests de spec-00X (devuelven *Config).
+func Load() (*Config, error) {
+	cfg, err := Cargar()
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
 // CargarDotenv carga el primer .env encontrado subiendo directorios. No pisa
 // variables ya definidas en el entorno.
 func CargarDotenv() {

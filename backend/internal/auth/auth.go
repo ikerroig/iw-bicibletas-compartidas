@@ -13,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
+	"si16/backend/internal/apierr"
 	"si16/backend/internal/httperr"
 	"si16/backend/internal/models"
 )
@@ -121,20 +122,36 @@ func (e *Emisor) RequireAuth() gin.HandlerFunc {
 }
 
 // RequireRole exige uno de los roles dados (usar tras RequireAuth) → 403 si no.
-func RequireRole(roles ...models.Rol) gin.HandlerFunc {
+// Acepta los dos esquemas de sesión del repo: la Sesion que deja el RequireAuth
+// del Emisor (HU-01/HU-02) y el par de claves "rol" que deja
+// auth.RequireAuth(secret) (HU-03…HU-08). El código 403 sigue el esquema del
+// middleware que corrió: ROL_INSUFICIENTE (contrato global) o
+// ROL_NO_PERMITIDO (specs-00X).
+func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		s, ok := SesionDe(c)
+		if s, ok := SesionDe(c); ok {
+			for _, r := range roles {
+				if string(s.Rol) == r {
+					c.Next()
+					return
+				}
+			}
+			httperr.Responder(c, http.StatusForbidden, httperr.RolInsuficiente, "No tienes permiso para esta operación")
+			return
+		}
+		v, ok := c.Get("rol")
 		if !ok {
 			httperr.Responder(c, http.StatusUnauthorized, httperr.Unautenticado, "Inicia sesión para continuar")
 			return
 		}
+		rolStr, _ := v.(string)
 		for _, r := range roles {
-			if s.Rol == r {
+			if rolStr == r {
 				c.Next()
 				return
 			}
 		}
-		httperr.Responder(c, http.StatusForbidden, httperr.RolInsuficiente, "No tienes permiso para esta operación")
+		apierr.RolNoPermitido(c)
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 	"si16/backend/internal/auth"
 	"si16/backend/internal/cache"
 	"si16/backend/internal/config"
+	"si16/backend/internal/deps"
 	authhandler "si16/backend/internal/handlers/auth"
 	"si16/backend/internal/services/estacion"
 )
@@ -40,5 +41,27 @@ func NuevoRouter(d Deps) *gin.Engine {
 	RegisterSpec001(rg, d)
 	RegisterSpec002(rg, d)
 
+	// specs que reciben deps.Deps (paquete deps): puente desde Deps global.
+	sd := deps.Deps{
+		Pool:         d.Pool,
+		RDB:          d.Cache.Redis(),
+		JWTSecret:    d.Cfg.JWTSecret,
+		TarifaMinuto: d.Cfg.TarifaMinuto,
+	}
+	RegisterSpec003(rg, sd)
+	RegisterSpec004(rg, sd)
+	RegisterSpec007(rg, sd)
+	RegisterSpec008(rg, sd)
+
 	return r
+}
+
+// Register monta las rutas base y las specs-003/004/007/008 a partir de
+// deps.Deps (usado por los tests de esas specs; auth base incluida).
+func Register(rg *gin.RouterGroup, d deps.Deps) {
+	auth.RegisterAuth(rg, d) // base compartida: POST /auth/login, GET /auth/me
+	RegisterSpec003(rg, d)   // spec-003 (Alex Morell): HU-03 devolución y tarificación
+	RegisterSpec004(rg, d)   // spec-004 (Alex Morell): HU-04 historial de viajes
+	RegisterSpec007(rg, d)   // spec-007 (HU-07): alertas de balanceo y traslados
+	RegisterSpec008(rg, d)   // spec-008 (HU-08): analítica de uso y exportación CSV
 }

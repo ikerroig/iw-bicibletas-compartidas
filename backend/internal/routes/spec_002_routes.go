@@ -14,6 +14,6 @@ import (
 func RegisterSpec002(rg *gin.RouterGroup, d Deps) {
 	h := &alquilerhandler.Handler{Svc: alquiler.Nuevo(d.Pool, d.Estacion, d.Log), Log: d.Log}
 	g := rg.Group("/alquileres", d.Auth.RequireAuth())
-	g.POST("/desbloqueo", auth.RequireRole(models.RolUsuario), h.Desbloquear)
+	g.POST("/desbloqueo", auth.RequireRole(string(models.RolUsuario)), h.Desbloquear)
 	g.GET("/activo", h.Activo)
 }

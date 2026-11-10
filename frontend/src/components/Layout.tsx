@@ -10,6 +10,10 @@ const TODOS: Rol[] = ['usuario', 'operario_taller', 'operario_logistica', 'gesto
 const AREAS: { ruta: string; etiqueta: string; roles: Rol[] }[] = [
   { ruta: '/', etiqueta: 'Mapa', roles: TODOS }, // spec-001
   { ruta: '/alquiler', etiqueta: 'Desbloquear', roles: ['usuario'] }, // spec-002
+  { ruta: '/devolucion', etiqueta: 'Devolver', roles: ['usuario'] }, // spec-003
+  { ruta: '/viajes', etiqueta: 'Mis viajes', roles: ['usuario'] }, // spec-004
+  { ruta: '/balanceo', etiqueta: 'Balanceo', roles: ['operario_logistica'] }, // spec-007
+  { ruta: '/analitica', etiqueta: 'Analítica', roles: ['gestor'] }, // spec-008
 ];
 
 export default function Layout(props: ParentProps) {

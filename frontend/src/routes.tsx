@@ -5,6 +5,10 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import MapaRed from './pages/mapa/MapaRed';
 import Desbloqueo from './pages/alquiler/Desbloqueo';
+import { Devolucion } from './pages/devolucion';
+import { MisViajes } from './pages/viajes';
+import { Balanceo } from './pages/balanceo';
+import { PanelAnalitica } from './pages/analitica';
 
 export default function Rutas() {
   return (
@@ -13,6 +17,10 @@ export default function Rutas() {
       <Route path="/" component={Layout}>
         <Route path="/" component={() => <MapaRed />} /> {/* spec-001 */}
         <Route path="/alquiler" component={Desbloqueo} /> {/* spec-002 */}
+        <Route path="/devolucion" component={Devolucion} /> {/* spec-003 */}
+        <Route path="/viajes" component={MisViajes} /> {/* spec-004 */}
+        <Route path="/balanceo" component={Balanceo} /> {/* spec-007 */}
+        <Route path="/analitica" component={PanelAnalitica} /> {/* spec-008 */}
       </Route>
     </Router>
   );

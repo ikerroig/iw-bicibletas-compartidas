@@ -34,6 +34,11 @@ func Conectar(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// NewPool es el alias histórico que usan los tests de spec-00X.
+func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+	return Conectar(ctx, databaseURL)
+}
+
 // EnTransaccion ejecuta fn dentro de una transacción: commit si fn devuelve
 // nil, rollback en cualquier otro caso (incluido un panic). Las operaciones que
 // necesiten bloqueo pesimista usan `SELECT … FOR UPDATE` dentro de fn
@@ -62,6 +67,12 @@ func EnTransaccion(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) erro
 	commitCtx, cancelar := context.WithTimeout(context.WithoutCancel(ctx), plazoCommit)
 	defer cancelar()
 	return tx.Commit(commitCtx)
+}
+
+// WithTx es el alias histórico que usan los servicios/tests de spec-00X
+// (mismo semántica que EnTransaccion: commit si fn devuelve nil, si no rollback).
+func WithTx(ctx context.Context, pool *pgxpool.Pool, fn func(tx pgx.Tx) error) error {
+	return EnTransaccion(ctx, pool, fn)
 }
 
 // Migrar aplica (direccion "up") o revierte la última ("down") migración

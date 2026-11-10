@@ -19,6 +19,7 @@ import (
 	"si16/backend/internal/db"
 	"si16/backend/internal/routes"
 	"si16/backend/internal/services/estacion"
+	alertas "si16/backend/internal/workers/alertas"
 	"si16/backend/internal/workers/refresco_estado"
 )
 
@@ -61,6 +62,7 @@ func main() {
 
 	// --- Workers: una línea por spec ---
 	go refresco_estado.Nuevo(deps.Estacion, rc, log, refresco_estado.IntervaloBarrido).Iniciar(ctx) // spec-001
+	go alertas.Run(ctx, pool) // spec-007 (HU-07): evaluación inmediata + cada 55 s
 
 	gin.SetMode(gin.ReleaseMode)
 	srv := &http.Server{
