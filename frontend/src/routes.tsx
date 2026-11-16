@@ -9,6 +9,7 @@ import { Devolucion } from './pages/devolucion';
 import { MisViajes } from './pages/viajes';
 import { Balanceo } from './pages/balanceo';
 import { PanelAnalitica } from './pages/analitica';
+import Taller from './pages/taller';
 import { ReportarAveria } from './pages/averias';
 import { PanelIncidencias } from './pages/incidencias';
 
@@ -25,6 +26,7 @@ export default function Rutas() {
         <Route path="/incidencias" component={PanelIncidencias} /> {/* spec-005 */}
         <Route path="/balanceo" component={Balanceo} /> {/* spec-007 */}
         <Route path="/analitica" component={PanelAnalitica} /> {/* spec-008 */}
+        <Route path="/taller" component={Taller} /> {/* spec-006 */}
       </Route>
     </Router>
   );
