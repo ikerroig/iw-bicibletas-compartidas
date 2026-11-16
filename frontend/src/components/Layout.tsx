@@ -12,6 +12,8 @@ const AREAS: { ruta: string; etiqueta: string; roles: Rol[] }[] = [
   { ruta: '/alquiler', etiqueta: 'Desbloquear', roles: ['usuario'] }, // spec-002
   { ruta: '/devolucion', etiqueta: 'Devolver', roles: ['usuario'] }, // spec-003
   { ruta: '/viajes', etiqueta: 'Mis viajes', roles: ['usuario'] }, // spec-004
+  { ruta: '/averias', etiqueta: 'Reportar averia', roles: ['usuario'] }, // spec-005
+  { ruta: '/incidencias', etiqueta: 'Incidencias', roles: ['operario_taller'] }, // spec-005
   { ruta: '/balanceo', etiqueta: 'Balanceo', roles: ['operario_logistica'] }, // spec-007
   { ruta: '/analitica', etiqueta: 'Analítica', roles: ['gestor'] }, // spec-008
 ];

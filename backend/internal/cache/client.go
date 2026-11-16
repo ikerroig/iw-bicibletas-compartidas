@@ -33,6 +33,12 @@ func Nuevo(addr string, db int) *Cliente {
 	return &Cliente{rdb: redis.NewClient(&redis.Options{Addr: addr, DB: db, ContextTimeoutEnabled: true})}
 }
 
+// NuevoDesdeRedis reutiliza un cliente ya creado por el proceso. Lo usan las
+// rutas registradas desde deps.Deps, que reciben Redis como dependencia comun.
+func NuevoDesdeRedis(rdb *redis.Client) *Cliente {
+	return &Cliente{rdb: rdb}
+}
+
 // Ping comprueba la conexión.
 func (c *Cliente) Ping(ctx context.Context) error { return c.rdb.Ping(ctx).Err() }
 

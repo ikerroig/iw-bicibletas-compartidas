@@ -127,6 +127,9 @@ type Viaje struct {
 type Incidencia struct {
 	ID                 int64      `json:"id"`
 	BicicletaID        int64      `json:"bicicleta_id"`
+	BicicletaCodigo    string     `json:"bicicleta_codigo,omitempty"`
+	EstacionID         int64      `json:"estacion_id"`
+	EstacionNombre     string     `json:"estacion_nombre,omitempty"`
 	UsuarioReportaID   *int64     `json:"usuario_reporta_id"`
 	OperarioID         *int64     `json:"operario_id"`
 	TipoFallo          string     `json:"tipo_fallo"`
