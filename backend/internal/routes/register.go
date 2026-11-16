@@ -47,21 +47,24 @@ func NuevoRouter(d Deps) *gin.Engine {
 		RDB:          d.Cache.Redis(),
 		JWTSecret:    d.Cfg.JWTSecret,
 		TarifaMinuto: d.Cfg.TarifaMinuto,
+		Estacion:     d.Estacion,
 	}
 	RegisterSpec003(rg, sd)
 	RegisterSpec004(rg, sd)
+	RegisterSpec005(rg, sd)
 	RegisterSpec007(rg, sd)
 	RegisterSpec008(rg, sd)
 
 	return r
 }
 
-// Register monta las rutas base y las specs-003/004/007/008 a partir de
+// Register monta las rutas base y las specs-003/004/005/007/008 a partir de
 // deps.Deps (usado por los tests de esas specs; auth base incluida).
 func Register(rg *gin.RouterGroup, d deps.Deps) {
 	auth.RegisterAuth(rg, d) // base compartida: POST /auth/login, GET /auth/me
 	RegisterSpec003(rg, d)   // spec-003 (Alex Morell): HU-03 devolución y tarificación
 	RegisterSpec004(rg, d)   // spec-004 (Alex Morell): HU-04 historial de viajes
-	RegisterSpec007(rg, d)   // spec-007 (HU-07): alertas de balanceo y traslados
-	RegisterSpec008(rg, d)   // spec-008 (HU-08): analítica de uso y exportación CSV
+	RegisterSpec005(rg, d)
+	RegisterSpec007(rg, d) // spec-007 (HU-07): alertas de balanceo y traslados
+	RegisterSpec008(rg, d) // spec-008 (HU-08): analítica de uso y exportación CSV
 }
