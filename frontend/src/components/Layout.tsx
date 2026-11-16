@@ -16,6 +16,7 @@ const AREAS: { ruta: string; etiqueta: string; roles: Rol[] }[] = [
   { ruta: '/incidencias', etiqueta: 'Incidencias', roles: ['operario_taller'] }, // spec-005
   { ruta: '/balanceo', etiqueta: 'Balanceo', roles: ['operario_logistica'] }, // spec-007
   { ruta: '/analitica', etiqueta: 'Analítica', roles: ['gestor'] }, // spec-008
+  { ruta: '/taller', etiqueta: 'Taller', roles: ['operario_taller'] }, // spec-006
 ];
 
 export default function Layout(props: ParentProps) {
