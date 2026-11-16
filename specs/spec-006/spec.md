@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-20
 
-**Status**: Draft
+**Status**: Implemented locally
 
 **Input**: User description: "HU-06 — Registro de intervenciones técnicas y reparación en taller (historia.md, SI-16)."
 
@@ -125,3 +125,13 @@ bicicleta reaparece disponible en el mapa tras ubicarla en un anclaje.
   por la constitución del proyecto y quedan fuera de esta especificación.
 - El alcance es exactamente la HU-06 de `historia.md`, validada por el
   profesor; no se añaden historias nuevas.
+
+## Decisiones aclaradas durante la implementación
+
+- La ficha se consulta por el identificador interno de la bicicleta y devuelve
+  también el código visible y todo su historial de incidencias.
+- Una reparación completada deja la bicicleta `disponible` sin anclaje. La
+  ubicación se confirma en una operación posterior y solo entonces vuelve a
+  contar en la estación.
+- El mantenimiento preventivo se registra como una incidencia resuelta de tipo
+  `otro`; como no procede de un reporte de usuario, puede quedar sin estación.
