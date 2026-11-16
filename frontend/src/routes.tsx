@@ -9,6 +9,8 @@ import { Devolucion } from './pages/devolucion';
 import { MisViajes } from './pages/viajes';
 import { Balanceo } from './pages/balanceo';
 import { PanelAnalitica } from './pages/analitica';
+import { ReportarAveria } from './pages/averias';
+import { PanelIncidencias } from './pages/incidencias';
 
 export default function Rutas() {
   return (
@@ -19,6 +21,8 @@ export default function Rutas() {
         <Route path="/alquiler" component={Desbloqueo} /> {/* spec-002 */}
         <Route path="/devolucion" component={Devolucion} /> {/* spec-003 */}
         <Route path="/viajes" component={MisViajes} /> {/* spec-004 */}
+        <Route path="/averias" component={ReportarAveria} /> {/* spec-005 */}
+        <Route path="/incidencias" component={PanelIncidencias} /> {/* spec-005 */}
         <Route path="/balanceo" component={Balanceo} /> {/* spec-007 */}
         <Route path="/analitica" component={PanelAnalitica} /> {/* spec-008 */}
       </Route>
