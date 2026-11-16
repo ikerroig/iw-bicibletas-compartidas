@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-20
 
-**Status**: Draft
+**Status**: Implemented locally
 
 **Input**: User description: "HU-05 — Notificación de averías e inhabilitación preventiva (historia.md, SI-16)."
 
@@ -65,7 +65,10 @@ operarios.
 
 - **FR-001**: El sistema MUST permitir a un usuario enviar un reporte de
   avería sobre una bicicleta desde la aplicación, incluyendo una descripción
-  del fallo técnico (obligatoria) y la estación donde se encuentra.
+  del fallo técnico (obligatoria) y la estación donde se encuentra. Si la
+  bicicleta está anclada, la estación indicada debe ser la estación real del
+  anclaje; una bicicleta en viaje activo queda exceptuada porque no tiene
+  estación de anclaje actual.
 - **FR-002**: Al procesarse el reporte el sistema MUST cambiar el estado de la
   bicicleta a "Averiada" de forma inmediata.
 - **FR-003**: Una bicicleta en estado "Averiada" MUST quedar inhabilitada para
@@ -79,6 +82,10 @@ operarios.
   registrado.
 - **FR-007**: El sistema MUST evitar transiciones duplicadas: una bicicleta
   averiada reportada de nuevo no genera un segundo bloqueo inconsistente.
+
+- **FR-008**: El panel de incidencias pendientes MUST refrescarse
+  automáticamente en menos de 30 segundos mientras está abierto, además de
+  permitir una actualización manual.
 
 ### Key Entities
 
@@ -119,3 +126,11 @@ operarios.
   por la constitución del proyecto y quedan fuera de esta especificación.
 - El alcance es exactamente la HU-05 de `historia.md`, validada por el
   profesor; no se añaden historias nuevas.
+
+## Decisiones aclaradas durante la implementación
+
+- Si la bicicleta está anclada, la estación del reporte debe coincidir con la
+  estación que contiene ese anclaje. Una bicicleta en viaje activo no tiene
+  anclaje actual y se acepta con la estación declarada por el usuario.
+- El panel de taller se actualiza automáticamente cada 10 segundos y conserva
+  la actualización manual.
