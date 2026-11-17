@@ -12,22 +12,22 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 
 	"si16/backend/internal/apierr"
-	"si16/backend/internal/cache"
 	"si16/backend/internal/models"
+	"si16/backend/internal/services/estacion"
 )
 
 // Service agrupa las dependencias del cierre de viaje.
 type Service struct {
 	pool         *pgxpool.Pool
-	rdb          *redis.Client
+	estacion     *estacion.Servicio
 	tarifaMinuto float64
 }
 
-func New(pool *pgxpool.Pool, rdb *redis.Client, tarifaMinuto float64) *Service {
-	return &Service{pool: pool, rdb: rdb, tarifaMinuto: tarifaMinuto}
+// New crea el servicio. est es el recálculo común del estado en vivo (T020).
+func New(pool *pgxpool.Pool, est *estacion.Servicio, tarifaMinuto float64) *Service {
+	return &Service{pool: pool, estacion: est, tarifaMinuto: tarifaMinuto}
 }
 
 func errInterno() *apierr.Error {
@@ -164,8 +164,8 @@ func (s *Service) CerrarViaje(ctx context.Context, usuarioID int64, codigoAnclaj
 
 	// 8. Redis post-commit best-effort (D4): si falla, el viaje ya está
 	// cerrado; el TTL de 120 s autolimita la desviación.
-	if s.rdb != nil {
-		if err := cache.ActualizarEstadoEstacion(ctx, s.pool, s.rdb, estacionDestino); err != nil {
+	if s.estacion != nil {
+		if err := s.estacion.RecalcularEstacion(ctx, []int64{estacionDestino}); err != nil {
 			log.Printf("devolucion: cache estación %d (viaje cerrado igualmente): %v",
 				estacionDestino, err)
 		}

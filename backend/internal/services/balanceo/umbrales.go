@@ -8,7 +8,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
+
+	"si16/backend/internal/services/estacion"
 )
 
 // Tipos de alerta (schema global AlertaBalanceo.tipo_alerta).
@@ -17,20 +18,20 @@ const (
 	TipoLlena = "llena_mas_90"
 )
 
-// Servicio agrupa las dependencias del balanceo. New deja rdb en nil (solo
-// umbrales, suficiente para el worker y los tests unitarios); NewConCache
+// Servicio agrupa las dependencias del balanceo. New deja estacion en nil (solo
+// umbrales, suficiente para el worker y los tests unitarios); NewConEstacion
 // añade Redis para el flujo de traslado (post-commit FR-007).
 type Servicio struct {
-	pool *pgxpool.Pool
-	rdb  *redis.Client
+	pool     *pgxpool.Pool
+	estacion *estacion.Servicio
 }
 
 func New(pool *pgxpool.Pool) *Servicio {
 	return &Servicio{pool: pool}
 }
 
-func NewConCache(pool *pgxpool.Pool, rdb *redis.Client) *Servicio {
-	return &Servicio{pool: pool, rdb: rdb}
+func NewConEstacion(pool *pgxpool.Pool, est *estacion.Servicio) *Servicio {
+	return &Servicio{pool: pool, estacion: est}
 }
 
 // Decision es la acción de una evaluación. Función pura decidir(pct, estado)

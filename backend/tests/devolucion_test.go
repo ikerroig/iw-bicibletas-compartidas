@@ -15,52 +15,28 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 
 	"si16/backend/internal/auth"
-	"si16/backend/internal/config"
-	"si16/backend/internal/db"
 	"si16/backend/internal/deps"
 	"si16/backend/internal/routes"
+	tu "si16/backend/internal/testutil"
 )
 
-var (
-	setupOnce sync.Once
-	testDeps  deps.Deps
-	setupErr  error
-	ctx       = context.Background()
-)
+var ctx = context.Background()
 
+// depsTest usa la BD y la base de Redis propias de este paquete (testutil):
+// nunca DATABASE_URL, porque los tests vacían las tablas.
 func depsTest(t *testing.T) deps.Deps {
 	t.Helper()
-	setupOnce.Do(func() {
-		cfg, err := config.Load()
-		if err != nil {
-			setupErr = err
-			return
-		}
-		pool, err := db.NewPool(ctx, cfg.DatabaseURL)
-		if err != nil {
-			setupErr = err
-			return
-		}
-		rdb := redis.NewClient(&redis.Options{Addr: cfg.RedisAddr})
-		if err := rdb.Ping(ctx).Err(); err != nil {
-			setupErr = fmt.Errorf("redis: %w", err)
-			return
-		}
-		testDeps = deps.Deps{
-			Pool:         pool,
-			RDB:          rdb,
-			JWTSecret:    cfg.JWTSecret,
-			TarifaMinuto: cfg.TarifaMinuto,
-		}
-	})
-	if setupErr != nil {
-		t.Fatalf("setup de dependencias: %v", setupErr)
+	e := tu.Iniciar(t, "tests", 13)
+	return deps.Deps{
+		Pool:         e.Pool,
+		RDB:          e.Cache.Redis(),
+		JWTSecret:    tu.SecretoTests,
+		TarifaMinuto: 0.20,
+		Estacion:     e.Estacion,
 	}
-	return testDeps
 }
 
 func nuevaApp(d deps.Deps) *gin.Engine {
@@ -198,9 +174,9 @@ func prepararEscenario(t *testing.T, d deps.Deps) escenario {
 }
 
 type respuesta struct {
-	status  int
-	body    map[string]any
-	raw     string
+	status int
+	body   map[string]any
+	raw    string
 }
 
 func postDevolucion(app *gin.Engine, token, codigoAnclaje string) respuesta {
@@ -309,7 +285,7 @@ func TestDevolucion_ViajeCorto_FinalizaYGratuito(t *testing.T) {
 
 	// Frescura Redis (constitución IV): clave de la estación destino con marca nueva.
 	clave := fmt.Sprintf("estacion:%d:estado", e.estacionDestino)
-	if err := testDeps.RDB.HGet(ctx, clave, "actualizado_en").Err(); err != nil {
+	if err := d.RDB.HGet(ctx, clave, "actualizado_en").Err(); err != nil {
 		t.Errorf("clave Redis %s no escrita post-commit: %v", clave, err)
 	}
 }
@@ -463,10 +439,10 @@ func TestDevolucion_RelojInconsistente_CosteNoNegativo(t *testing.T) {
 	}
 
 	var (
-		estado     string
-		coste      float64
-		duracion   *int
-		fechaFin   *time.Time
+		estado   string
+		coste    float64
+		duracion *int
+		fechaFin *time.Time
 	)
 	if err := d.Pool.QueryRow(ctx,
 		`SELECT estado, coste_total::float8, duracion_minutos, fecha_fin

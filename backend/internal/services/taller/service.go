@@ -11,10 +11,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 
-	"si16/backend/internal/cache"
 	"si16/backend/internal/models"
+	"si16/backend/internal/services/estacion"
 )
 
 var (
@@ -34,9 +33,9 @@ const columnasIncidencia = `i.id, i.bicicleta_id, b.codigo,
 	i.piezas_sustituidas, i.notas_taller, i.fecha_reporte, i.fecha_reparacion, i.estado`
 
 type Servicio struct {
-	pool *pgxpool.Pool
-	rdb  *redis.Client
-	log  *slog.Logger
+	pool     *pgxpool.Pool
+	estacion *estacion.Servicio
+	log      *slog.Logger
 }
 
 type BicicletaFicha struct {
@@ -56,11 +55,11 @@ type Intervencion struct {
 	MarcarOperativa   bool
 }
 
-func Nuevo(pool *pgxpool.Pool, rdb *redis.Client, log *slog.Logger) *Servicio {
+func Nuevo(pool *pgxpool.Pool, est *estacion.Servicio, log *slog.Logger) *Servicio {
 	if log == nil {
 		log = slog.Default()
 	}
-	return &Servicio{pool: pool, rdb: rdb, log: log}
+	return &Servicio{pool: pool, estacion: est, log: log}
 }
 
 func (s *Servicio) Ficha(ctx context.Context, bicicletaID int64) (Ficha, error) {
@@ -288,13 +287,11 @@ func liberarAnclaje(ctx context.Context, tx pgx.Tx, bicicletaID int64) ([]int64,
 }
 
 func (s *Servicio) actualizarEstaciones(ctx context.Context, ids []int64) {
-	if s.rdb == nil {
+	if s.estacion == nil {
 		return
 	}
-	for _, id := range ids {
-		if err := cache.ActualizarEstadoEstacion(ctx, s.pool, s.rdb, id); err != nil {
-			s.log.Warn("taller: Redis no actualizado tras cambio confirmado", "estacion_id", id, "error", err)
-		}
+	if err := s.estacion.RecalcularEstacion(ctx, ids); err != nil {
+		s.log.Warn("taller: estado en vivo no actualizado tras cambio confirmado", "estaciones", ids, "error", err)
 	}
 }
 

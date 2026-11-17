@@ -11,7 +11,7 @@ import (
 )
 
 func RegisterSpec006(rg *gin.RouterGroup, d deps.Deps) {
-	h := &taller.Handler{Svc: servicio.Nuevo(d.Pool, d.RDB, nil)}
+	h := &taller.Handler{Svc: servicio.Nuevo(d.Pool, d.Estacion, nil)}
 	grupo := rg.Group("/taller/bicicletas/:id",
 		auth.RequireAuth(d.JWTSecret),
 		auth.RequireRole("operario_taller"),

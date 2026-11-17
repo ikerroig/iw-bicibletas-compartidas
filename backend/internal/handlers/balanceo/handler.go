@@ -70,7 +70,7 @@ func HandlerTraslado(d deps.Deps) gin.HandlerFunc {
 			apierr.Respond(c, e.Status, e.Codigo, e.Mensaje)
 			return
 		}
-		origen, destino, e := balanceo.NewConCache(d.Pool, d.RDB).
+		origen, destino, e := balanceo.NewConEstacion(d.Pool, d.Estacion).
 			ConfirmarTraslado(c.Request.Context(), req)
 		if e != nil {
 			apierr.Respond(c, e.Status, e.Codigo, e.Mensaje)
