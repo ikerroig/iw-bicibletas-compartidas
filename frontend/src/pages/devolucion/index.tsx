@@ -1,6 +1,7 @@
 import { createSignal, Show, type Component } from "solid-js";
 import { devolver, type ViajeDevolucion } from "../../services/api/devolucion";
 import { FetchError } from "../../services/api";
+import { fijarViajeEnCurso } from "../../stores/viaje";
 
 /**
  * HU-03: devolución de bicicleta. Muestra el resultado del cierre (duración,
@@ -29,6 +30,7 @@ export const Devolucion: Component = () => {
     try {
       const v = await devolver(cod);
       setViaje(v);
+      fijarViajeEnCurso(null); // aviso de viaje en curso (HU-02 FR-008)
       setCodigo("");
     } catch (err) {
       // 409/422/401: mostramos el mensaje del envelope de error.

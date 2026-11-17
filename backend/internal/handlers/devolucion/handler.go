@@ -23,7 +23,7 @@ type devolverRequest struct {
 // aplica la ruta (D7); aquí se valida la entrada, se invoca al servicio y
 // se traduce el resultado al contrato.
 func Handler(d deps.Deps) gin.HandlerFunc {
-	svc := servicio.New(d.Pool, d.RDB, d.TarifaMinuto)
+	svc := servicio.New(d.Pool, d.Estacion, d.TarifaMinuto)
 	return func(c *gin.Context) {
 		var req devolverRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -31,7 +31,8 @@ func Handler(d deps.Deps) gin.HandlerFunc {
 				"El cuerpo debe ser JSON con el campo codigo_anclaje")
 			return
 		}
-		req.CodigoAnclaje = strings.TrimSpace(req.CodigoAnclaje)
+		// Mismo criterio que el desbloqueo (HU-02 FR-001): los códigos se guardan en mayúsculas.
+		req.CodigoAnclaje = strings.ToUpper(strings.TrimSpace(req.CodigoAnclaje))
 		if req.CodigoAnclaje == "" {
 			apierr.Respond(c, http.StatusUnprocessableEntity, "ENTRADA_INVALIDA",
 				"codigo_anclaje es obligatorio")

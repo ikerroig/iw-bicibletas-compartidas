@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"si16/backend/internal/apierr"
-	"si16/backend/internal/cache"
 	"si16/backend/internal/models"
 )
 
@@ -77,7 +76,7 @@ type filaEstacion struct {
 // EstacionEstado recalculados de la propia respuesta (FR-007, SC-003).
 func (s *Servicio) ConfirmarTraslado(ctx context.Context, req models.TrasladoRequest) (models.EstacionEstado, models.EstacionEstado, *apierr.Error) {
 	var cero models.EstacionEstado
-	if s.rdb == nil {
+	if s.estacion == nil {
 		return cero, cero, errInterno()
 	}
 	if e := validarEntrada(req); e != nil {
@@ -239,10 +238,10 @@ func (s *Servicio) ConfirmarTraslado(ctx context.Context, req models.TrasladoReq
 
 	// 5. Post-commit best-effort (patrón de la devolución): el traslado ya está
 	// aplicado; si algo falla, el worker lo corrige en < 60 s (SC-001).
+	if err := s.estacion.RecalcularEstacion(ctx, []int64{origen.id, destino.id}); err != nil {
+		log.Printf("balanceo: estado en vivo (traslado aplicado igualmente): %v", err)
+	}
 	for _, id := range []int64{origen.id, destino.id} {
-		if err := cache.ActualizarEstadoEstacion(ctx, s.pool, s.rdb, id); err != nil {
-			log.Printf("balanceo: cache estación %d (traslado aplicado igualmente): %v", id, err)
-		}
 		if err := s.EvaluarEstacion(ctx, id); err != nil {
 			log.Printf("balanceo: evaluación inline estación %d: %v", id, err)
 		}

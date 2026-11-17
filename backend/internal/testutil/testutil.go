@@ -34,6 +34,9 @@ import (
 	"si16/backend/internal/services/estacion"
 )
 
+// SecretoTests firma los JWT de los tests; lo comparten las dos bases de auth.
+const SecretoTests = "secreto-de-tests"
+
 // Entorno de un paquete de tests.
 type Entorno struct {
 	Ctx       context.Context
@@ -105,10 +108,10 @@ func preparar(paquete string, redisDB int) (*Entorno, error) {
 	e := &Entorno{
 		Ctx: ctx, Pool: pool, Cache: rc, RedisAddr: addr, RedisDB: redisDB, DBURL: dbURL,
 		Estacion: estacion.Nuevo(pool, rc, log),
-		Emisor:   auth.NuevoEmisor("secreto-de-tests"),
+		Emisor:   auth.NuevoEmisor(SecretoTests),
 	}
 	e.Router = routes.NuevoRouter(routes.Deps{
-		Cfg: config.Config{TarifaMinuto: 0.20}, Pool: pool, Cache: rc,
+		Cfg: config.Config{TarifaMinuto: 0.20, JWTSecret: SecretoTests}, Pool: pool, Cache: rc,
 		Auth: e.Emisor, Estacion: e.Estacion, Log: log,
 	})
 	return e, nil

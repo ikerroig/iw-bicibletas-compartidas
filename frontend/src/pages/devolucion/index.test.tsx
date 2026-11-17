@@ -10,6 +10,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@solidjs/testing-library";
 import { Devolucion } from "./index";
+import { fijarViajeEnCurso, viajeEnCurso } from "../../stores/viaje";
 
 const viajeGratuito = {
   id: 7,
@@ -121,5 +122,24 @@ describe("HU-03 · página de devolución", () => {
     const error = await screen.findByTestId("error-devolucion");
     expect(error.textContent).toContain("El anclaje está ocupado, elige otro");
     expect(screen.queryByTestId("exito-devolucion")).toBeNull();
+  });
+});
+
+describe("HU-03 · integración con el aviso de viaje en curso (HU-02)", () => {
+  it("al devolver, el aviso de viaje en curso desaparece", async () => {
+    fijarViajeEnCurso({
+      ...viajeGratuito,
+      estacion_destino_id: null,
+      fecha_fin: null,
+      duracion_minutos: null,
+      estado: "en_curso",
+      bicicleta_codigo: "BICI-0001",
+      estacion_origen_nombre: "Colón",
+    });
+    render(() => <Devolucion />);
+    await enviarDevolucion("AN-00002");
+
+    await screen.findByTestId("exito-devolucion");
+    expect(viajeEnCurso()).toBeNull();
   });
 });
