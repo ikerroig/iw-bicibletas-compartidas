@@ -146,9 +146,9 @@ Sin tareas: autenticación, `httperr`, `db.EnTransaccion`, `RecalcularEstacion` 
 
 ### Validación
 
-- [ ] T056 [US1] Validación manual de V1, V7 y V10–V14 de `quickstart.md` en el navegador y por API; registrar en `refinamiento/verificacion-final.md` la entrada, el resultado esperado y el observado **antes** (P2.3, P3.3, P3.5, P3.9 y el caso no probado de pérdida de conexión de `pruebas-previas.md`) y **después** de T051–T055 (enunciado §5.3, paso 4)
-- [ ] T057 [US1] Regresión de HU-02: `go vet ./...` y `go test -count=1 ./...` en `backend/`; `npx tsc --noEmit`, `npm run lint` y `npm test` en `frontend/`; repetir V2–V9; guardar las salidas en `refinamiento/evidencias/` (enunciado §5.4, «Regresión»)
-- [ ] T058 Comunicar al equipo en la PR los cambios en piezas compartidas, todos aditivos: constante `SinAbono` en `httperr`, `SIN_ABONO` y `abono` en el OpenAPI y el handler por defecto de `frontend/tests/handlers.ts` (const. III)
+- [X] T056 [US1] Validación manual de V1, V7 y V10–V14 de `quickstart.md` en el navegador y por API; registrar en `refinamiento/verificacion-final.md` la entrada, el resultado esperado y el observado **antes** (P2.3, P3.3, P3.5, P3.9 y el caso no probado de pérdida de conexión de `pruebas-previas.md`) y **después** de T051–T055 (enunciado §5.3, paso 4)
+- [X] T057 [US1] Regresión de HU-02: `go vet ./...` y `go test -count=1 ./...` en `backend/`; `npx tsc --noEmit`, `npm run lint` y `npm test` en `frontend/`; repetir V2–V9; guardar las salidas en `refinamiento/evidencias/` (enunciado §5.4, «Regresión»)
+- [X] T058 Comunicar al equipo en la PR los cambios en piezas compartidas, todos aditivos: constante `SinAbono` en `httperr`, `SIN_ABONO` y `abono` en el OpenAPI y el handler por defecto de `frontend/tests/handlers.ts` (const. III). *Aviso enviado al grupo el 2026-11-19 antes de T043; se repite en la descripción de la PR*
 
 **Checkpoint**: HU-02 cumple FR-001…FR-012 y SC-001…SC-004; T044–T050 y T059 en verde y V1, V10–V14 comprobados en el navegador.
 
