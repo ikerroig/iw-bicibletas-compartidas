@@ -12,6 +12,8 @@ El SI-16 necesita una única base técnica coherente para las 8 historias: la co
 
 **Actualización 2026-11-03 (aclaraciones de HU-01)**: la cota de 30 s pasa a medirse de extremo a extremo (del commit al pintado), así que el barrido del worker baja de 15 s a 10 s (R16). Se añaden a la UI del mapa el aviso de «datos desactualizados» a los > 30 s sin actualización correcta (R17) y estados visuales accesibles, no solo de color, para «sin bicicletas», «sin anclajes libres» y «fuera de servicio» (este último prevalece y oculta los contadores) (R18). Se confirma que los anclajes con bicicleta averiada no suman en ningún contador (R19). Ningún contrato compartido (API, Redis, esquema) cambia.
 
+**Actualización 2026-11-19 (clarify de refinamiento de HU-01, enunciado §5.1)**: se añaden cuatro decisiones de frontend y una confirmación. (R20) Si la primera carga falla, se muestra «No se pudo cargar la disponibilidad» con un botón «Reintentar» (FR-010). (R21) Listado textual de estaciones `ListaEstaciones.tsx` con un conmutador «Mapa / Lista», sobre el mismo store y `estadoVisual` (FR-011, SC-008). (R22) Se confirma el rechazo 401 y la vuelta al mapa tras el login, que ya estaban implementados; solo faltan las pruebas (FR-012). (R23) El encuadre inicial ignora la ubicación del usuario si cae fuera del área de la red (FR-013). El detalle abierto que se actualiza solo (FR-004 ampliado) ya se cumple porque deriva del store; se añade su test. **Ningún contrato compartido (API, Redis, esquema) cambia**, así que no hace falta acuerdo de equipo (principio III).
+
 ## Technical Context
 
 **Language/Version**: Go 1.26+ (backend; mínimo fijado por las dependencias en `backend/go.mod`, antes 1.22+); TypeScript 5.x + SolidJS 1.9+ (frontend).
@@ -59,6 +61,7 @@ El SI-16 necesita una única base técnica coherente para las 8 historias: la co
 | III | Modelo compartido | PASS — `data-model.md` es la fuente única; adiciones señaladas (`password_hash`, `estado` en estaciones, índices) requieren acuerdo de equipo antes de migrar. |
 | IV | Frescura ≤ 30 s | PASS — contrato Redis en `contracts/redis-state.md` + endpoint `GET /estaciones` con `actualizado_en`; quickstart mide la ventana (S1, S1a–S1d, incluido el camino de respaldo). |
 | I (re-check 2026-11-03) | Autoridad del backend | PASS — los estados visuales de R18 son presentación derivada de los contadores del backend; no se toma ninguna decisión de negocio en el cliente. |
+| I, III, IV (re-check 2026-11-19) | Backend, modelo compartido, frescura | PASS — FR-012 se valida en el servidor (`RequireAuth`); R20–R23 son solo de frontend y no tocan la API, el esquema ni Redis; el listado (R21) usa el mismo store en vivo, así que hereda la frescura ≤ 30 s. |
 | V | Independencia | PASS — `contracts/openapi.yaml` particiona endpoints por tag/spec; propiedad de carpetas sin solapes. |
 
 **Veredicto final**: **PASS (0 violaciones, 0 justificaciones necesarias)**.
@@ -123,7 +126,7 @@ specs/spec-001/
     ├── src/
     │   ├── components/           # Compartidos: Layout, MapaBase, tabla, UI atómica
     │   ├── pages/
-    │   │   ├── mapa/             # spec-001  (Iker): MapaPage, DetalleEstacion, AvisoDesactualizado, estadoVisual.ts (R17/R18)
+    │   │   ├── mapa/             # spec-001  (Iker): MapaRed, DetalleEstacion, AvisoDesactualizado, estadoVisual.ts (R17/R18), ListaEstaciones (R21)
     │   │   ├── alquiler/         # spec-002  (Iker)
     │   │   ├── devolucion/       # spec-003  (Alex)
     │   │   ├── historial/        # spec-004  (Alex)

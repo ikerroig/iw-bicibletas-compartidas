@@ -152,6 +152,30 @@ Investigación asociada al Technical Context de `plan.md`. Cada entrada resuelve
 - **Racional**: lo deja fijado la aclaración de la spec; evita que alguien añada una comprobación «suma = capacidad» que fallaría.
 - **Alternativas consideradas**: mostrar un tercer contador de «averiadas» (descartado en la aclaración).
 
+## R20. Error en la primera carga (HU-01 FR-010) — *añadido 2026-11-19*
+
+- **Decisión**: el store `red.ts` distingue entre «sin ningún dato todavía» (`cargado = false`) y «con datos previos». Si una petición falla sin datos previos, `MapaRed.tsx` muestra un bloque con `role="alert"` y el texto «No se pudo cargar la disponibilidad», más un botón «Reintentar» que llama a `refrescar()` sin esperar al siguiente ciclo. El reintento automático del polling (15 s) sigue activo. Con datos previos se mantiene el comportamiento de R17 (aviso de datos desactualizados y últimos contadores visibles).
+- **Racional**: el texto técnico actual («Error 500. Reintentando…») no le dice al usuario qué pasa ni le deja actuar. Reutilizar `refrescar()` evita un segundo camino de carga.
+- **Alternativas consideradas**: una pantalla de error que bloquea todo (descartada en el clarify, opción C); un reintento con backoff exponencial (añade complejidad sin necesidad con unas 60 estaciones).
+
+## R21. Listado textual de estaciones (HU-01 FR-011, SC-008) — *añadido 2026-11-19*
+
+- **Decisión**: un componente nuevo `pages/mapa/ListaEstaciones.tsx` que lee el **mismo** store `red.ts` y usa la **misma** función `estadoVisual` (R18) que el mapa, así que es imposible que el estado o la frescura no coincidan. `MapaRed.tsx` añade un conmutador «Mapa / Lista» accesible (`role="tablist"`). El listado se ordena por nombre, y cada fila es un botón que abre el mismo `DetalleEstacion`. No depende de Leaflet, por lo que funciona aunque fallen las teselas.
+- **Racional**: cubre la accesibilidad y la caída del proveedor externo sin un endpoint nuevo ni cambios de contrato (principios III y V).
+- **Alternativas consideradas**: una tabla en otra ruta (rompe la selección compartida con el detalle); hacer accesible cada marcador de Leaflet como única vía (no resuelve la caída de las teselas).
+
+## R22. Sesión no válida durante la consulta (HU-01 FR-012) — *añadido 2026-11-19*
+
+- **Decisión**: confirma lo ya implementado. `GET /estaciones` y `GET /estaciones/{id}` están detrás de `RequireAuth` (401 sin token o con un token inválido). El cliente `api.ts`, ante un 401 con token, llama a `cerrarSesion()`; el guard de `Layout` redirige a `/login`, y el login lleva a `/`, que es la vista de disponibilidad. El servidor ya está cubierto por `TestEstacionesExigeSesion` (integración: sin token y con token falso → 401). Solo falta el **test de frontend** del 401 durante el polling.
+- **Racional**: el comportamiento ya cumple el FR-012 (pruebas P3.3–P3.6 de `refinamiento/pruebas-previas.md`), pero sin un test una regresión pasaría desapercibida.
+- **Alternativas consideradas**: guardar la ruta de origen y volver a ella tras el login (el FR-012 solo exige volver a la vista de disponibilidad, que coincide con `/`).
+
+## R23. Encuadre inicial con geolocalización (HU-01 FR-013) — *añadido 2026-11-19*
+
+- **Decisión**: `MapaBase.tsx` calcula el **área de la red** como `L.latLngBounds` de todas las estaciones ampliado un 20 % (`pad(0.2)`). La posición del usuario solo se usa para centrar si `area.contains(posicion)`. Si la posición llega **antes** que los datos, se guarda y la decisión se toma cuando llegan las estaciones; mientras tanto no se mueve el mapa. Si está fuera del área, o no llega en 5 s, se hace `fitBounds` de la red. El atributo `data-encuadre` (`red` / `usuario`) lo refleja para los tests.
+- **Racional**: corrige el hallazgo H1 (los 60 marcadores quedaban fuera de la pantalla). El margen del 20 % permite centrarse en usuarios que están en el borde de la ciudad.
+- **Alternativas consideradas**: no centrar nunca en el usuario (opción B del clarify, descartada); un radio fijo en kilómetros (depende de la ciudad, y el rectángulo se adapta solo al inventario).
+
 ---
 
-**Resumen de resolución**: 19 decisiones (R16–R19 añadidas el 2026-11-03 tras `/speckit.clarify`), 0 NEEDS CLARIFICATION. Pendiente de acuerdo de equipo (principio III): adiciones R15 y numeración de migraciones R6. El cambio del barrido a 10 s (R16) es interno de spec-001 y no altera ningún contrato.
+**Resumen de resolución**: 23 decisiones (R16–R19 añadidas el 2026-11-03 tras `/speckit.clarify`; R20–R23 el 2026-11-19 tras el clarify de refinamiento), 0 NEEDS CLARIFICATION. R20–R23 no cambian ningún contrato compartido (API, esquema, Redis). Pendiente de acuerdo de equipo (principio III): adiciones R15 y numeración de migraciones R6. El cambio del barrido a 10 s (R16) es interno de spec-001 y no altera ningún contrato.
