@@ -38,8 +38,9 @@ npm run dev
 
 ```powershell
 cd backend
-go test ./...                                  # unit + integración (usa la BD del compose)
-go test ./internal/services/... -run TestReglasCriticas   # T1–T5 (ver abajo)
+go test -p 1 ./...                             # unit + contrato + integración (BD de tests del compose)
+# Solo el gate T1–T5 (ver abajo); los tests están repartidos entre los paquetes de cada spec:
+go test -count=1 -p 1 ./internal/services/alquiler ./internal/services/devolucion ./internal/services/balanceo ./tests ./tests/integration -run 'TestAbono|TestDesbloqueoRechazaAbonoNoVigente|TestDesbloqueoConAbonoQueVenceHoy|TestDesbloqueosConcurrentes|TestCalcularCoste|TestDuracionMinutos|TestAveriaBloqueaYEsIdempotente|TestAveriadasNoSuman|TestDecidirUmbralesEstrictos|TestBalanceoT7aUmbralesEstrictos'
 cd ../frontend
 npm test                                       # Vitest + testing-library + MSW
 ```
@@ -73,6 +74,10 @@ Invoke-RestMethod -Uri http://localhost:8080/api/v1/estaciones -Headers $h | Con
 | S1c | HU-01 (spec-001) | `UPDATE estaciones SET estado='fuera_de_servicio'` en una estación con 0 bicis; después revertir | En ≤ 30 s el marcador pasa a «Fuera de servicio» (prevalece sobre «sin bicicletas»), sigue siendo seleccionable y su detalle muestra «—» sin contadores ni acciones; al revertir vuelve a operativa en ≤ 30 s (FR-009, SC-007) |
 | S1d | HU-01 (spec-001) | Parar las escrituras síncronas (p. ej. un `UPDATE` directo en `anclajes`, sin pasar por la API) y medir | El contador cambia en pantalla en ≤ 30 s solo gracias al barrido de 10 s (camino de respaldo, R16) |
 | S1e | HU-01 (spec-001) | Chrome DevTools: perfil de red «Fast 4G», caché vacía, pestaña Performance; recargar el mapa y hacer clic en un marcador. Repetir denegando el permiso de ubicación | Todos los marcadores pintados en < 5 s y detalle visible en < 2 s desde el clic (SC-004); con la ubicación denegada el mapa se encuadra en toda la red sin errores (caso límite) |
+| S1f | HU-01 (spec-001) | Con sesión iniciada, parar el backend y **recargar** el mapa; pulsar «Reintentar»; volver a levantar el backend sin recargar | Sin datos previos: «No se pudo cargar la disponibilidad», botón «Reintentar» y ningún marcador; al volver el backend, el mapa se carga solo y el mensaje desaparece (FR-010) |
+| S1g | HU-01 (spec-001) | Bloquear `tile.openstreetmap.org` (DevTools → Network → Block request URL), recargar y pasar a «Lista» | El listado muestra las ~60 estaciones con el mismo estado y contadores que el mapa; con un cambio por SQL, el listado se actualiza en ≤ 30 s (FR-011, SC-008) |
+| S1h | HU-01 (spec-001) | `curl` a `/api/v1/estaciones` sin token; en el navegador, con el mapa abierto, reiniciar el backend con otro `JWT_SECRET` y esperar al siguiente refresco | 401 `UNAUTENTICADO`; la aplicación cierra la sesión y lleva a `/login`; tras entrar se vuelve al mapa (FR-012) |
+| S1i | HU-01 (spec-001) | Conceder la ubicación con una posición simulada **fuera** de Valencia (DevTools → Sensors → Location), recargar; repetir con una posición **dentro** de la red | Fuera: el mapa se encuadra en toda la red y las estaciones quedan visibles; dentro: se centra en el usuario (FR-013, hallazgo H1) |
 | S2 | HU-02 (spec-002) | Desbloquear con código de anclaje válido | 201 con viaje activo; usuario caducado → 403 con causa; usuario con viaje activo → 409; código inexistente/estación fuera de servicio/anclaje sin bici → 404/409 **sin** modificar nada |
 | S3 | HU-03 (spec-003) | Devolver en anclaje libre; repetir con viaje forzado > 30 min (ajustar `fecha_inicio` en BD o esperar) | Viaje finalizado con hora de llegada, usuario liberado (puede desbloquear de nuevo), bici anclada; ≤ 30 min → `coste_total = 0.00` con etiqueta "Tramo gratuito (0,00 €)"; > 30 min → solo excedente |
 | S4 | HU-04 (spec-004) | Sección "Mis Viajes" con filtro mes/año | Lista cronológica (origen, destino, duración, coste), sumatorio correcto, viajes de 0,00 € etiquetados, viaje activo ausente del historial |

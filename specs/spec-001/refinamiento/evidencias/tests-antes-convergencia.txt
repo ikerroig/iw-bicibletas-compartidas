@@ -1,0 +1,33 @@
+# Tests de HU-01 ANTES de T111-T113 (commit bca6190 + tests nuevos), 2026-11-19 11:48
+ ✓ tests/mapa/estadoVisual.test.ts (11 tests) 14ms
+   ✓ aviso de datos desactualizados > a los 30 s exactos no avisa; a los 31 s sí, con los contadores visibles; una respuesta correcta lo quita 154ms
+   ✓ aviso de datos desactualizados > el aviso es una región accesible con texto, no solo color 75ms
+   × aviso de datos desactualizados > sin ninguna carga correcta NO muestra «Datos desactualizados» (no hay datos que mostrar) 22ms
+expected document not to contain element, found <strong>
+   × aviso de datos desactualizados > sin datos y pasados 30 s, el mapa muestra solo el mensaje de FR-010 81ms
+expected document not to contain element, found <strong>
+   ✓ aviso de datos desactualizados > al volver a una pestaña oculta más de 30 s no parpadea el aviso si la respuesta llega bien 27ms
+ ✓ tests/mapa/encuadre.test.tsx (4 tests) 456ms
+ ✓ tests/mapa/mapa.test.tsx (15 tests) 873ms
+ ✓ tests/mapa/sesionCaducada.test.tsx (2 tests) 574ms
+   ✓ sesión no válida durante la consulta (FR-012) > sin sesión, la vista de disponibilidad redirige al login y, tras entrar, vuelve al mapa  384ms
+   ✓ listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado  315ms
+   × listado de estaciones (FR-011) > las dos pestañas apuntan siempre a un panel existente (aria-controls) 62ms
+     → panel de «Lista»: expected null not to be null
+   × listado de estaciones (FR-011) > un refresco actualiza la fila enfocada sin volver a crearla ni perder el foco 1110ms
+   ✓ listado de estaciones (FR-011) > contiene TODAS las estaciones con el mismo estado y contadores que el mapa (SC-008) 31ms
+   ✓ listado de estaciones (FR-011) > las filas van ordenadas por nombre y muestran texto de estado, no solo color 56ms
+   ✓ listado de estaciones (FR-011) > una estación fuera de servicio aparece con «Fuera de servicio» y «—», sin contadores 30ms
+   ✓ listado de estaciones (FR-011) > se actualiza con el siguiente refresco, igual que el mapa (FR-003) 76ms
+   ✓ listado de estaciones (FR-011) > pulsar una fila abre el detalle de esa estación 37ms
+   ✓ listado de estaciones (FR-011) > sigue funcionando aunque las teselas del mapa de fondo no carguen 38ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/mapa/desactualizado.test.tsx > aviso de datos desactualizados > sin ninguna carga correcta NO muestra «Datos desactualizados» (no hay datos que mostrar)
+expected document not to contain element, found <strong>
+ FAIL  tests/mapa/desactualizado.test.tsx > aviso de datos desactualizados > sin datos y pasados 30 s, el mapa muestra solo el mensaje de FR-010
+expected document not to contain element, found <strong>
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > las dos pestañas apuntan siempre a un panel existente (aria-controls)
+AssertionError: panel de «Lista»: expected null not to be null
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > un refresco actualiza la fila enfocada sin volver a crearla ni perder el foco
+ Test Files  2 failed | 4 passed (6)
+      Tests  4 failed | 42 passed (46)

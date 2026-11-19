@@ -311,9 +311,21 @@ func sembrarViajesDemo(ctx context.Context, tx pgx.Tx, hoy time.Time) error {
 		{-2, 15, 55, "5.00"}, // dos meses atrás: 25 min excedente × 0,20
 	}
 	for i, f := range filas {
-		inicio := time.Date(hoy.Year(), hoy.Month()+time.Month(f.mes), f.dia,
+		// Ningún viaje finalizado puede quedar en el futuro: falsearía el
+		// historial y la analítica, y la devolución lo tomaría por un cierre
+		// recién hecho (VIAJE_YA_CERRADO). En el mes en curso el día se limita
+		// a hoy y, si aún no ha llegado la hora, el viaje se adelanta a ahora.
+		dia := f.dia
+		if f.mes == 0 && dia > hoy.Day() {
+			dia = hoy.Day()
+		}
+		duracion := time.Duration(f.minutos) * time.Minute
+		inicio := time.Date(hoy.Year(), hoy.Month()+time.Month(f.mes), dia,
 			12, 0, 0, 0, time.UTC)
-		fin := inicio.Add(time.Duration(f.minutos) * time.Minute)
+		if limite := hoy.Add(-time.Duration(len(filas)-i) * time.Minute); inicio.Add(duracion).After(limite) {
+			inicio = limite.Add(-duracion)
+		}
+		fin := inicio.Add(duracion)
 		destino := est2
 		if i%2 == 1 {
 			destino = est3

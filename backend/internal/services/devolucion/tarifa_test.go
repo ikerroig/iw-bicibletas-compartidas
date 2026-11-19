@@ -69,3 +69,19 @@ func TestCalcularCoste_FraccionesDeExcedente(t *testing.T) {
 		t.Errorf("46:30: esperaba 3.40 (17 min × 0,20), obtuve %.2f", c)
 	}
 }
+
+// duracion_minutos = ceil(segundos/60); con coste > 0 nunca figura ≤ 30 min (SC-001).
+func TestDuracionMinutos_RedondeaHaciaArriba(t *testing.T) {
+	casos := []struct {
+		segundos int64
+		minutos  int
+	}{{-5, 0}, {0, 0}, {1, 1}, {60, 1}, {61, 2}, {23*60 + 47, 24}, {1800, 30}, {1801, 31}, {1830, 31}}
+	for _, c := range casos {
+		if got := DuracionMinutos(c.segundos); got != c.minutos {
+			t.Errorf("%d s: esperaba %d min, obtuve %d", c.segundos, c.minutos, got)
+		}
+		if CalcularCoste(c.segundos, 0.20) > 0 && DuracionMinutos(c.segundos) <= 30 {
+			t.Errorf("%d s: cobrado pero con duración ≤ 30 min", c.segundos)
+		}
+	}
+}
