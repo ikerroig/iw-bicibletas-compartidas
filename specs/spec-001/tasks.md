@@ -177,7 +177,7 @@
 ### Tests for User Story 5
 
 - [ ] T053 [P] [US5] **T4 (const. I)**: `backend/tests/integration/spec005_inhabilitacion_test.go` — tras el reporte, desbloqueo de la bici → 409 `BICICLETA_NO_DISPONIBLE`; bici ausente de `bicis_disponibles` y del hash Redis; 0 secuencias dejan bici averiada pero alquilable
-- [ ] T054 [P] [US5] `backend/tests/integration/spec005_reporte_test.go` — descripción vacía → 422; doble reporte simultáneo → un solo cambio de estado y respuesta `duplicada: true` sin segundo bloqueo; reporte de bici `en_uso` admitido (viaje continúa)
+- [ ] T054 [P] [US5] `backend/tests/integration/spec005_reporte_test.go` — descripción vacía → 422; doble reporte simultáneo → un solo cambio de estado y respuesta `repetido: true` sin segundo bloqueo; reporte de bici `en_uso` admitido (viaje continúa)
 - [ ] T055 [P] [US5] Test de contrato `POST /incidencias` y `GET /incidencias` + 403 para rol no `operario_taller` en `backend/tests/contract/spec005_test.go`
 
 ### Implementation for User Story 5
@@ -275,7 +275,7 @@
 - [ ] T089 Re-ejecutar el gate **T1–T5** (reglas críticas, const. I) en local/CI antes de cada fusión de spec — checklist obligatoria de PR
 - [ ] T090 [P] Optimización de rendimiento: `EXPLAIN ANALYZE` de las consultas calientes (snapshot de estaciones, historial paginado, agregados de analítica) contra objetivos de `plan.md` (< 5 s mapa, < 3 s historial, < 5 s analítica)
 - [ ] T091 [P] Security hardening: rate limiting en `POST /auth/login` y `POST /alquileres/desbloqueo`, cabeceras HTTP (CSP, X-Content-Type-Options), validación de entrada en todos los handlers
-- [ ] T092 [P] Actualizar `README.md` de la raíz: arranque (`docker compose up -d`, migrate, seed, server, dev), enlaces a `specs/spec-001…008/` y roles seed
+- [x] T092 [P] Actualizar `README.md` de la raíz: arranque (`docker compose up -d`, migrate, seed, server, dev), enlaces a `specs/spec-001…008/` y roles seed
 - [ ] T093 Checkpoint de esquema (const. III): confirmar con el equipo que ninguna spec añadió migraciones nuevas tras `0001`; si alguna lo hizo, verificar ordinal acordado y comunicación previa
 - [ ] T094 [P] Revisión de constitución por PR (5 principios + reparto de historias) por un integrante distinto del autor de cada spec
 

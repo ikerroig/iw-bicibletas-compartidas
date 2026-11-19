@@ -38,8 +38,9 @@ npm run dev
 
 ```powershell
 cd backend
-go test ./...                                  # unit + integración (usa la BD del compose)
-go test ./internal/services/... -run TestReglasCriticas   # T1–T5 (ver abajo)
+go test -p 1 ./...                             # unit + contrato + integración (BD de tests del compose)
+# Solo el gate T1–T5 (ver abajo); los tests están repartidos entre los paquetes de cada spec:
+go test -count=1 -p 1 ./internal/services/alquiler ./internal/services/devolucion ./internal/services/balanceo ./tests ./tests/integration -run 'TestAbono|TestDesbloqueoRechazaAbonoNoVigente|TestDesbloqueoConAbonoQueVenceHoy|TestDesbloqueosConcurrentes|TestCalcularCoste|TestDuracionMinutos|TestAveriaBloqueaYEsIdempotente|TestAveriadasNoSuman|TestDecidirUmbralesEstrictos|TestBalanceoT7aUmbralesEstrictos'
 cd ../frontend
 npm test                                       # Vitest + testing-library + MSW
 ```

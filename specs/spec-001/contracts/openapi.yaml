@@ -206,19 +206,23 @@ paths:
       summary: Reporte de avería por usuario — bicicleta a 'averiada' (HU-05)
       description: >
         Cambio de estado inmediato e inhabilitación para alquiler. Reporte
-        repetido sobre bicicleta ya averiada: 200 con 'duplicada: true' y la
-        incidencia original, sin segundo bloqueo.
+        repetido sobre bicicleta ya averiada: 200 con 'repetido: true' y la
+        incidencia original, sin segundo bloqueo. También disponible como
+        POST /averias (mismo cuerpo y respuesta; ver specs/spec-005/contracts/averias.md).
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [bicicleta_id, tipo_fallo, descripcion_reporte]
+              description: Se identifica la bicicleta por bicicleta_id o por bicicleta_codigo.
+              required: [estacion_id, tipo_fallo, descripcion]
               properties:
                 bicicleta_id: { type: integer, format: int64 }
+                bicicleta_codigo: { type: string, example: BICI-0001 }
+                estacion_id: { type: integer, format: int64 }
                 tipo_fallo: { $ref: '#/components/schemas/TipoFallo' }
-                descripcion_reporte: { type: string, minLength: 10 }
+                descripcion: { type: string, minLength: 1, maxLength: 2000 }
       responses:
         '201':
           description: Incidencia registrada y bicicleta inhabilitada
@@ -228,16 +232,18 @@ paths:
                 type: object
                 properties:
                   incidencia: { $ref: '#/components/schemas/Incidencia' }
-                  duplicada: { type: boolean, default: false }
+                  mensaje: { type: string }
+                  repetido: { type: boolean, default: false }
         '200':
-          description: 'Ya estaba averiada (duplicada: true, sin efectos nuevos)'
+          description: 'Ya estaba averiada (repetido: true, sin efectos nuevos)'
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   incidencia: { $ref: '#/components/schemas/Incidencia' }
-                  duplicada: { type: boolean, default: true }
+                  mensaje: { type: string }
+                  repetido: { type: boolean, default: true }
         '422': { $ref: '#/components/responses/Error' }
     get:
       tags: [spec-005]
