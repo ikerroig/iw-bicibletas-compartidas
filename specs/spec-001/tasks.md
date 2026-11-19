@@ -381,3 +381,12 @@ Task: "T036 services/alquiler/service.go (transacción + FOR UPDATE)"
 - Esquema compartido: 0001 es la única migración aportada; cambios futuros exigen ordinal acordado (T093, const. III)
 - Commit tras cada tarea o grupo lógico; parar en cada Checkpoint para validar la historia de forma independiente
 - Evitar: tareas vagas, conflictos de fichero entre stories, dependencias que rompan la independencia (el hook `hooks/estacion.go` + helpers T011/T020 existen precisamente para evitarlas)
+
+## Phase 12: Convergence
+
+> Origen: `/speckit-converge` de 2026-11-19 sobre HU-01 ([refinamiento/converge-1.md](./refinamiento/converge-1.md)). Responsable: Iker Roig · Revisor: _(compañero)_.
+
+- [ ] T111 [US1] Identificar las filas de `frontend/src/pages/mapa/ListaEstaciones.tsx` por `id` de estación (no por referencia del objeto) para que un refresco no vuelva a crearlas ni haga perder el foco del teclado o del lector de pantalla; añadir antes un test en `frontend/tests/mapa/listaEstaciones.test.tsx` que enfoque una fila, fuerce un refresco con datos nuevos y compruebe que la misma fila sigue enfocada y con los contadores actualizados (debe fallar antes del cambio) per FR-011 (partial)
+- [ ] T112 [US1] Mostrar solo el mensaje de FR-010 cuando no hay ninguna carga correcta: ocultar el aviso «Datos desactualizados · Mostramos los últimos datos conocidos…» de `frontend/src/pages/mapa/AvisoDesactualizado.tsx` mientras `ultimaActualizacionOk` sea `null`, y actualizar el test «sin ninguna carga correcta, avisa igualmente pasados 30 s» de `frontend/tests/mapa/desactualizado.test.tsx` para que compruebe que, sin datos, a los 31 s se ve el mensaje de FR-010 y no el de datos desactualizados per FR-010 (partial)
+- [ ] T113 [US1] Mantener siempre en el DOM los dos `tabpanel` del conmutador «Mapa / Lista» en `frontend/src/pages/mapa/MapaRed.tsx` (el inactivo con el atributo `hidden`), para que el `aria-controls` de ambas pestañas apunte siempre a un elemento existente; ajustar los tests de `listaEstaciones.test.tsx` que comprueban que el listado no está visible con la vista «Mapa» per FR-011 (partial)
+- [ ] T114 [US1] Justificar en `specs/spec-001/research.md` (R18) la `Leyenda` del panel lateral de `MapaRed.tsx` como apoyo a FR-008 («no solo color»), o eliminarla si el equipo no la considera necesaria per plan: R18 (unrequested)
