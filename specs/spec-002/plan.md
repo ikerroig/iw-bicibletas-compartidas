@@ -8,6 +8,8 @@
 
 **Trazabilidad del proceso**: este plan se generó **después** de una primera implementación (commit `e090f41`), hecha a partir de las tareas T033–T039 del `tasks.md` global, sin `clarify`, `plan`, `tasks` ni `analyze` propios de esta spec. Se completa ahora el flujo de Spec Kit, y este plan es el diseño vigente: lo que difiere de `e090f41` se marca como **Delta** y se corregirá desde el `tasks.md` de esta spec.
 
+**Actualización 2026-11-19 (clarify de refinamiento de HU-02, enunciado §5.1 y §5.2)**: tras las [pruebas previas](./refinamiento/pruebas-previas.md) y el [clarify](./refinamiento/clarify.md) se añaden tres decisiones y se corrige una. (D15) El rechazo por abono distingue `SIN_ABONO` de `ABONO_VENCIDO`, este último con la fecha (FR-002, SC-001). (D16) `GET /alquileres/activo` devuelve también el estado del abono para avisar al abrir la pantalla y desactivar el formulario (FR-010). (D17) Si la respuesta al desbloqueo no llega o es un 5xx, la página comprueba el viaje activo en lugar de dar un error genérico, y nunca reenvía el `POST` (FR-011). (D9, corregida) La página redirige al mapa a los roles distintos de `usuario` (FR-009 ampliado). El orden de las causas (D4) pasa a ser requisito (FR-012) sin cambios en el código. Los cambios en piezas compartidas son aditivos: una constante en `httperr`, el OpenAPI y el handler de tests por defecto; se comunican al equipo (principio III). Sin migraciones ni claves Redis nuevas.
+
 ## Summary
 
 Abrir el ciclo de alquiler: un usuario con abono vigente introduce el código de un anclaje y el sistema crea su viaje activo, desacopla la bicicleta y actualiza el estado en vivo. Enfoque técnico: `POST /alquileres/desbloqueo` con **una transacción PostgreSQL** que bloquea el anclaje, valida las reglas críticas y escribe; `ux_viajes_usuario_activo` es la red de seguridad frente a desbloqueos simultáneos, y tras el commit se recalcula `estacion:{id}:estado`. `GET /alquileres/activo` devuelve el viaje en curso. Frontend SolidJS: página `pages/alquiler/`. Sin cambios de esquema.
@@ -32,7 +34,7 @@ Abrir el ciclo de alquiler: un usuario con abono vigente introduce el código de
 
 **Scale/Scope**: 2 endpoints, 1 servicio (`services/alquiler`), 1 handler, 1 página (`pages/alquiler`).
 
-**Unknowns**: **0 NEEDS CLARIFICATION.** Las 5 aclaraciones de la sesión 2026-11-04 y los puntos técnicos se resuelven en [research.md](./research.md).
+**Unknowns**: **0 NEEDS CLARIFICATION.** Las aclaraciones de las sesiones 2026-11-04 y 2026-11-19 (5 cada una) y los puntos técnicos se resuelven en [research.md](./research.md).
 
 ## Constitution Check
 
@@ -57,6 +59,7 @@ Abrir el ciclo de alquiler: un usuario con abono vigente introduce el código de
 | III | Modelo compartido | PASS: [data-model.md](./data-model.md) no propone cambios de esquema. |
 | IV | Frescura ≤ 30 s | PASS: V8 de quickstart comprueba el contador tras desbloquear. |
 | V | Independencia | PASS: `bicicleta_codigo` y `estacion_origen_nombre` no tocan `models.Viaje`; el nombre coincide con el que usa spec-004, y el cambio en `RecalcularEstacion` (D6) no altera su firma. |
+| I, III, V (re-check 2026-11-19) | Backend, modelo compartido, independencia | PASS: la causa del abono y el aviso previo se calculan en el servidor con una sola función (D15, D16); el frontend solo muestra el texto. No cambia `models.Usuario` ni el esquema; los cambios compartidos (constante `SinAbono`, OpenAPI, handler de tests) son aditivos. La guardia de FR-009 vive en `Desbloqueo.tsx`, no en `routes.tsx`. |
 
 **Veredicto final**: **PASS (0 violaciones, 0 justificaciones necesarias)**.
 
@@ -117,6 +120,16 @@ frontend/
 | D12 | FR-007 | Commit no cancelable en `db.EnTransaccion` |
 | D13 | FR-007 | `FOR SHARE` al leer el abono |
 | D14 | FR-008 | Aviso de viaje en curso en `Layout` |
+
+### Deltas del refinamiento (2026-11-19, respecto a `0d6f478`)
+
+| Delta | Origen | Cambio |
+|---|---|---|
+| D15 | FR-002, SC-001 | 403 `SIN_ABONO` «No tienes abono anual» y 403 `ABONO_VENCIDO` «Tu abono anual caducó el DD/MM/AAAA» |
+| D16 | FR-010 | `GET /alquileres/activo` añade `abono {vigente, codigo, mensaje}`; la página avisa y desactiva el formulario |
+| D17 | FR-011 | Plazo de 10 s en el `POST`; ante red caída, plazo agotado o 5xx, comprobar el viaje activo y botón «Volver a comprobar»; sin reenvío automático |
+| D9 | FR-009 | Redirigir a `/` desde `Desbloqueo.tsx` si el rol no es `usuario` |
+| D4 | FR-012 | Sin cambio de código; test que fija el orden de las causas |
 
 ## Complexity Tracking
 

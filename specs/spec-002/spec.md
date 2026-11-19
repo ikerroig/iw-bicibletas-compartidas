@@ -60,6 +60,18 @@ ya con viaje activo, verificando ambos rechazos.
 4. **Given** un usuario sin abono vigente, **When** abre la pantalla de
    desbloqueo, **Then** ve el motivo antes de introducir ningún código y el
    formulario aparece desactivado.
+5. **Given** un usuario con abono vigente que envía un código válido, **When**
+   la respuesta del servidor no llega o es un error interno (error de red,
+   error 5xx o más de 10 s), **Then**
+   la aplicación muestra «No sabemos si se ha desbloqueado; comprobando…»,
+   consulta su viaje activo y le enseña el viaje si se creó o «No se ha
+   desbloqueado, inténtalo de nuevo» si no, sin reenviar el desbloqueo.
+6. **Given** un gestor u operario con sesión iniciada, **When** escribe la
+   dirección de la pantalla de desbloqueo, **Then** se le lleva al mapa sin
+   mostrarle el formulario, y una solicitud directa al servidor se rechaza.
+7. **Given** un usuario con el abono caducado, **When** introduce un código
+   de anclaje que no existe, **Then** el sistema rechaza la operación con la
+   causa del abono, porque es la primera regla que falla.
 3. **Given** un usuario que ya cuenta con un trayecto iniciado, **When**
    intenta liberar otra bicicleta, **Then** el sistema deniega el acceso e
    impide realizar múltiples viajes simultáneos.
@@ -79,8 +91,8 @@ ya con viaje activo, verificando ambos rechazos.
   anclaje, de la bicicleta ni de ningún viaje existente.
 - Un usuario con viaje activo pierde la conexión al intentar desbloquear: no
   se crea un viaje parcial; el usuario conserva únicamente su viaje previo.
-- La respuesta a un desbloqueo no llega (error de red o más de 10 s sin
-  respuesta): la aplicación no da el desbloqueo por fallido ni por hecho;
+- La respuesta a un desbloqueo no llega o no permite saber el resultado
+  (error de red, error interno del servidor o más de 10 s sin respuesta): la aplicación no da el desbloqueo por fallido ni por hecho;
   comprueba el viaje activo y muestra el resultado real (FR-011).
 
 ## Requirements *(mandatory)*
@@ -123,8 +135,9 @@ ya con viaje activo, verificando ambos rechazos.
   aparecer desactivado. Este aviso es informativo: el sistema MUST seguir
   rechazando en el momento de la solicitud (FR-002), aunque la pantalla se
   haya abierto con el abono todavía vigente.
-- **FR-011**: Si la respuesta a un desbloqueo no llega (error de red o más de
-  10 s sin respuesta), la aplicación MUST mostrar «No sabemos si se ha
+- **FR-011**: Si la respuesta a un desbloqueo no llega o no permite saber el
+  resultado (error de red, error interno del servidor o más de 10 s sin
+  respuesta), la aplicación MUST mostrar «No sabemos si se ha
   desbloqueado; comprobando…» y consultar el viaje activo del usuario: si
   existe, MUST mostrarlo como en FR-008; si no existe, MUST mostrar «No se ha
   desbloqueado, inténtalo de nuevo». Si la consulta tampoco responde, MUST

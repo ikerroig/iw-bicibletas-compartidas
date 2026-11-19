@@ -49,14 +49,17 @@ Envelope uniforme `{"error":{"codigo","mensaje"}}`. Ningún rechazo tiene efecto
 |---|---|---|
 | 401 | `UNAUTENTICADO` | Sin token o token inválido |
 | 403 | `ROL_INSUFICIENTE` | Rol distinto de `usuario` |
-| 403 | `ABONO_VENCIDO` | Abono inactivo, caducado o sin fecha |
+| 403 | `SIN_ABONO` | Abono inactivo, sin fecha o usuario inexistente. Mensaje: «No tienes abono anual» (D15) |
+| 403 | `ABONO_VENCIDO` | Abono activo con fecha de vencimiento anterior a hoy (`Europe/Madrid`). Mensaje: «Tu abono anual caducó el DD/MM/AAAA» (D15) |
 | 404 | `ANCLAJE_NO_EXISTE` | Ningún anclaje con ese código |
 | 409 | `VIAJE_ACTIVO` | El usuario ya tiene un viaje en curso |
 | 409 | `ANCLAJE_NO_DISPONIBLE` | Estación o anclaje fuera de servicio, o anclaje vacío (también si otro usuario acaba de llevarse la bicicleta) |
 | 409 | `BICICLETA_NO_DISPONIBLE` | Bicicleta averiada o en taller |
 | 422 | `VALIDACION` | Cuerpo inválido o código que no cumple la validación |
 
-Si coinciden varias causas, las reglas del usuario prevalecen sobre las del anclaje (research D4).
+Si coinciden varias causas se devuelve una sola, la primera que falla en este orden (FR-012, research D4): abono → viaje activo → anclaje existe → estación en servicio → anclaje en servicio → anclaje con bicicleta → bicicleta disponible.
+
+Un `5xx` o una respuesta que no llega no garantizan que no se haya creado el viaje (research D12). El cliente no debe reenviar el `POST`: debe consultar `GET /alquileres/activo` (FR-011, research D17).
 
 ## GET /api/v1/alquileres/activo
 
@@ -67,8 +70,22 @@ Authorization: Bearer <JWT>          # cualquier rol; solo el viaje propio
 
 | Status | Cuerpo |
 |---|---|
-| 200 | `{"viaje": null}` o `{"viaje": { …como el 201… }}` |
+| 200 | `{"viaje": null, "abono": {…}}` o `{"viaje": { …como el 201… }, "abono": {…}}` |
 | 401 | `UNAUTENTICADO` |
+
+`abono` (añadido el 2026-11-19, FR-010, research D16) se calcula en el momento de la consulta con la misma función que decide el rechazo del `POST`, así que el texto coincide:
+
+```json
+{ "vigente": false, "codigo": "ABONO_VENCIDO", "mensaje": "Tu abono anual caducó el 09/11/2026" }
+```
+
+| Campo | Tipo | Valores |
+|---|---|---|
+| `vigente` | boolean | `true` si el usuario puede desbloquear por su abono |
+| `codigo` | string o null | `null` si `vigente`; si no, `SIN_ABONO` o `ABONO_VENCIDO` |
+| `mensaje` | string o null | `null` si `vigente`; si no, el mismo texto que el 403 del `POST` |
+
+Es un aviso informativo: el `POST` vuelve a comprobar el abono en su transacción.
 
 ## Cambios en el OpenAPI global
 
@@ -77,3 +94,4 @@ Aditivos, a comunicar al equipo:
 - `Viaje`: propiedades opcionales `bicicleta_codigo` y `estacion_origen_nombre`.
 - `/alquileres/desbloqueo`: respuestas `401` y `422`; ejemplo `E01-A01`.
 - `/alquileres/activo`: respuesta `401`.
+- *2026-11-19*: `/alquileres/desbloqueo`, código `SIN_ABONO` documentado en la descripción del 403; `/alquileres/activo`, propiedad `abono` (requerida en la respuesta 200) con el esquema de arriba.
