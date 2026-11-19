@@ -44,6 +44,44 @@ describe('listado de estaciones (FR-011)', () => {
     expect(screen.queryByRole('list', { name: 'Listado de estaciones' })).not.toBeInTheDocument();
   });
 
+  // T113 — converge F3: aria-controls nunca debe apuntar a un elemento inexistente.
+  it('las dos pestañas apuntan siempre a un panel existente (aria-controls)', async () => {
+    const { container } = render(() => <MapaRed />);
+    await waitFor(() => expect(marcadores(container)).toHaveLength(ESTACIONES.length));
+    for (const nombre of ['Mapa', 'Lista']) {
+      const pestana = screen.getByRole('tab', { name: nombre });
+      const panel = document.getElementById(pestana.getAttribute('aria-controls')!);
+      expect(panel, `panel de «${nombre}»`).not.toBeNull();
+      expect(panel).toHaveAttribute('role', 'tabpanel');
+      expect(panel).toHaveAttribute('aria-labelledby', pestana.id);
+    }
+    // El panel inactivo existe pero está oculto.
+    expect(document.getElementById('panel-lista')).toHaveAttribute('hidden');
+    expect(document.getElementById('panel-mapa')).not.toHaveAttribute('hidden');
+  });
+
+  // T111 — converge F1: un refresco no debe volver a crear las filas, o quien
+  // navega con teclado o lector de pantalla pierde el foco cada 15 s.
+  it('un refresco actualiza la fila enfocada sin volver a crearla ni perder el foco', async () => {
+    const { lista } = await montarYAbrirLista();
+    const fila = filas(lista).find((b) => b.getAttribute('aria-label')?.startsWith('Normal'))!;
+    fila.focus();
+    expect(fila).toHaveFocus();
+
+    server.use(
+      http.get('*/api/v1/estaciones', () =>
+        HttpResponse.json(
+          snapshot(ESTACIONES.map((e) => (e.id === 1 ? { ...e, bicis_disponibles: 2 } : e))),
+        ),
+      ),
+    );
+    await waitFor(() =>
+      expect(fila).toHaveAttribute('aria-label', expect.stringContaining('2 bicicletas')),
+    );
+    expect(fila.isConnected).toBe(true);
+    expect(fila).toHaveFocus();
+  });
+
   it('contiene TODAS las estaciones con el mismo estado y contadores que el mapa (SC-008)', async () => {
     const { container, lista } = await montarYAbrirLista();
     const delMapa = marcadores(container)

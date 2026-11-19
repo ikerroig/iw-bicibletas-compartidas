@@ -54,20 +54,21 @@ export default function MapaRed(props: Props) {
               class="absolute inset-0"
             />
           </div>
-          <Show when={vista() === 'lista'}>
-            <div
-              id="panel-lista"
-              role="tabpanel"
-              aria-labelledby="pestana-lista"
-              class="absolute inset-0 overflow-y-auto bg-white pt-20"
-            >
-              <ListaEstaciones
-                estaciones={red.estaciones()}
-                seleccionId={seleccionId()}
-                onSeleccionar={setSeleccionId}
-              />
-            </div>
-          </Show>
+          {/* Los dos paneles existen siempre para que el aria-controls de cada
+              pestaña apunte a un elemento real (converge F3, T113). */}
+          <div
+            id="panel-lista"
+            role="tabpanel"
+            aria-labelledby="pestana-lista"
+            hidden={vista() !== 'lista'}
+            class="absolute inset-0 overflow-y-auto bg-white pt-20"
+          >
+            <ListaEstaciones
+              estaciones={red.estaciones()}
+              seleccionId={seleccionId()}
+              onSeleccionar={setSeleccionId}
+            />
+          </div>
 
           <div class="pointer-events-none absolute inset-x-0 top-2 z-[1000] flex flex-col items-center gap-2 px-2">
             <AvisoDesactualizado

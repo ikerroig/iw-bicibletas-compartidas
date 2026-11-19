@@ -3,6 +3,7 @@ import { render, screen } from '@solidjs/testing-library';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AvisoDesactualizado from '../../src/pages/mapa/AvisoDesactualizado';
+import MapaRed from '../../src/pages/mapa/MapaRed';
 import { crearRedEnVivo } from '../../src/stores/red';
 import { snapshot } from '../handlers';
 import { server } from '../server';
@@ -78,12 +79,24 @@ describe('aviso de datos desactualizados', () => {
     expect(region).toHaveTextContent('Datos desactualizados');
   });
 
-  it('sin ninguna carga correcta, avisa igualmente pasados 30 s', async () => {
+  // T112 — converge F2. Antes de FR-010 este test exigía el aviso «Datos
+  // desactualizados» también sin datos, pero ese aviso dice «Mostramos los
+  // últimos datos conocidos» y no hay ninguno: sin datos manda FR-010.
+  it('sin ninguna carga correcta NO muestra «Datos desactualizados» (no hay datos que mostrar)', async () => {
     server.use(caida());
     render(() => <Arnes />);
     await avanzar(31_000);
-    expect(screen.getByText('Datos desactualizados')).toBeInTheDocument();
+    expect(screen.queryByText('Datos desactualizados')).not.toBeInTheDocument();
+    expect(screen.queryByText(/últimos datos conocidos/)).not.toBeInTheDocument();
     expect(screen.getByText(/Sin datos todavía/)).toBeInTheDocument();
+  });
+
+  it('sin datos y pasados 30 s, el mapa muestra solo el mensaje de FR-010', async () => {
+    server.use(caida());
+    render(() => <MapaRed />);
+    await avanzar(31_000);
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo cargar la disponibilidad');
+    expect(screen.queryByText('Datos desactualizados')).not.toBeInTheDocument();
   });
 
   it('al volver a una pestaña oculta más de 30 s no parpadea el aviso si la respuesta llega bien', async () => {
