@@ -1,0 +1,26 @@
+# Tests de HU-01 DESPUÉS de T102/T104/T108, 2026-11-19 11:41
+ ✓ tests/mapa/estadoVisual.test.ts (11 tests) 13ms
+ ✓ tests/mapa/desactualizado.test.tsx (4 tests) 300ms
+ ✓ tests/mapa/encuadre.test.tsx (4 tests) 520ms
+ ✓ tests/mapa/listaEstaciones.test.tsx (7 tests) 889ms
+   ✓ listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado  340ms
+ ✓ tests/mapa/mapa.test.tsx (15 tests) 955ms
+ ✓ tests/mapa/sesionCaducada.test.tsx (2 tests) 633ms
+   ✓ sesión no válida durante la consulta (FR-012) > sin sesión, la vista de disponibilidad redirige al login y, tras entrar, vuelve al mapa  427ms
+ Test Files  6 passed (6)
+      Tests  43 passed (43)
+
+# Suite completa del frontend
+ Test Files  14 passed (14)
+      Tests  78 passed (78)
+
+# Backend: go test ./...
+ok  	si16/backend/internal/services/alquiler	(cached)
+ok  	si16/backend/internal/services/analitica	(cached)
+ok  	si16/backend/internal/services/balanceo	(cached)
+ok  	si16/backend/internal/services/devolucion	(cached)
+ok  	si16/backend/internal/services/viajes	(cached)
+ok  	si16/backend/internal/workers/refresco_estado	(cached)
+ok  	si16/backend/tests	(cached)
+ok  	si16/backend/tests/contract	(cached)
+ok  	si16/backend/tests/integration	(cached)

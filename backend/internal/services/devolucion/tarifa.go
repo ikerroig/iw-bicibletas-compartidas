@@ -22,3 +22,12 @@ func CalcularCoste(segundos int64, tarifaMinuto float64) float64 {
 	// Piso a céntimos: evita binario-15×0.2=3.0000000000000004.
 	return math.Round(coste*100) / 100
 }
+
+// DuracionMinutos devuelve ceil(segundos/60) (data-model R8): 23 min 47 s
+// cuentan como 24 y 30 min 01 s como 31, coherente con CalcularCoste.
+func DuracionMinutos(segundos int64) int {
+	if segundos <= 0 {
+		return 0
+	}
+	return int((segundos + 59) / 60)
+}

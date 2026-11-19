@@ -1,0 +1,67 @@
+# T110 — Regresión de HU-01, 2026-11-19 11:57, commit 8c4e4f2
+
+## Backend: go test ./... (sin caché)
+?   	si16/backend/cmd/migrate	[no test files]
+?   	si16/backend/cmd/seed	[no test files]
+?   	si16/backend/cmd/server	[no test files]
+?   	si16/backend/internal/apierr	[no test files]
+?   	si16/backend/internal/auth	[no test files]
+?   	si16/backend/internal/cache	[no test files]
+?   	si16/backend/internal/config	[no test files]
+?   	si16/backend/internal/db	[no test files]
+?   	si16/backend/internal/deps	[no test files]
+?   	si16/backend/internal/handlers/alquiler	[no test files]
+?   	si16/backend/internal/handlers/analitica	[no test files]
+?   	si16/backend/internal/handlers/auth	[no test files]
+?   	si16/backend/internal/handlers/balanceo	[no test files]
+?   	si16/backend/internal/handlers/devolucion	[no test files]
+?   	si16/backend/internal/handlers/estacion	[no test files]
+?   	si16/backend/internal/handlers/incidencias	[no test files]
+?   	si16/backend/internal/handlers/taller	[no test files]
+?   	si16/backend/internal/handlers/viajes	[no test files]
+?   	si16/backend/internal/hooks	[no test files]
+?   	si16/backend/internal/httperr	[no test files]
+?   	si16/backend/internal/models	[no test files]
+?   	si16/backend/internal/routes	[no test files]
+ok  	si16/backend/internal/services/alquiler	1.757s
+ok  	si16/backend/internal/services/analitica	0.288s
+ok  	si16/backend/internal/services/balanceo	0.342s
+ok  	si16/backend/internal/services/devolucion	0.286s
+?   	si16/backend/internal/services/estacion	[no test files]
+?   	si16/backend/internal/services/incidencias	[no test files]
+?   	si16/backend/internal/services/taller	[no test files]
+ok  	si16/backend/internal/services/viajes	0.259s
+?   	si16/backend/internal/testutil	[no test files]
+?   	si16/backend/internal/workers/alertas	[no test files]
+ok  	si16/backend/internal/workers/refresco_estado	1.523s
+?   	si16/backend/migrations	[no test files]
+ok  	si16/backend/tests	10.219s
+ok  	si16/backend/tests/contract	1.636s
+ok  	si16/backend/tests/integration	23.278s
+
+## Frontend: npm test
+ ✓ src/pages/balanceo/index.test.tsx (4 tests) 223ms
+ ✓ src/pages/analitica/index.test.tsx (6 tests) 310ms
+ ✓ src/pages/viajes/index.test.tsx (6 tests) 355ms
+ ✓ tests/mapa/desactualizado.test.tsx (5 tests) 544ms
+ ✓ tests/alquiler/menu.test.tsx (5 tests) 362ms
+ ✓ tests/mapa/encuadre.test.tsx (4 tests) 702ms
+   ✓ encuadre inicial del mapa (FR-013) > (a) usuario FUERA del área y su posición llega ANTES que los datos → se encuadra la red  384ms
+ ✓ tests/alquiler/aviso.test.tsx (4 tests) 489ms
+ ✓ tests/alquiler/desbloqueo.test.tsx (5 tests) 1107ms
+   ✓ desbloqueo > muestra el viaje activo en lugar del formulario  375ms
+   ✓ desbloqueo > envía el código sin espacios y pasa al viaje en curso  309ms
+ ✓ tests/mapa/sesionCaducada.test.tsx (2 tests) 825ms
+   ✓ sesión no válida durante la consulta (FR-012) > sin sesión, la vista de disponibilidad redirige al login y, tras entrar, vuelve al mapa  524ms
+ ✓ tests/mapa/mapa.test.tsx (15 tests) 1358ms
+   ✓ MapaRed > pinta TODAS las estaciones de la API (SC-001) con texto/aria-label distinto por estado  373ms
+ ✓ tests/mapa/listaEstaciones.test.tsx (9 tests) 1373ms
+   ✓ listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado  490ms
+ ✓ tests/mapa/estadoVisual.test.ts (11 tests) 8ms
+ ✓ src/pages/devolucion/index.test.tsx (4 tests) 64ms
+ ✓ src/pages/taller/index.test.tsx (1 test) 135ms
+ Test Files  14 passed (14)
+      Tests  81 passed (81)
+
+## Frontend: tsc --noEmit
+sin errores de tipos

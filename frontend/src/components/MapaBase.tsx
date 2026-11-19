@@ -2,9 +2,11 @@
 // L.divIcon. No conoce la lógica de estados: recibe el HTML y el aria-label de
 // cada marcador ya calculados (pages/mapa/).
 //
-// Encuadre (caso límite de HU-01): si el usuario concede su ubicación, se
-// centra en ella; si la deniega, no está disponible o tarda más de 5 s, se
-// encuadra en toda la red. El atributo data-encuadre lo refleja para tests.
+// Encuadre (HU-01 FR-013, research R23): se encuadra toda la red, salvo que el
+// usuario conceda su ubicación y esta caiga DENTRO del área de la red, en cuyo
+// caso se centra en él. Si la posición llega antes que las estaciones, se
+// guarda y se decide al llegar estas. Ubicación denegada, no disponible, tardía
+// (> 5 s) o fuera del área → toda la red. data-encuadre lo refleja para tests.
 import L from 'leaflet';
 import { createEffect, createSignal, onCleanup, onMount } from 'solid-js';
 
@@ -44,14 +46,28 @@ export default function MapaBase(props: Props) {
 
     const capas = new Map<number, { marcador: L.Marker; html: string; aria: string }>();
 
+    // Última lista de marcadores y posición del usuario (si ya llegó): con las
+    // dos se decide el encuadre (FR-013, R23), sin importar cuál llega antes.
+    let listaActual: MarcadorMapa[] = [];
+    let posicionUsuario: L.LatLng | null = null;
+
     const encuadrarRed = (lista: MarcadorMapa[]) => {
       if (lista.length === 0 || encuadre() === 'usuario') return;
-      const limites = L.latLngBounds(lista.map((m) => [m.lat, m.lng] as L.LatLngTuple));
+      const limites = limitesDe(lista);
       // Sin tamaño (p. ej. jsdom o contenedor oculto) fitBounds no puede calcular el zoom.
       if (mapa.getSize().x > 0 && mapa.getSize().y > 0)
         mapa.fitBounds(limites, { padding: [24, 24], maxZoom: 16 });
       else mapa.setView(limites.getCenter(), 13);
       setEncuadre('red');
+    };
+
+    /** Centra en el usuario solo si está dentro del área de la red. */
+    const centrarSiDentro = (): boolean => {
+      if (!posicionUsuario || listaActual.length === 0) return false;
+      if (!areaDeLaRed(listaActual).contains(posicionUsuario)) return false;
+      mapa.setView(posicionUsuario, ZOOM_USUARIO);
+      setEncuadre('usuario');
+      return true;
     };
 
     // Geolocalización con plazo propio: una respuesta tardía se ignora.
@@ -64,11 +80,15 @@ export default function MapaBase(props: Props) {
         clearTimeout(plazo);
       });
       navigator.geolocation.getCurrentPosition(
+        // Callback del navegador (una sola vez): lee el encuadre en ese momento, no necesita seguimiento.
+        // eslint-disable-next-line solid/reactivity
         (pos) => {
           clearTimeout(plazo);
           if (vencido) return;
-          mapa.setView([pos.coords.latitude, pos.coords.longitude], ZOOM_USUARIO);
-          setEncuadre('usuario');
+          // Si aún no hay estaciones, se guarda y se decide cuando lleguen.
+          // Fuera del área de la red se ignora: se queda el encuadre de la red.
+          posicionUsuario = L.latLng(pos.coords.latitude, pos.coords.longitude);
+          if (encuadre() !== 'usuario') centrarSiDentro();
         },
         () => {
           clearTimeout(plazo); // denegada o no disponible: se queda el encuadre de la red
@@ -123,7 +143,8 @@ export default function MapaBase(props: Props) {
           capas.delete(id);
         }
       }
-      if (encuadre() === 'pendiente') encuadrarRed(lista);
+      listaActual = lista;
+      if (encuadre() === 'pendiente' && !centrarSiDentro()) encuadrarRed(lista);
     });
 
     const observador =
@@ -146,6 +167,28 @@ export default function MapaBase(props: Props) {
       role="application"
       aria-label="Mapa de estaciones"
     />
+  );
+}
+
+function limitesDe(lista: MarcadorMapa[]): L.LatLngBounds {
+  return L.latLngBounds(lista.map((m) => [m.lat, m.lng] as L.LatLngTuple));
+}
+
+/** Margen mínimo del área de la red, en grados (≈ 2 km). */
+const MARGEN_MINIMO_GRADOS = 0.02;
+
+/**
+ * Área de la red (FR-013, R23): rectángulo que abarca todas las estaciones,
+ * ampliado un 20 % y, como mínimo, ~2 km por cada lado (para que una red muy
+ * compacta no deje fuera a quien está en la calle de al lado).
+ */
+export function areaDeLaRed(lista: MarcadorMapa[]): L.LatLngBounds {
+  const b = limitesDe(lista).pad(0.2);
+  const so = b.getSouthWest();
+  const ne = b.getNorthEast();
+  return L.latLngBounds(
+    [so.lat - MARGEN_MINIMO_GRADOS, so.lng - MARGEN_MINIMO_GRADOS],
+    [ne.lat + MARGEN_MINIMO_GRADOS, ne.lng + MARGEN_MINIMO_GRADOS],
   );
 }
 
