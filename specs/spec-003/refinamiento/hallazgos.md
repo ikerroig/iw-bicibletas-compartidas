@@ -41,3 +41,18 @@ falta volver a clarify.
   reflejado en el clarify de spec-004 (D2).
 - **spec-005 (HU-05, Josep)**: T3h (bici averiada durante el viaje) sigue
   intacto tras el merge de main.
+
+## Revisión entre compañeros (§5.1 y §5.2) — a rellenar por Iker Roig
+
+> El enunciado pide que el revisor contraste las decisiones del clarify, elija
+> **al menos un criterio** de la historia y compruebe que la tarea propuesta
+> permitiría verificarlo. Si no hay incidencias reales, se documenta la
+> cobertura comprobada, sin inventarse errores.
+
+| Qué se revisó | Criterio / decisión | Cómo se comprobó | Resultado | Fecha |
+|---------------|---------------------|------------------|-----------|-------|
+| Decisiones del clarify | _(p. ej., AC4 / AC5 / AC6: abono caducado no bloquea devolución, tarifa y redondeo por minuto empezado)_ | _(lectura de `clarify.md` y contraste con la narrativa)_ | | |
+| Cobertura de un criterio en la matriz | _(p. ej., FR-003 / SC-001 tramo gratuito ≤ 30 min → T014, T016 o FR-008 permisos → T028)_ | _(tarea, test previsto y ejecución de pruebas)_ | | |
+| Registro de hallazgos | _(p. ej., A1 permisos o A2 abono vencido)_ | _(contraste con el informe analyze y los tests)_ | | |
+
+**Firma del revisor**: _(Iker Roig — fecha)_
