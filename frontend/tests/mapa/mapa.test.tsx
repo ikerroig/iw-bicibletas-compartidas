@@ -123,6 +123,24 @@ describe('MapaRed', () => {
     await waitFor(() =>
       expect(within(detalle).getByTestId('contador-bicis')).toHaveTextContent('0 · Sin bicicletas'),
     );
+
+    // T105 — FR-004 ampliado (escenario 6): paso a fuera de servicio con el
+    // detalle abierto; no se cierra ni pierde la selección.
+    server.use(
+      http.get('*/api/v1/estaciones', () =>
+        HttpResponse.json(
+          snapshot(
+            ESTACIONES.map((e) =>
+              e.id === 1 ? { ...e, estado: 'fuera_de_servicio' as const } : e,
+            ),
+          ),
+        ),
+      ),
+    );
+    await waitFor(() => expect(detalle).toHaveTextContent('Fuera de servicio'));
+    expect(within(detalle).getByTestId('contador-bicis')).toHaveTextContent('—');
+    expect(within(detalle).getByTestId('contador-anclajes')).toHaveTextContent('—');
+    expect(screen.getByRole('region', { name: /Normal/ })).toBe(detalle);
   });
 
   it('con la geolocalización denegada se encuadra en toda la red sin error', async () => {
@@ -163,9 +181,57 @@ describe('MapaRed', () => {
     expect(marcadores(container)).toHaveLength(ESTACIONES.length);
   });
 
-  it('si la primera carga falla lo indica y reintenta', async () => {
-    server.use(http.get('*/api/v1/estaciones', () => HttpResponse.error()));
-    render(() => <MapaRed />);
-    expect(await screen.findByText(/No se pudo conectar con el servidor/)).toBeInTheDocument();
+  // T101 — FR-010 (escenario 4). Con el intervalo de producción (15 s), la
+  // petición inmediata tras pulsar «Reintentar» solo puede venir del botón.
+  it('si la primera carga falla: mensaje, botón «Reintentar» y ningún marcador (FR-010)', async () => {
+    let peticiones = 0;
+    server.use(
+      http.get('*/api/v1/estaciones', () => {
+        peticiones++;
+        return HttpResponse.error();
+      }),
+    );
+    const { container } = render(() => <MapaRed />);
+
+    const alerta = await screen.findByRole('alert');
+    expect(alerta).toHaveTextContent('No se pudo cargar la disponibilidad');
+    expect(marcadores(container)).toHaveLength(0);
+    expect(screen.queryByTestId('contador-bicis')).not.toBeInTheDocument();
+
+    server.use(
+      http.get('*/api/v1/estaciones', () => {
+        peticiones++;
+        return HttpResponse.json(snapshot());
+      }),
+    );
+    const antes = peticiones;
+    fireEvent.click(within(alerta).getByRole('button', { name: 'Reintentar' }));
+
+    await waitFor(() => expect(marcadores(container)).toHaveLength(ESTACIONES.length));
+    expect(peticiones).toBe(antes + 1);
+    expect(screen.queryByText('No se pudo cargar la disponibilidad')).not.toBeInTheDocument();
+  });
+
+  it('si la primera carga falla, reintenta solo y el mensaje desaparece al recibir datos (FR-010)', async () => {
+    server.use(
+      http.get('*/api/v1/estaciones', () => HttpResponse.error(), { once: true }),
+      http.get('*/api/v1/estaciones', () => HttpResponse.json(snapshot())),
+    );
+    const { container } = render(() => <MapaRed intervaloMs={50} />);
+    expect(await screen.findByText('No se pudo cargar la disponibilidad')).toBeInTheDocument();
+    await waitFor(() => expect(marcadores(container)).toHaveLength(ESTACIONES.length));
+    expect(screen.queryByText('No se pudo cargar la disponibilidad')).not.toBeInTheDocument();
+  });
+
+  it('con datos previos, un fallo NO muestra el mensaje de primera carga (se mantiene R17)', async () => {
+    server.use(
+      http.get('*/api/v1/estaciones', () => HttpResponse.json(snapshot()), { once: true }),
+      http.get('*/api/v1/estaciones', () => HttpResponse.error()),
+    );
+    const { container } = render(() => <MapaRed intervaloMs={50} />);
+    await waitFor(() => expect(marcadores(container)).toHaveLength(ESTACIONES.length));
+    expect(await screen.findByText(/Reintentando/)).toBeInTheDocument();
+    expect(screen.queryByText('No se pudo cargar la disponibilidad')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reintentar' })).not.toBeInTheDocument();
   });
 });

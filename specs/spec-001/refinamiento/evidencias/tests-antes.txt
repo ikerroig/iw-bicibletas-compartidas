@@ -1,0 +1,65 @@
+# Tests de HU-01 ANTES de T102/T104/T108 (commit 8632439 + tests T101-T107), 2026-11-19 11:37
+ ✓ tests/mapa/estadoVisual.test.ts (11 tests) 15ms
+ ✓ tests/mapa/desactualizado.test.tsx (4 tests) 274ms
+ ✓ tests/mapa/sesionCaducada.test.tsx (2 tests) 554ms
+   ✓ sesión no válida durante la consulta (FR-012) > sin sesión, la vista de disponibilidad redirige al login y, tras entrar, vuelve al mapa  355ms
+   × listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado 411ms
+     → Unable to find an accessible element with the role "tablist" and name "Vista de la disponibilidad"
+   × listado de estaciones (FR-011) > contiene TODAS las estaciones con el mismo estado y contadores que el mapa (SC-008) 146ms
+     → Unable to find an accessible element with the role "tab" and name "Lista"
+   × listado de estaciones (FR-011) > las filas van ordenadas por nombre y muestran texto de estado, no solo color 120ms
+     → Unable to find an accessible element with the role "tab" and name "Lista"
+   × listado de estaciones (FR-011) > una estación fuera de servicio aparece con «Fuera de servicio» y «—», sin contadores 112ms
+     → Unable to find an accessible element with the role "tab" and name "Lista"
+   × listado de estaciones (FR-011) > se actualiza con el siguiente refresco, igual que el mapa (FR-003) 111ms
+     → Unable to find an accessible element with the role "tab" and name "Lista"
+   × listado de estaciones (FR-011) > pulsar una fila abre el detalle de esa estación 111ms
+     → Unable to find an accessible element with the role "tab" and name "Lista"
+   × listado de estaciones (FR-011) > sigue funcionando aunque las teselas del mapa de fondo no carguen 85ms
+     → Unable to find an accessible element with the role "tab" and name "Lista"
+   × encuadre inicial del mapa (FR-013) > (a) usuario FUERA del área y su posición llega ANTES que los datos → se encuadra la red 1261ms
+     → expected 'usuario' to be 'red' // Object.is equality
+   × encuadre inicial del mapa (FR-013) > (b) usuario FUERA del área y su posición llega DESPUÉS que los datos → se mantiene la red 59ms
+     → expected 'usuario' to be 'red' // Object.is equality
+   ✓ encuadre inicial del mapa (FR-013) > (c) usuario DENTRO del área → se centra en él (antes o después de los datos) 70ms
+   ✓ encuadre inicial del mapa (FR-013) > (d) permiso denegado → se encuadra la red 47ms
+   ✓ DetalleEstacion > operativa con disponibilidad: muestra los dos contadores 42ms
+   ✓ DetalleEstacion > 0 bicicletas → «0 · Sin bicicletas» (FR-008) 5ms
+   ✓ DetalleEstacion > 0 anclajes libres → «0 · Sin anclajes libres» (FR-008) 4ms
+   ✓ DetalleEstacion > ambos a 0 → señala los dos estados, sin desglose de averiadas (FR-006) 6ms
+   ✓ DetalleEstacion > fuera de servicio → «Fuera de servicio» y «—» sin contadores ni acciones (FR-009) 9ms
+   ✓ MapaRed > pinta TODAS las estaciones de la API (SC-001) con texto/aria-label distinto por estado 202ms
+   ✓ MapaRed > un marcador fuera de servicio es seleccionable y abre su detalle (FR-009) 81ms
+   ✓ MapaRed > el detalle se actualiza con los datos en vivo de la estación seleccionada 130ms
+   ✓ MapaRed > con la geolocalización denegada se encuadra en toda la red sin error 41ms
+   ✓ MapaRed > con permiso de ubicación centra el mapa en el usuario 22ms
+   ✓ MapaRed > sin estaciones muestra un estado vacío 32ms
+   ✓ MapaRed > si la conexión falla conserva el último estado conocido 71ms
+   × MapaRed > si la primera carga falla: mensaje, botón «Reintentar» y ningún marcador (FR-010) 27ms
+   × MapaRed > si la primera carga falla, reintenta solo y el mensaje desaparece al recibir datos (FR-010) 1031ms
+     → Unable to find an element with the text: No se pudo cargar la disponibilidad. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+   ✓ MapaRed > con datos previos, un fallo NO muestra el mensaje de primera carga (se mantiene R17) 82ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  tests/mapa/encuadre.test.tsx > encuadre inicial del mapa (FR-013) > (a) usuario FUERA del área y su posición llega ANTES que los datos → se encuadra la red
+AssertionError: expected 'usuario' to be 'red' // Object.is equality
+ FAIL  tests/mapa/encuadre.test.tsx > encuadre inicial del mapa (FR-013) > (b) usuario FUERA del área y su posición llega DESPUÉS que los datos → se mantiene la red
+AssertionError: expected 'usuario' to be 'red' // Object.is equality
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado
+TestingLibraryElementError: Unable to find an accessible element with the role "tablist" and name "Vista de la disponibilidad"
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > contiene TODAS las estaciones con el mismo estado y contadores que el mapa (SC-008)
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "Lista"
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > las filas van ordenadas por nombre y muestran texto de estado, no solo color
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "Lista"
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > una estación fuera de servicio aparece con «Fuera de servicio» y «—», sin contadores
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "Lista"
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > se actualiza con el siguiente refresco, igual que el mapa (FR-003)
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "Lista"
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > pulsar una fila abre el detalle de esa estación
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "Lista"
+ FAIL  tests/mapa/listaEstaciones.test.tsx > listado de estaciones (FR-011) > sigue funcionando aunque las teselas del mapa de fondo no carguen
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "Lista"
+ FAIL  tests/mapa/mapa.test.tsx > MapaRed > si la primera carga falla: mensaje, botón «Reintentar» y ningún marcador (FR-010)
+ FAIL  tests/mapa/mapa.test.tsx > MapaRed > si la primera carga falla, reintenta solo y el mensaje desaparece al recibir datos (FR-010)
+TestingLibraryElementError: Unable to find an element with the text: No se pudo cargar la disponibilidad. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+ Test Files  3 failed | 3 passed (6)
+      Tests  11 failed | 32 passed (43)

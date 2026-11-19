@@ -24,7 +24,9 @@ export default function AvisoDesactualizado(props: Props) {
           ? 'Sin datos todavía'
           : `Actualizado a las ${formatearHora(props.ultimaActualizacionOk)}`}
       </p>
-      <Show when={props.desactualizado}>
+      {/* Solo con datos previos (converge F2, T112): sin ninguna carga correcta no
+          hay «últimos datos conocidos» que mostrar; ese caso lo cubre FR-010. */}
+      <Show when={props.desactualizado && props.ultimaActualizacionOk !== null}>
         <p class="flex items-center gap-2 rounded border-2 border-amber-600 bg-amber-50 px-3 py-1.5 text-amber-900 shadow">
           <span aria-hidden="true" class="text-lg">
             ⚠
