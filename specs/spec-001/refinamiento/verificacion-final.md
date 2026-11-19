@@ -1,6 +1,6 @@
 # Verificación final de HU-01 — T109 (antes/después) y T110 (regresión)
 
-**Responsable**: Iker Roig · **Revisor**: _(compañero)_
+**Responsable**: Iker Roig · **Revisor**: Alex Morell
 **Fecha**: 2026-11-19, 11:52–12:01 (hora local)
 **Versión del código**: commit `8c4e4f2` (rama `refinamiento/spec-001`; tras
 T101–T114 y converge 2 *converged*)

@@ -4,7 +4,7 @@
 [informe inicial](./analyze.md) con el material del proyecto (spec, plan,
 tareas, contrato, código y pruebas en navegador) y se ha decidido qué hacer
 con él.
-**Responsable**: Iker Roig · **Revisor**: _(compañero)_ · **Fecha**: 2026-11-19
+**Responsable**: Iker Roig · **Revisor**: Alex Morell · **Fecha**: 2026-11-19
 
 **Estados**: *Corregido* = el documento ya está corregido · *Tareas añadidas* =
 la corrección documental está hecha y el código queda para `/speckit-implement`
@@ -45,3 +45,18 @@ Después de las correcciones no queda ningún hallazgo **crítico** ni **alto**
 sin resolver en el plano documental. G1–G4 y H1 tienen tareas y pruebas
 previstas; su cierre en el código se verificará con `/speckit-converge`
 (§5.3).
+
+## Revisión entre compañeros (§5.1 y §5.2) — a rellenar por Alex Morell
+
+> El enunciado pide que el revisor contraste las decisiones del clarify, elija
+> **al menos un criterio** de la historia y compruebe que la tarea propuesta
+> permitiría verificarlo. Si no hay incidencias reales, se documenta la
+> cobertura comprobada, sin inventarse errores.
+
+| Qué se revisó | Criterio / decisión | Cómo se comprobó | Resultado | Fecha |
+|---------------|---------------------|------------------|-----------|-------|
+| Decisiones del clarify | _(p. ej., pregunta 5 → FR-013)_ | _(lectura de `clarify.md` y la narrativa)_ | _(de acuerdo / discrepancia y motivo)_ | |
+| Cobertura de un criterio en la matriz | _(p. ej., FR-010)_ | _(tarea, test y escenario de `docs/matriz-trazabilidad.md`; ejecución del test)_ | | |
+| Registro de hallazgos | _(p. ej., G3 / G4, falsos positivos)_ | _(contraste con el código)_ | | |
+
+**Firma del revisor**: _(nombre y fecha)_

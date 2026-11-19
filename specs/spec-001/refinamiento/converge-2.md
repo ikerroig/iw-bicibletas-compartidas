@@ -1,6 +1,6 @@
 # Informe de converge 2 — spec-001 (HU-01)
 
-**Responsable**: Iker Roig · **Revisor**: _(compañero)_
+**Responsable**: Iker Roig · **Revisor**: Alex Morell
 **Fecha**: 2026-11-19 · **Comando**: `/speckit-converge` (segunda ejecución,
 enunciado §5.3 paso 5: «Repetir converge tras las correcciones»)
 **Estado de partida**: commit `a42bbbf` (T111–T114). Tests: 81/81 del frontend

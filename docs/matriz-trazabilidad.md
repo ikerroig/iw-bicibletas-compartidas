@@ -6,6 +6,14 @@ integrante rellena las filas de sus dos historias, y **otro integrante** las
 revisa: comprueba al menos un criterio por historia y que la tarea propuesta
 permitiría verificarlo.
 
+**Revisión cruzada** (acordada el 2026-11-19): **Iker Roig ↔ Alex Morell** y
+**Josep Peiró ↔ Alberto Copa**. Cada pareja revisa las dos historias del otro.
+Las historias de cada pareja van seguidas en el flujo del sistema
+(desbloqueo → devolución → historial; avería → taller → balanceo y
+analítica), lo que también sirve para los recorridos entre integrantes del
+§5.4. Para que la revisión sea comprobable, el revisor deja por escrito qué
+criterio concreto comprobó y cómo, no solo «revisado».
+
 **Leyenda de pruebas**: `Go:` test de backend (`backend/tests/…`) · `Vitest:`
 test de frontend (`frontend/tests/…`) · `S1x`: escenario manual de
 `specs/spec-001/quickstart.md` · `P…`: comprobación de
@@ -13,7 +21,7 @@ test de frontend (`frontend/tests/…`) · `S1x`: escenario manual de
 **Estado**: ✅ cubierto y probado · 🛠 tareas añadidas en el refinamiento,
 pendientes de implementar · 👁 solo validación manual.
 
-## HU-01 — Consulta de disponibilidad en tiempo real (spec-001) · Iker Roig · Revisor: _(pendiente)_
+## HU-01 — Consulta de disponibilidad en tiempo real (spec-001) · Iker Roig · Revisor: Alex Morell
 
 Decisiones: `specs/spec-001/research.md` (Rn) · Tareas: `specs/spec-001/tasks.md` (Tnnn).
 
@@ -39,30 +47,30 @@ Decisiones: `specs/spec-001/research.md` (Rn) · Tareas: `specs/spec-001/tasks.m
 prueba prevista**. Tras el refinamiento (2026-11-19): **20 ✅** y 1 👁
 (SC-004: cumple de sobra en local; falta repetir la medición con «Fast 4G»).
 
-## HU-02 — Desbloqueo de bicicleta por código de anclaje (spec-002) · Iker Roig · Revisor: _(pendiente)_
+## HU-02 — Desbloqueo de bicicleta por código de anclaje (spec-002) · Iker Roig · Revisor: Alex Morell
 
 _(Pendiente: se rellena tras el clarify y el analyze de spec-002.)_
 
-## HU-03 — Devolución y tarificación (spec-003) · Alex Morell · Revisor: _(pendiente)_
+## HU-03 — Devolución y tarificación (spec-003) · Alex Morell · Revisor: Iker Roig
 
 _(Pendiente.)_
 
-## HU-04 — Historial de viajes y desglose mensual (spec-004) · Alex Morell · Revisor: _(pendiente)_
+## HU-04 — Historial de viajes y desglose mensual (spec-004) · Alex Morell · Revisor: Iker Roig
 
 _(Pendiente.)_
 
-## HU-05 — Notificación de averías e inhabilitación (spec-005) · Josep Peiró · Revisor: _(pendiente)_
+## HU-05 — Notificación de averías e inhabilitación (spec-005) · Josep Peiró · Revisor: Alberto Copa
 
 _(Pendiente.)_
 
-## HU-06 — Intervenciones técnicas y taller (spec-006) · Josep Peiró · Revisor: _(pendiente)_
+## HU-06 — Intervenciones técnicas y taller (spec-006) · Josep Peiró · Revisor: Alberto Copa
 
 _(Pendiente.)_
 
-## HU-07 — Alertas de balanceo de flota (spec-007) · Alberto Copa · Revisor: _(pendiente)_
+## HU-07 — Alertas de balanceo de flota (spec-007) · Alberto Copa · Revisor: Josep Peiró
 
 _(Pendiente.)_
 
-## HU-08 — Analítica de uso y exportación CSV (spec-008) · Alberto Copa · Revisor: _(pendiente)_
+## HU-08 — Analítica de uso y exportación CSV (spec-008) · Alberto Copa · Revisor: Josep Peiró
 
 _(Pendiente.)_

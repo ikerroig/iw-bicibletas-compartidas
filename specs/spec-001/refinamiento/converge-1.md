@@ -1,6 +1,6 @@
 # Informe de converge 1 — spec-001 (HU-01)
 
-**Responsable**: Iker Roig · **Revisor**: _(compañero)_
+**Responsable**: Iker Roig · **Revisor**: Alex Morell
 **Fecha**: 2026-11-19 · **Comando**: `/speckit-converge` (Spec Kit 1.1.3)
 **Estado de partida**: commit `49f5233` (implement de T101–T108). Tests: 78/78
 del frontend y todos los paquetes del backend en verde

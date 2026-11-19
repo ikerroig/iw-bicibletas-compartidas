@@ -1,6 +1,6 @@
 # Pruebas previas al clarify — HU-01 (spec-001)
 
-**Responsable**: Iker Roig · **Revisor**: _(compañero que contrasta)_
+**Responsable**: Iker Roig · **Revisor**: Alex Morell
 **Enunciado**: §5.1, paso 1. Probar la historia en tres situaciones: el
 recorrido habitual, una entrada inválida o un caso límite, y una condición de
 permisos o de estado.

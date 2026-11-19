@@ -98,7 +98,7 @@
 
 ### Refinamiento de User Story 1 (2026-11-19, tras el clarify de refinamiento)
 
-> Origen: `refinamiento/clarify.md` (sesión 2026-11-19) y `refinamiento/analyze.md` (hallazgos G1–G4, H1). Responsable: Iker Roig · Revisor: _(compañero)_. Ninguna tarea cambia la API, el esquema ni Redis.
+> Origen: `refinamiento/clarify.md` (sesión 2026-11-19) y `refinamiento/analyze.md` (hallazgos G1–G4, H1). Responsable: Iker Roig · Revisor: Alex Morell. Ninguna tarea cambia la API, el esquema ni Redis.
 
 - [X] T101 [P] [US1] Actualizar el test «si la primera carga falla lo indica y reintenta» de `frontend/tests/mapa/mapa.test.tsx` (FR-010, escenario 4; hoy espera «No se pudo conectar con el servidor»): MSW devuelve error **sin datos previos** → se ve «No se pudo cargar la disponibilidad» con `role="alert"`, hay un botón «Reintentar» y ningún marcador; al pulsar «Reintentar» se hace una petición nueva en el acto; cuando MSW responde 2xx, aparecen los marcadores y el mensaje desaparece. El test existente «si la conexión falla conserva el último estado conocido» **no** se toca: con datos previos se mantiene R17
 - [X] T102 [US1] Implementar R20 en `frontend/src/pages/mapa/MapaRed.tsx` (y `frontend/src/stores/red.ts` si hace falta exponer el estado «sin datos + error»): sustituir «Sin datos todavía · Error N. Reintentando…» por el mensaje y el botón de FR-010, que llama a `refrescar()`; hace pasar T101
@@ -384,7 +384,7 @@ Task: "T036 services/alquiler/service.go (transacción + FOR UPDATE)"
 
 ## Phase 12: Convergence
 
-> Origen: `/speckit-converge` de 2026-11-19 sobre HU-01 ([refinamiento/converge-1.md](./refinamiento/converge-1.md)). Responsable: Iker Roig · Revisor: _(compañero)_.
+> Origen: `/speckit-converge` de 2026-11-19 sobre HU-01 ([refinamiento/converge-1.md](./refinamiento/converge-1.md)). Responsable: Iker Roig · Revisor: Alex Morell.
 
 - [X] T111 [US1] Identificar las filas de `frontend/src/pages/mapa/ListaEstaciones.tsx` por `id` de estación (no por referencia del objeto) para que un refresco no vuelva a crearlas ni haga perder el foco del teclado o del lector de pantalla; añadir antes un test en `frontend/tests/mapa/listaEstaciones.test.tsx` que enfoque una fila, fuerce un refresco con datos nuevos y compruebe que la misma fila sigue enfocada y con los contadores actualizados (debe fallar antes del cambio) per FR-011 (partial)
 - [X] T112 [US1] Mostrar solo el mensaje de FR-010 cuando no hay ninguna carga correcta: ocultar el aviso «Datos desactualizados · Mostramos los últimos datos conocidos…» de `frontend/src/pages/mapa/AvisoDesactualizado.tsx` mientras `ultimaActualizacionOk` sea `null`, y actualizar el test «sin ninguna carga correcta, avisa igualmente pasados 30 s» de `frontend/tests/mapa/desactualizado.test.tsx` para que compruebe que, sin datos, a los 31 s se ve el mensaje de FR-010 y no el de datos desactualizados per FR-010 (partial)

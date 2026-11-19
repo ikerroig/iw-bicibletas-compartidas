@@ -1,6 +1,6 @@
 # Informe de clarify — spec-001 (HU-01: Consulta de disponibilidad en tiempo real)
 
-**Responsable**: Iker Roig · **Revisor**: _(compañero que contrasta las decisiones)_
+**Responsable**: Iker Roig · **Revisor**: Alex Morell
 **Comando**: `/speckit-clarify` · **Spec Kit**: 1.1.3
 **Spec**: [`specs/spec-001/spec.md`](../spec.md)
 **Commit de referencia** (antes del refinamiento): `44b5050`
