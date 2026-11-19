@@ -9,7 +9,7 @@
 ## Casos probados por historia (3/3 exigidos)
 
 > **Comprobación previa sobre el commit de partida `0d6f478` (§5.1, paso 1)**:
-> Previo a las preguntas del clarify se ejecutaron las pruebas automatizadas existentes (`go test ./...` y `npm test`) y se reprodujo manualmente el recorrido funcional de devolución en local (iniciar sesión con `usuario1@test.local`, tener un viaje activo iniciado y enviar `POST /api/v1/devoluciones` con `codigo_anclaje`). La aplicación cerró el viaje y recalculó la estación en el caso nominal básico, pero la interacción con la aplicación y la inspección del código y contrato revelaron las ambigüedades y casos límite probados a continuación:
+> Previo a las preguntas del clarify se ejecutaron las pruebas automatizadas existentes (`go test ./...` y `npm test`, ambas en verde sobre `0d6f478`) y se comprobó el recorrido funcional de devolución en local tras sembrar la base de datos con `go run ./cmd/seed` (iniciar sesión con `ana@si16.test` / `password`, usuaria provista por el seed con un viaje activo para la demo de HU-03, y enviar `POST /api/v1/devoluciones` con `codigo_anclaje` de un anclaje libre). La aplicación cerró el viaje y recalculó la estación en el caso nominal básico, pero la interacción y la inspección del código y contrato revelaron las ambigüedades y casos límite probados a continuación:
 
 | # | Categoría | Caso probado | Resultado |
 |---|-----------|--------------|-----------|
