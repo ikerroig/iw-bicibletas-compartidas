@@ -17,8 +17,9 @@ export function fijarViajeEnCurso(v: ViajeActivo | null): void {
   setViaje(v);
 }
 
-export async function cargarViajeEnCurso(): Promise<ViajeActivo | null> {
-  const r = await estadoAlquiler();
+/** Consulta el viaje y el abono; `plazoMs` acota la espera (FR-011, T061). */
+export async function cargarViajeEnCurso(plazoMs?: number): Promise<ViajeActivo | null> {
+  const r = await estadoAlquiler(plazoMs);
   setViaje(r.viaje);
   setAbono(r.abono);
   return r.viaje;

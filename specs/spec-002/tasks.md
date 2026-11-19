@@ -224,6 +224,6 @@ Spec individual de Iker Roig. T009, T020 y T029 tocan piezas compartidas, por lo
 
 ## Phase 7: Convergence
 
-- [ ] T061 Poner un plazo (10 s, como el desbloqueo) a la consulta de comprobación de `cargarViajeEnCurso()` cuando la llama `Desbloqueo.tsx` tras un resultado desconocido, y tratar el plazo agotado como fallo de la consulta (mensaje y botón «Volver a comprobar»), con un caso nuevo en `frontend/tests/alquiler/resultadoDesconocido.test.tsx` en el que el `GET` nunca responde per FR-011 (partial)
-- [ ] T062 Eliminar `viajeActivo()` de `frontend/src/services/api/alquiler.ts`, que se quedó sin usos al introducir `estadoAlquiler()` per plan: D16 (unrequested)
-- [ ] T063 Documentar en `specs/spec-002/research.md` (D17) que cualquier error que no sea un `ApiError` también se trata como resultado desconocido, o restringir `resultadoDesconocido()` de `Desbloqueo.tsx` a los tres casos de D17 per plan: D17 (unrequested)
+- [X] T061 Poner un plazo (10 s, como el desbloqueo) a la consulta de comprobación de `cargarViajeEnCurso()` cuando la llama `Desbloqueo.tsx` tras un resultado desconocido, y tratar el plazo agotado como fallo de la consulta (mensaje y botón «Volver a comprobar»), con un caso nuevo en `frontend/tests/alquiler/resultadoDesconocido.test.tsx` en el que el `GET` nunca responde per FR-011 (partial)
+- [X] T062 Eliminar `viajeActivo()` de `frontend/src/services/api/alquiler.ts`, que se quedó sin usos al introducir `estadoAlquiler()` per plan: D16 (unrequested)
+- [X] T063 Documentar en `specs/spec-002/research.md` (D17) que cualquier error que no sea un `ApiError` también se trata como resultado desconocido, o restringir `resultadoDesconocido()` de `Desbloqueo.tsx` a los tres casos de D17 per plan: D17 (unrequested)

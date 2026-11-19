@@ -16,7 +16,7 @@ const COMPROBANDO = 'No sabemos si se ha desbloqueado; comprobando…';
 const NO_DESBLOQUEADO = 'No se ha desbloqueado, inténtalo de nuevo';
 
 /** Escenario: `post` responde al desbloqueo; `consultas` devuelve, en orden, lo que responde cada GET posterior a la carga. */
-function escenario(post: () => Response | Promise<Response>, consultas: (() => Response)[]) {
+function escenario(post: () => Response | Promise<Response>, consultas: (() => Response | Promise<Response>)[]) {
   const cuenta = { posts: 0, gets: 0 };
   server.use(
     http.post('*/api/v1/alquileres/desbloqueo', () => {
@@ -101,6 +101,21 @@ describe('resultado desconocido del desbloqueo (FR-011)', () => {
     const volver = await screen.findByRole('button', { name: 'Volver a comprobar' });
     expect(screen.getByText(/No sabemos si se ha desbloqueado/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeDisabled();
+    await u.click(volver);
+    expect(await screen.findByRole('heading', { name: 'Viaje en curso' })).toBeInTheDocument();
+    expect(cuenta.posts).toBe(1);
+    expect(cuenta.gets).toBe(3);
+  });
+
+  it('si la comprobación no responde en 10 s → botón «Volver a comprobar» (T061)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const colgada = () => new Promise<Response>(() => {}); // la consulta nunca responde
+    const cuenta = escenario(caido, [colgada, conViaje]);
+    montarDesbloqueo();
+    const u = await enviar(userEvent.setup({ advanceTimers: vi.advanceTimersByTime }));
+    expect(await screen.findByText(COMPROBANDO)).toBeInTheDocument();
+    await vi.advanceTimersByTimeAsync(10_500);
+    const volver = await screen.findByRole('button', { name: 'Volver a comprobar' });
     await u.click(volver);
     expect(await screen.findByRole('heading', { name: 'Viaje en curso' })).toBeInTheDocument();
     expect(cuenta.posts).toBe(1);

@@ -6,7 +6,12 @@
 import { Navigate } from '@solidjs/router';
 import { createResource, createSignal, Match, Show, Switch } from 'solid-js';
 import { ApiError } from '../../services/api';
-import { desbloquear, PlazoAgotado, type ViajeActivo } from '../../services/api/alquiler';
+import {
+  desbloquear,
+  PLAZO_DESBLOQUEO_MS,
+  PlazoAgotado,
+  type ViajeActivo,
+} from '../../services/api/alquiler';
 import { sesion } from '../../stores/sesion';
 import { cargarViajeEnCurso, estadoAbono, fijarViajeEnCurso } from '../../stores/viaje';
 
@@ -16,7 +21,11 @@ const NO_DESBLOQUEADO = 'No se ha desbloqueado, inténtalo de nuevo';
 const horaLocal = (iso: string) =>
   new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
 
-/** Sin respuesta, plazo agotado o 5xx: el viaje pudo crearse o no (D17). */
+/**
+ * Sin respuesta, plazo agotado o 5xx: el viaje pudo crearse o no (D17). Cualquier
+ * otro error que no sea un ApiError (p. ej., un 201 cuyo cuerpo no se puede leer)
+ * también es desconocido: solo provoca una consulta de lectura (T063).
+ */
 function resultadoDesconocido(e: unknown): boolean {
   if (e instanceof PlazoAgotado) return true;
   if (e instanceof ApiError) return e.status === 0 || e.status >= 500;
@@ -70,7 +79,8 @@ function PantallaDesbloqueo() {
   const comprobar = async () => {
     setFase('comprobando');
     try {
-      const viaje = await cargarViajeEnCurso();
+      // Con plazo: una consulta que no responde cuenta como fallo (T061).
+      const viaje = await cargarViajeEnCurso(PLAZO_DESBLOQUEO_MS);
       if (viaje) {
         mutate(viaje);
       } else {

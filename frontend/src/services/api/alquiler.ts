@@ -56,10 +56,26 @@ export async function desbloquear(codigoAnclaje: string): Promise<ViajeActivo> {
   }
 }
 
-export async function estadoAlquiler(): Promise<{ viaje: ViajeActivo | null; abono: EstadoAbono }> {
-  return apiFetch<{ viaje: ViajeActivo | null; abono: EstadoAbono }>('/alquileres/activo');
-}
-
-export async function viajeActivo(): Promise<ViajeActivo | null> {
-  return (await estadoAlquiler()).viaje;
+/**
+ * Viaje en curso y estado del abono (FR-008, FR-010). Con `plazoMs`, la consulta
+ * se cancela si no responde a tiempo y rechaza con PlazoAgotado (FR-011, T061).
+ */
+export async function estadoAlquiler(
+  plazoMs?: number,
+): Promise<{ viaje: ViajeActivo | null; abono: EstadoAbono }> {
+  if (plazoMs === undefined) {
+    return apiFetch<{ viaje: ViajeActivo | null; abono: EstadoAbono }>('/alquileres/activo');
+  }
+  const control = new AbortController();
+  const temporizador = setTimeout(() => control.abort(), plazoMs);
+  try {
+    return await apiFetch<{ viaje: ViajeActivo | null; abono: EstadoAbono }>('/alquileres/activo', {
+      signal: control.signal,
+    });
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw new PlazoAgotado();
+    throw e;
+  } finally {
+    clearTimeout(temporizador);
+  }
 }
