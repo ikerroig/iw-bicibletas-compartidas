@@ -66,3 +66,9 @@ revisión de **HU-02 (spec-002)** queda pendiente hasta que Iker ejecute el
 clarify/analyze de esa spec.
 
 **Firma del revisor**: Alex Morell — 2026-11-19
+
+**Respuesta del responsable** (Iker Roig, 2026-11-19): observación atendida.
+La línea «Borrador» se ha eliminado de `clarify.md`, porque el texto ya es
+definitivo. Al repasarlo se corrigió además una frase de «Cómo lo detecté» que
+no coincidía con `verificacion-final.md` (S1i): el fallo de encuadre ocurría
+tanto si la posición llegaba antes de los datos como después.

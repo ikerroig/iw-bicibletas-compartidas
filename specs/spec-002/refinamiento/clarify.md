@@ -78,13 +78,11 @@ se acordará con el equipo antes.
 **Iker Roig — pregunta 2 de la sesión del 2026-11-19: qué ve el usuario cuando
 la respuesta al desbloqueo no llega (FR-011).**
 
-*Borrador: pendiente de revisar y ajustar con mis palabras.*
-
 **Qué duda había.** La spec garantizaba que nunca se crea un viaje a medias,
 pero no decía qué ve el usuario cuando la petición se envía y la respuesta no
 vuelve. En ese caso hay dos posibilidades que la app no puede distinguir: que
 la petición no llegase al servidor (no hay viaje) o que llegase y se perdiera
-la respuesta (sí hay viaje y la bici está libre).
+la respuesta (sí hay viaje y la bici está desbloqueada).
 
 **Qué opciones había.** (A) Mostrar un error genérico, como hasta ahora.
 (B) Decir que no se sabe el resultado y comprobarlo consultando el viaje
@@ -97,8 +95,14 @@ evitar. Con C, si el primer intento entró, el reintento responde «ya tienes un
 viaje en curso», que confunde todavía más. B no adivina: pregunta al servidor,
 que es quien tiene el dato real (constitución I), y enseña lo que hay.
 
-**Cómo se comprueba.** Con el backend parado o con la red cortada justo después
-de enviar, la app debe mostrar «No sabemos si se ha desbloqueado;
-comprobando…» y, al volver la conexión, el viaje si se creó o «No se ha
-desbloqueado, inténtalo de nuevo» si no. Nunca debe aparecer un segundo
-desbloqueo en el registro del servidor.
+**Cómo se comprueba.** El caso aplica si la red falla, si pasan 10 s sin
+respuesta o si el servidor devuelve un error 5xx, porque en ninguno de los
+tres se sabe si el viaje se creó. La app muestra «No sabemos si se ha
+desbloqueado; comprobando…» y consulta el viaje activo una sola vez: si existe
+lo enseña, y si no, muestra «No se ha desbloqueado, inténtalo de nuevo». Si la
+consulta tampoco responde, aparece el botón «Volver a comprobar», que repite
+solo la consulta. Nunca se envía un segundo desbloqueo. Lo cubren los tests de
+`resultadoDesconocido.test.tsx` y las pruebas V12a y V12b de
+[verificacion-final.md](./verificacion-final.md); en V12b el servidor creó el
+viaje, la respuesta se perdió y la app lo mostró tras comprobarlo, con un solo
+`POST`.
