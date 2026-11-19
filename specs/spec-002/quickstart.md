@@ -40,7 +40,7 @@ Usa en cada caso un anclaje del tipo indicado; se localizan en el detalle de est
 | V4 | FR-003 | Con el viaje de V2, Eva llama a la API con otro código | 409 `VIAJE_ACTIVO`, sin un segundo viaje |
 | V5 | FR-004 | Fran (abono vigente, sin viaje) prueba un código inexistente, una bici averiada y una estación fuera de servicio | 404 o 409 con causa, sin cambios |
 | V6 | FR-009 | El gestor no ve «Desbloquear» en el menú y llama a la API | 403 `ROL_INSUFICIENTE` (el acceso por URL se comprueba en V13) |
-| V7 | FR-001 | Código con 65 caracteres o con `\u0000` | 422 `VALIDACION`, nunca 500 |
+| V7 | FR-001 (D2) | Código vacío; después, código con 65 caracteres o con `\u0000` | 422 `VALIDACION`, nunca 500. Vacío: «Introduce el código del anclaje»; largo o con caracteres de control: «El código no es válido» |
 | V9 | FR-008 | Con el viaje de V2, Eva cierra sesión, vuelve a entrar y queda en el mapa | Aviso con hora de inicio y código de bicicleta; «Ver» lleva a `/alquiler`; desaparece al entrar otro usuario sin viaje |
 | V8 | Const. IV | Mirar `bicis_disponibles` de la estación antes y después de V2 | Baja en 1 y `anclajes_libres` sube en 1, en ≤ 30 s |
 | V10 | FR-010 | Bruno y Carla abren `/alquiler` | Antes de escribir nada ven su motivo (el mismo texto que en V1) y el campo y el botón están desactivados |
