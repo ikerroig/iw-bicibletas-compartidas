@@ -30,7 +30,7 @@ Mostrar al usuario su historial propio de viajes finalizados ("Mis Viajes") con 
 
 **Scope/Scale**: 1 endpoint (`GET /viajes`), 1 servicio (`services/viajes`), 1 página (`pages/viajes`), 1 registro de rutas trivial compartido, ampliación del seed.
 
-**Unknowns**: **0 NEEDS CLARIFICATION.** Las 5 preguntas de `/speckit.clarify` (paginación, zona horaria, fecha visible, contrato global, sumatorio fuera de rango) están resueltas y codificadas en [spec.md § Clarifications](./spec.md); su detalle técnico está en [research.md](./research.md) (D1–D8).
+**Unknowns**: **0 NEEDS CLARIFICATION.** Las 5 preguntas de `/speckit.clarify` (paginación, zona horaria, fecha visible, contrato global, sumatorio fuera de rango) están resueltas y codificadas en [spec.md § Clarifications](./spec.md); su detalle técnico está en [research.md](./research.md) (D1–D8). Tras la fase de refinamiento (§5.1), la sesión de `/speckit.clarify` del **2026-11-19** resolvió 3 preguntas más (historial propio por JWT con 401 sin sesión, viaje activo fuera del historial y vista inicial sin filtro con orden descendente) codificadas en spec.md y justificadas en [refinamiento/clarify.md](./refinamiento/clarify.md) (decisiones C1–C3; allí la numeración «C» convive con la «D» de research.md sin colisión). No hay cambios de arquitectura, esquema ni contrato derivados de este clarify.
 
 ## Constitution Check
 

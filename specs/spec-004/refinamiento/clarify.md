@@ -23,7 +23,7 @@ justificación y HU afectada.
 
 ### Sesión 2026-11-19 (refinamiento fase 4)
 
-#### D6 — Permisos del historial · permisos · HU-04
+#### C1 — Permisos del historial · permisos · HU-04
 
 - **Pregunta**: ¿Puede algún usuario consultar el historial de viajes de
   otra persona, y qué ve un operario o un gestor cuando entra en «Mis
@@ -43,7 +43,7 @@ justificación y HU afectada.
 - **HU afectada**: HU-04 (FR-005, AC4); refuerzo del aislamiento
   compartido con HU-03.
 
-#### D7 — Viaje activo en el historial · estado · HU-04
+#### C2 — Viaje activo en el historial · estado · HU-04
 
 - **Pregunta**: ¿Debe aparecer el viaje activo (en curso) en el historial
   «Mis Viajes» mientras el usuario sigue andando?
@@ -59,7 +59,7 @@ justificación y HU afectada.
 - **HU afectada**: HU-04 (AC5, edge cases); dependencia de HU-03 (FR-005
   de spec-003 persiste el cierre).
 
-#### D8 — Vista inicial sin filtro · recorrido normal · HU-04
+#### C3 — Vista inicial sin filtro · recorrido normal · HU-04
 
 - **Pregunta**: Cuando el usuario entra en «Mis Viajes» por primera vez
   sin tocar ningún filtro, ¿qué debe ver y con qué sumatorio?
@@ -71,12 +71,12 @@ justificación y HU afectada.
   como «mes en curso» o «año completo». FR-003 ya exigía el sumatorio «del
   historial completo cuando no hay filtro», así que la opción elegida es
   la única coherente con el propio spec, con el caso límite «usuario sin
-  viajes» y con el estado inicial `sin filtro` del plan (D7).
+   viajes» y con el estado inicial `sin filtro` del plan (research D7).
 - **HU afectada**: HU-04 (FR-001 orden, FR-003, AC6).
 
 ### Sesión 2026-10-28 (previa, registrada aquí por trazabilidad)
 
-#### D9 — Presentación de la lista · recorrido normal · HU-04
+#### C4 — Presentación de la lista · recorrido normal · HU-04
 
 - **Pregunta**: ¿Debe mostrarse en cada fila del historial la fecha y hora
   de inicio de cada viaje?
@@ -89,7 +89,7 @@ justificación y HU afectada.
   hablen del mismo calendario.
 - **HU afectada**: HU-04 (FR-001).
 
-#### D10 — Paginación server-side · caso límite · HU-04
+#### C5 — Paginación server-side · caso límite · HU-04
 
 - **Pregunta**: ¿Cómo se entrega la lista cuando el periodo contiene
   muchos viajes?
@@ -102,7 +102,7 @@ justificación y HU afectada.
   el gasto mostrado dependa de la página.
 - **HU afectada**: HU-04 (FR-008, SC-002).
 
-#### D11 — Zona horaria del filtro · caso límite · HU-04
+#### C6 — Zona horaria del filtro · caso límite · HU-04
 
 - **Pregunta**: ¿En qué zona horaria se interpretan el mes y el año de
   cada viaje al aplicar el filtro?
@@ -113,7 +113,7 @@ justificación y HU afectada.
   PostgreSQL (const. I: la regla vive en el backend).
 - **HU afectada**: HU-04 (FR-002, SC-002).
 
-#### D12 — Contrato `GET /viajes` · caso límite · HU-04
+#### C7 — Contrato `GET /viajes` · caso límite · HU-04
 
 - **Pregunta**: El OpenAPI global define `desde`/`hasta` + `page`/
   `page_size`, mientras que la primera respuesta fijó filtro mes/año +
@@ -126,7 +126,7 @@ justificación y HU afectada.
   contrato y no cambia el criterio «filtrar por mes y año» de la HU.
 - **HU afectada**: HU-04 (FR-002, FR-008).
 
-#### D13 — Sumatorio con página fuera de rango · caso límite · HU-04
+#### C8 — Sumatorio con página fuera de rango · caso límite · HU-04
 
 - **Pregunta**: Si el periodo tiene viajes pero la página pedida está fuera
   de rango, ¿qué sumatorio devuelve la API?
@@ -154,7 +154,7 @@ Añadidos/actualizados en `spec.md` (US1 Acceptance Scenarios 4–6 y FR):
    filtro, **cuando** la vista se renderiza por primera vez, **entonces**
    ve todos sus viajes finalizados ordenados por fecha de inicio
    descendente con el sumatorio de todo el historial. *(AC6, nuevo —
-   D8; refuerza FR-001 con el orden y añade edge case de sesión 401)*
+   C3; refuerza FR-001 con el orden y añade edge case de sesión 401)*
 
 ## Diferencia entre la especificación anterior y la revisada
 
@@ -163,7 +163,7 @@ Resumen de secciones tocadas:
 
 | Sección | Antes | Después |
 |---|---|---|
-| `## Clarifications` | Session 2026-10-28 (5 Q→A) | + Session 2026-11-19 (3 Q→A: D6–D8) |
+| `## Clarifications` | Session 2026-10-28 (5 Q→A) | + Session 2026-11-19 (3 Q→A: C1–C3) |
 | US1 Acceptance Scenarios | 3 escenarios | 6 escenarios (AC4–AC6 nuevos, en GWT) |
 | Edge Cases | 6 casos | 7 casos (+ sesión ausente/expirada → 401) |
 | FR-001 | «lista cronológica…» | + orden por fecha de inicio descendente |
@@ -181,10 +181,13 @@ actualizados con los nuevos AC/FR).
 
 ## Notas de proceso
 
-- D1–D5 (sesión 2026-10-28) ya estaban codificadas en `spec.md`; aquí se
-  les añade la justificación que el enunciado de clarify exige, extraída
-  de `research.md` (D1–D8).
-- D6–D8 son la aportación de la fase 4: cubren los casos de permisos y
-  estado que faltaban y concretan la vista inicial.
+- **Numeración**: este documento numera sus decisiones **C1–C8**; el
+  `research.md` conserva su numeración propia **D1–D8** (decisiones
+  técnicas). No colisionan (hallazgo A6 del analyze 2026-11-19).
+- C4–C8 (sesión 2026-10-28) ya estaban codificadas como Q→A en `spec.md`;
+  aquí se les añade la justificación que el enunciado de clarify exige,
+  extraída de `research.md` (D1–D8).
+- C1–C3 (sesión 2026-11-19) son la aportación de la fase 4: cubren los
+  casos de permisos y estado que faltaban y concretan la vista inicial.
 - Toda modificación queda sujeta a PR revisado por otro integrante del
   grupo (constitución, Acuerdos de Colaboración).
