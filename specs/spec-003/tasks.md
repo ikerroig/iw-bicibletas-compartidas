@@ -4,7 +4,7 @@
 
 **Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅
 
-**Tests**: **INCLUIDOS** — el gate de calidad de la constitución (Acuerdos de Colaboración) exige pruebas automatizadas de las reglas críticas antes de fusionar; T3a–T3i de [quickstart.md](./quickstart.md) las define.
+**Tests**: **INCLUIDOS** — el gate de calidad de la constitución (Acuerdos de Colaboración) exige pruebas automatizadas de las reglas críticas antes de fusionar; T3a–T3j de [quickstart.md](./quickstart.md) las define.
 
 **Organization**: La HU-03 tiene **una única user story** (US1, P1) que es también el MVP de esta spec. Tareas agrupadas en Setup → Foundational → US1 → Polish.
 
@@ -86,6 +86,22 @@
 
 ---
 
+## Phase 5: Refinamiento (fase 4 — analyze 2026-11-19)
+
+**Purpose**: Cerrar los huecos de verificación detectados en
+`refinamiento/analyze-inicial.md` (A1, A2, A4, A7): los criterios nuevos del
+clarify (FR-008/FR-009) están implementados pero sin pruebas.
+
+- [ ] T028 [P] [US1] Test de integración de **permisos** en `backend/tests/devolucion_test.go` (FR-008, AC4): sin sesión → `401`; token con rol `operario` → `403 RolInsuficiente`; en ambos casos el viaje sigue `en_curso` y el anclaje intacto (montaje `httptest` + `routes.Register`, patrón del propio fichero) — *hallazgo A1*
+- [ ] T029 [P] [US1] Test de integración de **abono caducado** en `backend/tests/devolucion_test.go` (FR-009, AC5): usuario con `abono_activo = false` y `fecha_vencimiento_abono` pasada, con viaje activo → `POST /devoluciones` devuelve `200`, viaje `finalizado` con `coste_total` registrado — *hallazgo A2*
+- [ ] T030 [P] [US1] Aserto de **redondeo fraccionario > 1 min** en `backend/internal/services/devolucion/tarifa_test.go` (AC6): 46:30 → 17 minutos excedentes × tarifa (no 16) — *hallazgo A7*
+- [ ] T031 [US1] Ampliar la tabla *Acceptance Coverage* de `specs/spec-003/checklists/requirements.md` con las filas de FR-008, FR-009, AC4–AC6 y el nuevo aserto de T030, apuntando al test que lo demuestra — *hallazgo A4*
+
+**Checkpoint**: `go test ./...` en verde con las 4 tareas nuevas; el
+analyze final (`refinamiento/analyze-final.md`) sin hallazgos abiertos
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -94,6 +110,7 @@
 - **Foundational (Phase 2)**: depende de Setup — **bloquea** la US1
 - **US1 (Phase 3)**: depende de Foundational; es la única story (MVP = feature completa)
 - **Polish (Phase 4)**: depende de la US1 completa
+- **Refinamiento (Phase 5)**: documentada en el analyze 2026-11-19; T028–T030 reutilizan el patrón de montaje de T015 y T014, T031 cierra el checklist
 
 ### Within User Story 1
 

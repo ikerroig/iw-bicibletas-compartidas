@@ -75,9 +75,10 @@ excedente si > 30 min).
    cierra con normalidad (hora de llegada, liberación del usuario, anclaje
    ocupado) y el importe queda registrado; el abono solo condiciona el
    desbloqueo (HU-02).
-6. **Given** un viaje de 30 min 45 s con `TARIFA_MINUTO = 0,20 €`,
-   **When** el sistema calcula el importe al devolver, **Then** el coste es
-   0,20 € (1 minuto excedente × tarifa), nunca 0,00 € ni 0,15 €.
+6. **Given** un viaje de 30 min 45 s tarificado con la tarifa unitaria
+   por defecto del servicio (0,20 €/min), **When** el sistema calcula el
+   importe al devolver, **Then** el coste es 0,20 € (1 minuto excedente ×
+   tarifa), nunca 0,00 € ni 0,15 €.
 
 ### Edge Cases
 
@@ -119,9 +120,9 @@ excedente si > 30 min).
   un coste de 0,00 €.
 - **FR-004**: Para viajes con duración > 30 minutos el sistema MUST
   tarificar y cobrar únicamente el tramo de tiempo que exceda de los 30
-  minutos iniciales, aplicando la tarifa única del servicio
-  (`TARIFA_MINUTO`, sin tarifas por usuario) y cobrando por completo cada
-  minuto empezado del excedente (redondeo hacia arriba).
+  minutos iniciales, aplicando la tarifa unitaria única del servicio (sin
+  tarifas por usuario) y cobrando por completo cada minuto empezado del
+  excedente (redondeo hacia arriba).
 - **FR-005**: El sistema MUST persistir en el viaje la hora de inicio, la hora
   de llegada, la duración total y el coste final, para su consulta en el
   historial (HU-04).
@@ -156,8 +157,9 @@ excedente si > 30 min).
 - **SC-001**: El 100 % de los viajes con duración ≤ 30 minutos registran un
   coste final de 0,00 €.
 - **SC-002**: El 100 % de los viajes con duración > 30 minutos registran un
-  coste igual a `TARIFA_MINUTO` × minutos excedentes redondeados hacia
-  arriba (minuto empezado → entero), sin cobrar los 30 minutos iniciales.
+  coste igual a la tarifa unitaria del servicio × minutos excedentes
+  redondeados hacia arriba (minuto empezado → entero), sin cobrar los 30
+  minutos iniciales.
 - **SC-003**: Una devolución válida se completa en menos de 10 segundos desde
   que la bicicleta se fija en el anclaje, dejando el anclaje ocupado y el
   usuario libre.
@@ -166,11 +168,12 @@ excedente si > 30 min).
 
 ## Assumptions
 
-- La tarifa del tiempo excedente es una **tarifa única del servicio**
-  (`TARIFA_MINUTO`, configuración operativa); no hay tarifa por usuario
-  (clarificación 2026-11-19: la narrativa «la tarifa del usuario» se
-  interpreta como la tarifa aplicable al viaje de ese usuario; el modelo
-  compartido no prevé tarifas individuales — constitución III).
+- La tarifa del tiempo excedente es una **tarifa única del servicio**, de
+  configuración operativa con valor por defecto de 0,20 €/min; no hay
+  tarifa por usuario (clarificación 2026-11-19: la narrativa «la tarifa
+  del usuario» se interpreta como la tarifa aplicable al viaje de ese
+  usuario; el modelo compartido no prevé tarifas individuales —
+  constitución III).
 - La duración se calcula como diferencia entre hora de llegada y hora de
   inicio; la hora de cierre es la registrada en el momento de fijar la
   bicicleta en el anclaje.
