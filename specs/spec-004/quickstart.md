@@ -42,6 +42,7 @@ npm test                      # Vitest: página "Mis Viajes"
 | T4h | Periodo sin viajes | `total: 0`, `suma_coste: 0`, `items: []` sin error |
 | T4i | Entrada inválida | `page=0`, `page_size=500`, `desde>hasta` o fecha malformada → `422 ENTRADA_INVALIDA` |
 | T4j | Latencia (SC-004) | Respuesta del historial en < 3 s con un año completo de viajes (aserción cronometrada en el test de integración) |
+| T4k | AC4 (clarify 2026-11-19): cualquier rol autenticado | token `operario_taller` o `gestor` → `200` con su **propio** historial; el propietario se resuelve desde el JWT (un parámetro de usuario ajeno se ignora) |
 
 ## 3. Escenario manual S4
 
@@ -76,6 +77,9 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/v1/viajes?desde=2026-10-01&has
 | SC-002 (filtros exactos y sumatorio = suma del periodo) | T4b/T4e + comprobación manual 2 y 3 |
 | SC-003 (viajes sin coste con la etiqueta) | T4c + comprobación manual 1 |
 | SC-004 (historial y filtros < 3 s con un año de uso) | T4j (aserción cronometrada) |
+| AC4 (cualquier rol autenticado ve su propio historial; 401 sin sesión) | T4d (aislamiento + 401) + T4k (roles `operario_taller`/`gestor`) |
+| AC5 (viaje activo no aparece ni computa) | T4a (total = solo finalizados; `estado = finalizado` por fila) |
+| AC6 (primera carga sin filtro: todo, orden DESC, sumatorio total) | T4a (orden `fecha_inicio DESC`) + T4e/T4f (`suma_coste` del historial completo sin filtro) |
 
 ## 5. Resultados de la validación (2026-10-28, rama spec-004)
 

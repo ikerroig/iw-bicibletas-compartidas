@@ -100,7 +100,27 @@ T028–T031; evidencia en `specs/spec-003/refinamiento/converge-2.md`).
 
 ## HU-04 — Historial de viajes y desglose mensual (spec-004) · Alex Morell · Revisor: Iker Roig
 
-_(Pendiente — se integra en la PR #12 de la rama spec-004)._
+Decisiones: `specs/spec-004/research.md` (D1–D8) + clarify 2026-11-19 (C1–C3) · Tareas: `specs/spec-004/tasks.md` (T001–T021).
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001 — lista cronológica con fecha, estaciones, duración, coste; orden DESC | D1 (Q1 con JOIN a estaciones) | T005, T006 | Go: `TestHistorialT4a` (orden estricto + nombres) · Vitest: «render con datos…» | ✅ |
+| FR-002 — filtro mes/año interpretado en Europe/Madrid | D2 (`AT TIME ZONE 'Europe/Madrid'`) | T005 | Go: `TestHistorialT4bFiltroMes`, `TestHistorialT4gZonaHoraria` | ✅ |
+| FR-003 — sumatorio del periodo o del historial completo | D1 (Q2 agregado sin paginar) | T005 | Go: T4b (3,75), T4e/T4f (10,75 en cualquier página) · Vitest: sumatorio | ✅ |
+| FR-004 — etiqueta «Tramo gratuito (0,00 €)» calculada en el backend | D3 (`EtiquetaParaCoste`, solo `coste = 0`) | T004, T005 | Go: `TestHistorialT4cEtiqueta` · Vitest: etiqueta tal cual | ✅ |
+| FR-005 — solo el historial propio desde el JWT; 401 sin sesión; cualquier rol | D4 (aislamiento por usuario + `RequireAuth`) | T007, **T016** | Go: `TestHistorialT4dAislamientoY401` (401 `NO_AUTENTICADO`), `TestHistorialT4kRoles` (operario/gestor → 200 propio; parámetro ajeno ignorado) | ✅ |
+| FR-006 — origen y destino por viaje, sin GPS (alcance del clarify) | Assumptions + D5 (campos aditivos) | T005 | Go: T4a (`estacion_*_nombre`) · S4 | ✅ |
+| FR-007 — coste y duración tal como los registró la HU-03; sin recálculo | D3 (solo lectura) | T004 | Go: T4a · S4 (sin recálculo) | ✅ |
+| FR-008 — paginación server-side 50/200, suma del periodo, fuera de rango sin error | D6 (offset + página vacía con `total`/`suma`) | T005, T006 | Go: `TestHistorialT4ePaginacion`, `T4fPaginaFueraDeRango`, `T4iEntradaInvalida` | ✅ |
+| SC-001 — 100 % de viajes finalizados con campos correctos | D1 (filtro `estado='finalizado'`) | T004 | Go: T4a (el `en_curso` de la fixture no cuenta) | ✅ |
+| SC-002 — filtros exactos y sumatorio = suma del periodo | D1, D2 | T005 | Go: T4b/T4e/T4f · S4 | ✅ |
+| SC-003 — viajes sin coste muestran la etiqueta | D3 | T004 | Go: T4c · S4 | ✅ |
+| SC-004 — < 3 s con un año completo de uso | D1 (dos consultas indexadas, sin N+1) | **T017** | Go: `TestHistorialT4jLatencia` con fixture de ≥ 365 viajes (0,5 s medidos) | ✅ |
+| Regresión y UX del refinamiento (aviso de filtro incompleto, suites) | Clarify C3 (primera carga sin filtro) | T012, T019 | Vitest: «filtro a medias…» + `npm test` (82/82) tras el merge de `main` · checklist con *Acceptance Coverage* | ✅ |
+
+**Cobertura HU-04**: 8 FR + 4 SC = 12 criterios; **12/12 con tarea y
+prueba prevista, 12 ✅** (refinamiento 2026-11-19: AC4–AC6 cerrados con
+T016–T019; evidencia en `specs/spec-004/refinamiento/converge-2.md`).
 
 ## HU-05 — Notificación de averías e inhabilitación (spec-005) · Josep Peiró · Revisor: Alberto Copa
 
