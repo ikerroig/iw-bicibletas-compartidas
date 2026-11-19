@@ -14,3 +14,19 @@
 
 **Resumen**: 6 hallazgos (1 ALTA, 2 MEDIA, 3 BAJA) · 0 descartados ·
 todos con tarea asignada en la Phase 5 de `tasks.md`.
+
+## Revisión entre compañeros (§5.1 y §5.2) — a rellenar por Iker Roig
+
+> El enunciado pide que el revisor contraste las decisiones del clarify, elija
+> **al menos un criterio** de la historia y compruebe que la tarea propuesta
+> permitiría verificarlo. Si no hay incidencias reales, se documenta la
+> cobertura comprobada, sin inventarse errores.
+
+| Qué se revisó | Criterio / decisión | Cómo se comprobó | Resultado | Fecha |
+|---|---|---|---|---|
+| Decisiones del clarify | _(p. ej., C1 / C2 / C3: formato de mes, zona horaria Europe/Madrid, estado inicial sin filtro)_ | _(lectura de `clarify.md` y contraste con la narrativa)_ | | |
+| Cobertura de un criterio en la matriz | _(p. ej., FR-005 → T007, T016 o SC-004 latencia → T017)_ | _(tarea, test previsto y ejecución de pruebas)_ | | |
+| Registro de hallazgos | _(p. ej., A1 roles o A2 fixture latencia)_ | _(contraste con el informe analyze y los tests)_ | | |
+
+**Firma del revisor**: _(Iker Roig — fecha)_
+
