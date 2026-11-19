@@ -102,9 +102,11 @@ paths:
       operationId: desbloquear
       summary: Desbloqueo por código de anclaje — crea viaje activo (HU-02)
       description: >
-        Reglas críticas server-side: abono vigente (403 ABONO_VENCIDO), sin
-        viaje activo (409 VIAJE_ACTIVO), anclaje en servicio con bicicleta
-        disponible (404/409). Todo o nada (transacción única).
+        Reglas críticas server-side: abono vigente (403 SIN_ABONO «No tienes
+        abono anual» o 403 ABONO_VENCIDO «Tu abono anual caducó el
+        DD/MM/AAAA»), sin viaje activo (409 VIAJE_ACTIVO), anclaje en servicio
+        con bicicleta disponible (404/409). Si fallan varias, se devuelve la
+        primera en ese orden (HU-02 FR-012). Todo o nada (transacción única).
       requestBody:
         required: true
         content:
@@ -137,11 +139,24 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [viaje, abono]
                 properties:
                   viaje:
                     oneOf:
                       - { $ref: '#/components/schemas/Viaje' }
                       - { type: 'null' }
+                  abono:
+                    description: >
+                      Estado del abono en el momento de la consulta (HU-02
+                      FR-010). Mismo texto que el 403 del desbloqueo.
+                    type: object
+                    required: [vigente, codigo, mensaje]
+                    properties:
+                      vigente: { type: boolean }
+                      codigo:
+                        type: [string, 'null']
+                        enum: [SIN_ABONO, ABONO_VENCIDO, null]
+                      mensaje: { type: [string, 'null'] }
         '401': { $ref: '#/components/responses/Error' }
 
   # ---------------------------------------------------------------- spec-003

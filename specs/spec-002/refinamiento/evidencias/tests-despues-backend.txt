@@ -1,0 +1,9 @@
+ok  	si16/backend/internal/services/alquiler	1.583s
+ok  	si16/backend/internal/services/analitica	0.306s
+ok  	si16/backend/internal/services/balanceo	0.289s
+ok  	si16/backend/internal/services/devolucion	0.312s
+ok  	si16/backend/internal/services/viajes	0.291s
+ok  	si16/backend/internal/workers/refresco_estado	1.126s
+ok  	si16/backend/tests	10.860s
+ok  	si16/backend/tests/contract	1.499s
+ok  	si16/backend/tests/integration	24.425s

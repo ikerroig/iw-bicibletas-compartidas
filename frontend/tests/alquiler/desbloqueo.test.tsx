@@ -1,34 +1,16 @@
 // T039 — Página de desbloqueo (HU-02): estados de viaje activo y causa de rechazo.
-import { render, screen } from '@solidjs/testing-library';
+// T048 — FR-010 (D16): aviso del abono al abrir la pantalla, con el formulario
+// desactivado; FR-002 (D15): mensajes distintos para cada causa del abono.
+import { screen } from '@solidjs/testing-library';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
-import Desbloqueo from '../../src/pages/alquiler/Desbloqueo';
-import type { ViajeActivo } from '../../src/services/api/alquiler';
+import { describe, expect, it, vi } from 'vitest';
 import { server } from '../server';
+import { VIAJE, activo, montarDesbloqueo, rechazo } from './montar';
 
-const VIAJE: ViajeActivo = {
-  id: 1,
-  usuario_id: 7,
-  bicicleta_id: 42,
-  bicicleta_codigo: 'BICI-0007',
-  estacion_origen_id: 1,
-  estacion_origen_nombre: 'Colón',
-  estacion_destino_id: null,
-  fecha_inicio: '2026-11-04T09:15:00Z',
-  fecha_fin: null,
-  duracion_minutos: null,
-  coste_total: 0,
-  estado: 'en_curso',
-};
-
-const activo = (viaje: ViajeActivo | null) =>
-  http.get('*/api/v1/alquileres/activo', () => HttpResponse.json({ viaje }));
-
-const rechazo = (status: number, codigo: string, mensaje: string) =>
-  http.post('*/api/v1/alquileres/desbloqueo', () =>
-    HttpResponse.json({ error: { codigo, mensaje } }, { status }),
-  );
+vi.mock('../../src/stores/sesion', () => ({
+  sesion: { usuario: () => ({ id: 7, nombre: 'Eva', rol: 'usuario' }) },
+}));
 
 async function teclearYEnviar(codigo: string) {
   const u = userEvent.setup();
@@ -39,7 +21,7 @@ async function teclearYEnviar(codigo: string) {
 describe('desbloqueo', () => {
   it('muestra el viaje activo en lugar del formulario', async () => {
     server.use(activo(VIAJE));
-    render(() => <Desbloqueo />);
+    montarDesbloqueo();
     expect(await screen.findByRole('heading', { name: 'Viaje en curso' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Código de anclaje')).not.toBeInTheDocument();
   });
@@ -53,7 +35,7 @@ describe('desbloqueo', () => {
         return HttpResponse.json({});
       }),
     );
-    render(() => <Desbloqueo />);
+    montarDesbloqueo();
     expect(await screen.findByText('BICI-0007')).toBeInTheDocument();
     expect(screen.getByText('Colón')).toBeInTheDocument();
     expect(screen.getByTestId('viaje-inicio')).not.toBeEmptyDOMElement();
@@ -70,17 +52,21 @@ describe('desbloqueo', () => {
         return HttpResponse.json(VIAJE, { status: 201 });
       }),
     );
-    render(() => <Desbloqueo />);
+    montarDesbloqueo();
     await teclearYEnviar('  E01-A01 ');
     expect(await screen.findByRole('heading', { name: 'Viaje en curso' })).toBeInTheDocument();
     expect(enviado).toEqual({ codigo_anclaje: 'E01-A01' });
   });
 
-  it('muestra la causa que devuelve el backend y conserva el formulario', async () => {
-    server.use(activo(null), rechazo(403, 'ABONO_VENCIDO', 'Tu abono anual no está vigente'));
-    render(() => <Desbloqueo />);
+  it.each([
+    ['SIN_ABONO', 'No tienes abono anual'],
+    ['ABONO_VENCIDO', 'Tu abono anual caducó el 09/11/2026'],
+    ['ANCLAJE_NO_EXISTE', 'No existe ningún anclaje con ese código'],
+  ])('muestra la causa %s que devuelve el backend y conserva el formulario', async (codigo, mensaje) => {
+    server.use(activo(null), rechazo(codigo === 'ANCLAJE_NO_EXISTE' ? 404 : 403, codigo, mensaje));
+    montarDesbloqueo();
     await teclearYEnviar('E01-A01');
-    expect(await screen.findByRole('alert')).toHaveTextContent('Tu abono anual no está vigente');
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensaje);
     expect(screen.getByLabelText('Código de anclaje')).toHaveValue('E01-A01');
   });
 
@@ -88,12 +74,45 @@ describe('desbloqueo', () => {
     let consultas = 0;
     server.use(
       http.get('*/api/v1/alquileres/activo', () =>
-        HttpResponse.json({ viaje: consultas++ === 0 ? null : VIAJE }),
+        HttpResponse.json({
+          viaje: consultas++ === 0 ? null : VIAJE,
+          abono: { vigente: true, codigo: null, mensaje: null },
+        }),
       ),
       rechazo(409, 'VIAJE_ACTIVO', 'Ya tienes un viaje en curso'),
     );
-    render(() => <Desbloqueo />);
+    montarDesbloqueo();
     await teclearYEnviar('E01-A01');
     expect(await screen.findByRole('heading', { name: 'Viaje en curso' })).toBeInTheDocument();
+  });
+});
+
+describe('aviso del abono al abrir la pantalla (FR-010)', () => {
+  it.each([
+    ['SIN_ABONO', 'No tienes abono anual'],
+    ['ABONO_VENCIDO', 'Tu abono anual caducó el 09/11/2026'],
+  ] as const)('con %s avisa antes de escribir y desactiva el formulario', async (codigo, mensaje) => {
+    let posts = 0;
+    server.use(
+      activo(null, { vigente: false, codigo, mensaje }),
+      http.post('*/api/v1/alquileres/desbloqueo', () => {
+        posts++;
+        return HttpResponse.json({}, { status: 500 });
+      }),
+    );
+    montarDesbloqueo();
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensaje);
+    expect(screen.getByLabelText('Código de anclaje')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeDisabled();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Desbloquear' }));
+    expect(posts).toBe(0);
+  });
+
+  it('con el abono vigente el formulario está activo y sin aviso', async () => {
+    server.use(activo(null));
+    montarDesbloqueo();
+    expect(await screen.findByLabelText('Código de anclaje')).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeEnabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
