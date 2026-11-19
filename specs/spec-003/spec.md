@@ -8,6 +8,30 @@
 
 **Input**: User description: "HU-03 — Devolución de bicicleta y cálculo de tarificación (historia.md, SI-16)."
 
+## Clarifications
+
+### Session 2026-11-19
+
+- Q: Para el tiempo que excede de los 30 minutos, ¿se aplica una única
+  tarifa del servicio o cada usuario tiene su propia tarifa? — A: Tarifa
+  única del servicio (`TARIFA_MINUTO`, global en configuración); no existe
+  tarifa por usuario. La «tarifa del usuario» de la narrativa se interpreta
+  como la tarifa aplicable al viaje de ese usuario.
+- Q: Cuando un viaje dura 30 min 45 s, ¿cómo se cobra el tiempo que excede
+  de los 30 minutos iniciales? — A: Minuto empezado → se cobra entero
+  (redondeo hacia arriba): 30:45 → 1 minuto excedente.
+- Q: ¿Quién puede ejecutar la devolución (cierre) de una bicicleta? — A:
+  Solo el usuario autenticado con rol `usuario` propietario del viaje
+  activo; sin sesión → 401; operarios y gestores → 403, sin efectos sobre
+  viaje ni anclaje.
+- Q: Si el abono del usuario caduca mientras su viaje sigue en curso,
+  ¿puede devolver la bicicleta? — A: Sí; la devolución siempre está
+  permitida para el propietario del viaje activo. El abono solo condiciona
+  el desbloqueo (HU-02), no el cierre.
+- Q: ¿Se mantiene el criterio de que, si la estación destino no tiene
+  anclajes libres, la devolución no se completa y el viaje sigue activo?
+  — A: Sí, se mantiene (criterio existente confirmado).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Fin de viaje y tarifa (Priority: P1)
@@ -39,7 +63,21 @@ excedente si > 30 min).
    coste de 0,00 € (incluido en el abono).
 3. **Given** un viaje cuya duración supere los 30 minutos, **When** se procesa
    la devolución, **Then** se tarifica y cobra el tramo de tiempo que exceda
-   de los 30 minutos iniciales.
+   de los 30 minutos iniciales, aplicando la tarifa única del servicio y
+   cobrando por completo cada minuto empezado del excedente (redondeo hacia
+   arriba: 30:45 → 1 minuto excedente).
+4. **Given** un usuario autenticado con rol distinto de `usuario`
+   (operario o gestor) o sin sesión, **When** intenta ejecutar una
+   devolución, **Then** el sistema responde 403 (401 sin sesión) y no
+   modifica el viaje ni el anclaje.
+5. **Given** un viaje activo cuyo propietario tiene el abono caducado,
+   **When** fija la bicicleta en un anclaje libre, **Then** el viaje se
+   cierra con normalidad (hora de llegada, liberación del usuario, anclaje
+   ocupado) y el importe queda registrado; el abono solo condiciona el
+   desbloqueo (HU-02).
+6. **Given** un viaje de 30 min 45 s con `TARIFA_MINUTO = 0,20 €`,
+   **When** el sistema calcula el importe al devolver, **Then** el coste es
+   0,20 € (1 minuto excedente × tarifa), nunca 0,00 € ni 0,15 €.
 
 ### Edge Cases
 
@@ -61,6 +99,12 @@ excedente si > 30 min).
   la primera tiene efecto.
 - Duración negativa o reloj inconsistente: se detecta y se usa la hora de
   llegada validada; el coste nunca resulta negativo.
+- Abono caducado durante el viaje: la devolución del propietario se permite
+  siempre; rechazarla dejaría la bicicleta y el viaje bloqueados sin
+  solución de continuidad.
+- Intento de devolución por un rol distinto de `usuario` o sin sesión:
+  rechazo 403/401 sin efectos sobre el viaje ni el anclaje (solo el
+  propietario con viaje activo puede cerrarlo).
 
 ## Requirements *(mandatory)*
 
@@ -73,9 +117,11 @@ excedente si > 30 min).
   bloquear la bicicleta en el anclaje.
 - **FR-003**: Para viajes con duración ≤ 30 minutos el sistema MUST asignar
   un coste de 0,00 €.
-- **FR-004**: Para viajes con duración > 30 minutos el sistema MUST tarificar
-  y cobrar únicamente el tramo de tiempo que exceda de los 30 minutos
-  iniciales, según la tarifa vigente del servicio.
+- **FR-004**: Para viajes con duración > 30 minutos el sistema MUST
+  tarificar y cobrar únicamente el tramo de tiempo que exceda de los 30
+  minutos iniciales, aplicando la tarifa única del servicio
+  (`TARIFA_MINUTO`, sin tarifas por usuario) y cobrando por completo cada
+  minuto empezado del excedente (redondeo hacia arriba).
 - **FR-005**: El sistema MUST persistir en el viaje la hora de inicio, la hora
   de llegada, la duración total y el coste final, para su consulta en el
   historial (HU-04).
@@ -83,6 +129,13 @@ excedente si > 30 min).
   vez y que una bicicleta solo puede estar en un anclaje a la vez.
 - **FR-007**: El sistema MUST rechazar la devolución cuando el usuario no
   tenga viaje activo, sin alterar el estado del anclaje.
+- **FR-008**: El sistema MUST permitir la devolución únicamente al usuario
+  autenticado con rol `usuario` propietario del viaje activo: sin sesión
+  MUST responder 401 y con cualquier otro rol (operario, gestor) MUST
+  responder 403, en ambos casos sin modificar viaje ni anclaje.
+- **FR-009**: El sistema MUST permitir la devolución aunque el abono del
+  propietario esté caducado; la vigencia del abono solo condiciona el
+  desbloqueo (HU-02), nunca el cierre del viaje.
 
 ### Key Entities
 
@@ -92,8 +145,9 @@ excedente si > 30 min).
 - **Anclaje**: Hueco individual de una estación; estado (ocupado/libre) y la
   bicicleta que aloja.
 - **Bicicleta**: Unidad de la flota; estado y ubicación por anclaje.
-- **Tarifa**: Regla de precio del servicio; incluye la gratuidad de los
-  primeros 30 minutos y el precio aplicable al tiempo excedente.
+- **Tarifa**: Regla de precio del servicio, única para todo el servicio (no
+  por usuario); incluye la gratuidad de los primeros 30 minutos y el precio
+  aplicable al tiempo excedente con redondeo al minuto empezado.
 
 ## Success Criteria *(mandatory)*
 
@@ -102,8 +156,8 @@ excedente si > 30 min).
 - **SC-001**: El 100 % de los viajes con duración ≤ 30 minutos registran un
   coste final de 0,00 €.
 - **SC-002**: El 100 % de los viajes con duración > 30 minutos registran un
-  coste igual a la tarifa × minutos excedentes, sin cobrar los 30 minutos
-  iniciales.
+  coste igual a `TARIFA_MINUTO` × minutos excedentes redondeados hacia
+  arriba (minuto empezado → entero), sin cobrar los 30 minutos iniciales.
 - **SC-003**: Una devolución válida se completa en menos de 10 segundos desde
   que la bicicleta se fija en el anclaje, dejando el anclaje ocupado y el
   usuario libre.
@@ -112,9 +166,11 @@ excedente si > 30 min).
 
 ## Assumptions
 
-- La tarifa del tiempo excedente es una tarifa por unidad de tiempo
-  preestablecida por el servicio; su valor numérico es configuración
-  operativa y no forma parte del alcance de esta spec.
+- La tarifa del tiempo excedente es una **tarifa única del servicio**
+  (`TARIFA_MINUTO`, configuración operativa); no hay tarifa por usuario
+  (clarificación 2026-11-19: la narrativa «la tarifa del usuario» se
+  interpreta como la tarifa aplicable al viaje de ese usuario; el modelo
+  compartido no prevé tarifas individuales — constitución III).
 - La duración se calcula como diferencia entre hora de llegada y hora de
   inicio; la hora de cierre es la registrada en el momento de fijar la
   bicicleta en el anclaje.
