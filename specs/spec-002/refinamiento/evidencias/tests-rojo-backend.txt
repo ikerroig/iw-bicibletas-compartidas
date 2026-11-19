@@ -1,0 +1,6 @@
+# si16/backend/internal/services/alquiler
+# [si16/backend/internal/services/alquiler]
+vet.exe: internal\services\alquiler\causa_test.go:27:11: undefined: ErrSinAbono
+# si16/backend/tests/integration
+# [si16/backend/tests/integration]
+vet.exe: tests\integration\spec002_abono_test.go:88:58: undefined: httperr.SinAbono

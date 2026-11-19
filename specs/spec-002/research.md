@@ -16,6 +16,7 @@ Hereda del plan global R5 (autenticación y roles), R7 (integridad del alquiler)
 - **Decisión**: el backend aplica `TrimSpace` y `ToUpper` y consulta por igualdad exacta. Devuelve 422 `VALIDACION` si queda vacío, supera 64 caracteres (igual que `POST /devoluciones`) o contiene caracteres de control, incluido NUL.
 - **Racional**: FR-001. La igualdad usa el índice único de `codigo_anclaje`. Los códigos se guardan en mayúsculas (`E01-A01`), invariante que se documenta en [data-model.md](./data-model.md). PostgreSQL rechaza NUL en texto, y sin validar acabaría en 500.
 - **Alternativas consideradas**: `upper(codigo_anclaje) = $1`: rechazada porque no usa el índice y exigiría uno nuevo, es decir, cambio de esquema. Normalizar en el frontend: rechazada por la constitución I.
+- **Mensajes (añadido 2026-11-19, hallazgo U2 del analyze)**: el 422 `VALIDACION` distingue dos mensajes. Código vacío o cuerpo inválido → «Introduce el código del anclaje»; código de más de 64 caracteres o con caracteres de control → «El código no es válido». Antes ambos casos decían «Introduce el código del anclaje», que es engañoso si el usuario sí ha escrito algo (P2.3 de las pruebas previas). Se mantiene como validación técnica en el plan y no en la spec (decisión del grupo, opción A): el límite de 64 caracteres protege la base de datos, no es una regla del negocio, y el usuario que teclea un código real nunca lo alcanza.
 
 ## D3. Datos del viaje activo
 
@@ -25,8 +26,8 @@ Hereda del plan global R5 (autenticación y roles), R7 (integridad del alquiler)
 
 ## D4. Orden de validación y causas
 
-- **Decisión**: bloqueo del anclaje → abono → viaje activo → existencia del anclaje → estación → estado del anclaje → bicicleta. Mapeo: abono 403 `ABONO_VENCIDO`; viaje 409 `VIAJE_ACTIVO`; inexistente 404 `ANCLAJE_NO_EXISTE`; estación o anclaje no aptos 409 `ANCLAJE_NO_DISPONIBLE`; bicicleta 409 `BICICLETA_NO_DISPONIBLE`.
-- **Racional**: las reglas del usuario van primero porque quien no puede alquilar debe saberlo aunque también se equivoque de código.
+- **Decisión**: bloqueo del anclaje → abono → viaje activo → existencia del anclaje → estación → estado del anclaje → bicicleta. Mapeo: abono 403 `SIN_ABONO` o `ABONO_VENCIDO` (D15); viaje 409 `VIAJE_ACTIVO`; inexistente 404 `ANCLAJE_NO_EXISTE`; estación o anclaje no aptos 409 `ANCLAJE_NO_DISPONIBLE`; bicicleta 409 `BICICLETA_NO_DISPONIBLE`.
+- **Racional**: las reglas del usuario van primero porque quien no puede alquilar debe saberlo aunque también se equivoque de código. *2026-11-19*: el clarify de refinamiento convierte este orden en requisito (FR-012); el código ya lo cumple y solo falta un test que lo fije.
 - **Bloqueos**: el `FOR UPDATE` del anclaje va en una sentencia propia para que las lecturas siguientes vean lo confirmado durante la espera. Con un JOIN en la misma consulta, PostgreSQL revaluaría solo parte de las filas y podría leer datos antiguos.
 
 ## D5. Lectura de la estación
@@ -75,9 +76,31 @@ Hereda del plan global R5 (autenticación y roles), R7 (integridad del alquiler)
 ## D9. Permisos
 
 - **Decisión**: `RequireRole(usuario)` en el desbloqueo. `GET /alquileres/activo` admite cualquier sesión porque solo devuelve el viaje propio. La entrada del menú solo aparece al rol `usuario`.
-- **Acceso directo por URL**: no se añade guardia de ruta. FR-009 pide ocultar la opción en el menú, y el backend ya rechaza con 403 y la página muestra la causa.
+- **Acceso directo por URL**: ~~no se añade guardia de ruta~~. *Sustituido el 2026-11-19 (FR-009 ampliado en el clarify de refinamiento)*: `Desbloqueo.tsx` redirige a `/` con `<Navigate>` si el rol de la sesión no es `usuario`, también cuando no hay usuario guardado (mismo criterio que el menú, T029). La guardia va en la propia página y no en `routes.tsx`, que es compartido (const. V). El 403 del backend se mantiene como garantía (const. I).
 
 ## D10. Redis no disponible
 
 - **Decisión**: el desbloqueo no depende de Redis. El fallo posterior al commit se registra y lo repara el barrido (R16).
 - **Racional**: PostgreSQL es la fuente de verdad del viaje; un rechazo con el viaje creado sería peor que unos segundos de contador antiguo.
+
+## D15. Causa concreta del rechazo por abono (FR-002, SC-001) — *añadido 2026-11-19*
+
+- **Decisión**: el servicio distingue dos causas. `ErrSinAbono` cuando `abono_activo = false`, cuando no hay `fecha_vencimiento_abono` o cuando el usuario ya no existe; `ErrAbonoCaducado` cuando el abono está activo pero su fecha es anterior a hoy (fecha de `Europe/Madrid`, D1). El handler responde 403 `SIN_ABONO` «No tienes abono anual» y 403 `ABONO_VENCIDO` «Tu abono anual caducó el DD/MM/AAAA». La fecha sale de la columna `DATE`, así que se formatea sin conversión de zona. El texto se construye en una única función de `services/alquiler` (`causaAbono`), que también usa D16, para que el aviso previo y el rechazo digan exactamente lo mismo. `models.AbonoVigente` no cambia.
+- **Racional**: FR-002 pide «indicar la causa», y las pruebas previas (P3.3) mostraron el mismo mensaje para Carla (sin abono) que para Bruno (caducado). Se conserva `ABONO_VENCIDO` para el caso caducado, que es lo que ese código ya significaba, y se añade `SIN_ABONO`: el cambio de contrato es aditivo.
+- **Alternativas consideradas**: mantener un único código y variar solo el mensaje (el frontend y los tests no podrían distinguir las causas sin analizar texto); devolver la fecha en un campo aparte del envelope de error (el envelope `{codigo, mensaje}` es común a todas las specs y no se toca).
+
+## D16. Aviso del abono al abrir la pantalla (FR-010) — *añadido 2026-11-19*
+
+- **Decisión**: `GET /alquileres/activo` añade a su respuesta un objeto `abono`: `{"vigente": bool, "codigo": null | "SIN_ABONO" | "ABONO_VENCIDO", "mensaje": null | string}`, calculado con `causaAbono` (D15) en el momento de la consulta. `stores/viaje.ts` lo guarda junto al viaje. Si `vigente` es `false`, `Desbloqueo.tsx` muestra `mensaje` con `role="alert"` encima del formulario y desactiva el campo y el botón. El rechazo del `POST` se mantiene: si el abono caduca con la pantalla abierta, el servidor lo detecta igualmente (FR-010).
+- **Racional**: la página ya llama a `/alquileres/activo` al abrirse, así que no hace falta otra petición. El dato lo calcula el backend (const. I), con la misma función que decide el rechazo. Solo la HU-02 consume este endpoint (`AvisoViaje` y `Desbloqueo`), así que añadir un campo no afecta a otras historias.
+- **Alternativas consideradas**: exponer `fecha_vencimiento_abono` en el `Usuario` del login (cambia un modelo compartido, const. III; además, el usuario del login se guarda para toda la sesión y no reflejaría una renovación); un endpoint nuevo `/alquileres/estado` (una petición más para el mismo momento); calcular la vigencia en el frontend (duplicaría la regla fuera del backend, const. I).
+
+## D17. Resultado desconocido de un desbloqueo (FR-011) — *añadido 2026-11-19*
+
+- **Decisión**: `desbloquear()` en `services/api/alquiler.ts` usa un `AbortController` con un plazo de 10 s. `Desbloqueo.tsx` trata como **resultado desconocido** tres casos: `ApiError` con `status = 0` (`SIN_CONEXION`), la cancelación por plazo y cualquier `status >= 500`. En esos casos pasa al estado «comprobando», muestra «No sabemos si se ha desbloqueado; comprobando…» y llama una sola vez a `cargarViajeEnCurso()`: si hay viaje, lo muestra (FR-008); si no, muestra «No se ha desbloqueado, inténtalo de nuevo» con el formulario activo; si la consulta también falla, muestra el mismo aviso de comprobación con un botón «Volver a comprobar», que repite solo la consulta. El `POST` nunca se reenvía de forma automática. Los 4xx no cambian: son rechazos con causa y no hay duda sobre el resultado. *Convergencia (T061, T063)*: la consulta de comprobación tiene el mismo plazo de 10 s, y si no responde cuenta como fallo (botón «Volver a comprobar»); y cualquier otro error que no sea un `ApiError` (por ejemplo, un 201 cuyo cuerpo no se puede leer) también se trata como resultado desconocido, porque tampoco permite saber si el viaje se creó y solo provoca una consulta de lectura.
+- **Racional**: con la red cortada o un 5xx no se puede saber si el commit llegó a hacerse (D12 confirma aunque la petición se cancele). Consultar el viaje activo da el dato real del servidor. Reenviar el `POST` sería peor: si el primero entró, respondería `VIAJE_ACTIVO` y confundiría al usuario (clarify, pregunta 2).
+- **Alternativas consideradas**: reintentos automáticos del `POST` (descartados en el clarify, opción C); una clave de idempotencia en el `POST` (resolvería el reintento, pero cambia el contrato y la tabla `viajes`, const. III, para un caso que la consulta del viaje ya cubre).
+
+---
+
+**Resumen de resolución (2026-11-19)**: D15–D17 añadidas y D9 corregida tras el clarify de refinamiento; D4 pasa a ser requisito (FR-012) sin cambios. 0 NEEDS CLARIFICATION. Cambios en piezas compartidas, todos aditivos y a comunicar al equipo (const. III): constante `SinAbono` en `backend/internal/httperr`, código `SIN_ABONO` y objeto `abono` en `specs/spec-001/contracts/openapi.yaml`, y el handler por defecto de `/alquileres/activo` en `frontend/tests/handlers.ts`. Sin migraciones ni claves Redis nuevas.

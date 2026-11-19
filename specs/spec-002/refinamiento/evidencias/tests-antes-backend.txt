@@ -1,0 +1,20 @@
+?   	si16/backend/internal/handlers/viajes	[no test files]
+?   	si16/backend/internal/hooks	[no test files]
+?   	si16/backend/internal/httperr	[no test files]
+?   	si16/backend/internal/models	[no test files]
+?   	si16/backend/internal/routes	[no test files]
+ok  	si16/backend/internal/services/alquiler	1.965s
+ok  	si16/backend/internal/services/analitica	0.418s
+ok  	si16/backend/internal/services/balanceo	0.268s
+ok  	si16/backend/internal/services/devolucion	0.355s
+?   	si16/backend/internal/services/estacion	[no test files]
+?   	si16/backend/internal/services/incidencias	[no test files]
+?   	si16/backend/internal/services/taller	[no test files]
+ok  	si16/backend/internal/services/viajes	0.294s
+?   	si16/backend/internal/testutil	[no test files]
+?   	si16/backend/internal/workers/alertas	[no test files]
+ok  	si16/backend/internal/workers/refresco_estado	1.591s
+?   	si16/backend/migrations	[no test files]
+ok  	si16/backend/tests	53.312s
+ok  	si16/backend/tests/contract	5.246s
+ok  	si16/backend/tests/integration	56.464s

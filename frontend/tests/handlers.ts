@@ -56,7 +56,10 @@ export const handlers = [
     }),
   ),
   http.get('*/api/v1/estaciones', () => HttpResponse.json(snapshot())),
-  http.get('*/api/v1/alquileres/activo', () => HttpResponse.json({ viaje: null })),
+  http.get('*/api/v1/alquileres/activo', () =>
+    // spec-002 D16: la respuesta incluye siempre el estado del abono.
+    HttpResponse.json({ viaje: null, abono: { vigente: true, codigo: null, mensaje: null } }),
+  ),
   http.get('*/api/v1/estaciones/:id', ({ params }) => {
     const e = ESTACIONES.find((x) => x.id === Number(params.id));
     return e

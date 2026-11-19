@@ -1,0 +1,25 @@
+ ✓ tests/alquiler/menu.test.tsx (5 tests) 227ms
+ ✓ tests/alquiler/aviso.test.tsx (4 tests) 386ms
+   ✓ desbloqueo > muestra el viaje activo en lugar del formulario 203ms
+   ✓ desbloqueo > muestra inicio, código de bicicleta y estación sin pedir el detalle de la estación 21ms
+   ✓ desbloqueo > envía el código sin espacios y pasa al viaje en curso 227ms
+   ✓ desbloqueo > muestra la causa SIN_ABONO que devuelve el backend y conserva el formulario 131ms
+   ✓ desbloqueo > muestra la causa ABONO_VENCIDO que devuelve el backend y conserva el formulario 184ms
+   ✓ desbloqueo > muestra la causa ANCLAJE_NO_EXISTE que devuelve el backend y conserva el formulario 148ms
+   ✓ desbloqueo > con VIAJE_ACTIVO recupera el viaje iniciado en otro dispositivo 71ms
+   × aviso del abono al abrir la pantalla (FR-010) > con SIN_ABONO avisa antes de escribir y desactiva el formulario 1018ms
+   × aviso del abono al abrir la pantalla (FR-010) > con ABONO_VENCIDO avisa antes de escribir y desactiva el formulario 1015ms
+   ✓ aviso del abono al abrir la pantalla (FR-010) > con el abono vigente el formulario está activo y sin aviso 20ms
+   × guardia de la pantalla de desbloqueo > con rol gestor lleva al mapa sin mostrar el formulario 1080ms
+   × guardia de la pantalla de desbloqueo > con rol operario_taller lleva al mapa sin mostrar el formulario 1022ms
+   × guardia de la pantalla de desbloqueo > con rol operario_logistica lleva al mapa sin mostrar el formulario 1016ms
+   × guardia de la pantalla de desbloqueo > con rol null lleva al mapa sin mostrar el formulario 1021ms
+   ✓ guardia de la pantalla de desbloqueo > con rol usuario muestra el formulario 12ms
+   × resultado desconocido del desbloqueo (FR-011) > red caída al enviar y el viaje sí se creó → avisa, comprueba y muestra el viaje 1342ms
+   × resultado desconocido del desbloqueo (FR-011) > error 500 y el viaje no existe → «No se ha desbloqueado» con el formulario activo 1211ms
+   × resultado desconocido del desbloqueo (FR-011) > sin respuesta durante más de 10 s → cancela y comprueba 1587ms
+   × resultado desconocido del desbloqueo (FR-011) > si la comprobación también falla → botón «Volver a comprobar», que solo repite la consulta 1144ms
+   ✓ resultado desconocido del desbloqueo (FR-011) > un 4xx es un rechazo con causa: lo muestra y no consulta el viaje 197ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  3 failed | 2 passed (5)
+      Tests  10 failed | 19 passed (29)

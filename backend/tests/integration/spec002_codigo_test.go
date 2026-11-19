@@ -2,6 +2,7 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -30,13 +31,25 @@ func TestCodigoInvalidoEsErrorDeValidacion(t *testing.T) {
 	_, tok := e.Usuario(t, true, dias(30))
 	antes := fotografiar(t, e)
 
-	for nombre, cuerpo := range map[string]string{
-		"65 caracteres": fmt.Sprintf(`{"codigo_anclaje":%q}`, strings.Repeat("X", 65)),
-		"byte NUL":      `{"codigo_anclaje":"E01\u0000"}`,
+	// T059 (D2, hallazgo U2): mensaje distinto si falta el código o si no es válido.
+	const (
+		falta    = "Introduce el código del anclaje"
+		noValido = "El código no es válido"
+	)
+	for nombre, c := range map[string]struct{ cuerpo, mensaje string }{
+		"vacío":         {`{"codigo_anclaje":""}`, falta},
+		"solo espacios": {`{"codigo_anclaje":"   "}`, falta},
+		"sin el campo":  {`{}`, falta},
+		"65 caracteres": {fmt.Sprintf(`{"codigo_anclaje":%q}`, strings.Repeat("X", 65)), noValido},
+		"byte NUL":      {`{"codigo_anclaje":"E01\u0000"}`, noValido},
 	} {
-		rec := e.Post(t, "/alquileres/desbloqueo", tok, cuerpo)
-		if rec.Code != http.StatusUnprocessableEntity || !strings.Contains(rec.Body.String(), httperr.Validacion) {
-			t.Errorf("%s = %d %s; quiero 422 %s", nombre, rec.Code, rec.Body, httperr.Validacion)
+		rec := e.Post(t, "/alquileres/desbloqueo", tok, c.cuerpo)
+		var r struct {
+			Error struct{ Codigo, Mensaje string } `json:"error"`
+		}
+		_ = json.Unmarshal(rec.Body.Bytes(), &r)
+		if rec.Code != http.StatusUnprocessableEntity || r.Error.Codigo != httperr.Validacion || r.Error.Mensaje != c.mensaje {
+			t.Errorf("%s = %d %s; quiero 422 %s %q", nombre, rec.Code, rec.Body, httperr.Validacion, c.mensaje)
 		}
 	}
 	if d := fotografiar(t, e); d != antes {

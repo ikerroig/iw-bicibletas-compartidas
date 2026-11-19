@@ -18,7 +18,7 @@
 
 | Regla | Origen | Dónde se aplica |
 |---|---|---|
-| Abono vigente ⇔ `abono_activo` y `fecha_vencimiento_abono` ≥ fecha actual en `Europe/Madrid` | FR-002 | Servicio. Sin fecha cuenta como caducado |
+| Abono vigente ⇔ `abono_activo` y `fecha_vencimiento_abono` ≥ fecha actual en `Europe/Madrid` | FR-002 | Servicio. Si no es vigente, la causa es «sin abono» cuando `abono_activo = false` o no hay fecha, y «caducado» cuando la fecha ya ha pasado (D15, 2026-11-19) |
 | Código: sin espacios alrededor, en mayúsculas, 1–64 caracteres, sin caracteres de control | FR-001 | Backend |
 | Sin viaje `en_curso` del usuario | FR-003 | Servicio + `ux_viajes_usuario_activo` |
 | Estación `operativa`, anclaje `ocupado`, bicicleta `disponible` | FR-004 | Servicio |

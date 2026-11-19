@@ -58,6 +58,18 @@ func TestCalcularCoste_DosHoras(t *testing.T) {
 	}
 }
 
+// T030 (AC6 + hallazgo A7): fracciones de excedente — siempre el minuto
+// empezado, nunca truncado ni redondeado a la baja.
+func TestCalcularCoste_FraccionesDeExcedente(t *testing.T) {
+	if c := CalcularCoste(30*60+45, 0.20); c != 0.20 {
+		t.Errorf("30:45 (AC6): esperaba 0.20 (1 min × 0,20), obtuve %.2f", c)
+	}
+	// 46:30 → 16,5 min de excedente → 17 minutos empezados (no 16).
+	if c := CalcularCoste(46*60+30, 0.20); c != 3.40 {
+		t.Errorf("46:30: esperaba 3.40 (17 min × 0,20), obtuve %.2f", c)
+	}
+}
+
 // duracion_minutos = ceil(segundos/60); con coste > 0 nunca figura ≤ 30 min (SC-001).
 func TestDuracionMinutos_RedondeaHaciaArriba(t *testing.T) {
 	casos := []struct {

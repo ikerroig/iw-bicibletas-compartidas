@@ -41,6 +41,8 @@ go test ./...                                    # integración end-to-end contr
 | T3h | Bici reportada averiada durante el viaje (HU-05) → devolución | `200`, viaje `finalizado` y tarificado; la bici queda **anclada y `averiada`** (no suma en `bicis_disponibles`) |
 | T3i | Reloj inconsistente (`fecha_fin < fecha_inicio` forzada en BD) | coste ≥ 0; se usa hora validada |
 | T3j | Latencia de una devolución válida (SC-003) | completa en < 10 s (asertado en el test de integración y cronometrado en el manual) |
+| T3k | Permisos (FR-008, AC4): `POST /devoluciones` sin sesión y con token de rol `operario_taller` | sin sesión → `401 NO_AUTENTICADO`; operario → `403 ROL_NO_PERMITIDO`; en ambos el viaje sigue `en_curso` y el anclaje intacto |
+| T3l | Abono caducado (FR-009, AC5): usuario con abono vencido y viaje activo devuelve la bici | `200`, viaje `finalizado` con `coste_total` registrado (el abono no condiciona el cierre) |
 
 ## 3. Escenario manual S3 (misma prueba del quickstart global)
 
@@ -69,6 +71,6 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/devoluciones `
 | SC | Cómo se valida |
 |---|---|
 | SC-001 (100 % viajes ≤ 30 min con coste 0,00 €) | T3a/T3c + inspección SQL: `SELECT count(*) FROM viajes WHERE duracion_minutos <= 30 AND coste_total <> 0` = 0 |
-| SC-002 (100 % viajes > 30 min cobrados solo excedente) | T3b/T3d + inspección SQL: coste = minutos excedentes × TARIFA_MINUTO |
+| SC-002 (100 % viajes > 30 min cobrados solo excedente) | T3b/T3d + aserto 46:30 → 17 min (redondeo al minuto empezado) + inspección SQL: coste = minutos excedentes × tarifa unitaria |
 | SC-003 (devolución < 10 s) | T3j (aserción en test de integración) + cronómetro manual en el paso 3 |
 | SC-004 (usuario libre de inmediato, 0 dobles cierres) | pasos 1 y T3f |

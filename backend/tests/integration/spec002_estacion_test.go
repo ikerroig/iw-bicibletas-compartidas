@@ -71,8 +71,9 @@ func TestDesbloqueoEsperaALaRevocacionDelAbono(t *testing.T) {
 	status, cod := desbloqueoDuranteCambio(t, e, tok, codigo(id, 1),
 		`UPDATE usuarios SET abono_activo = FALSE WHERE id = $1`, uid)
 
-	if status != http.StatusForbidden || cod != httperr.AbonoVencido {
-		t.Fatalf("respuesta = %d %s; quiero 403 %s", status, cod, httperr.AbonoVencido)
+	// T045: revocar es abono_activo = FALSE, que ahora es «sin abono» (D15).
+	if status != http.StatusForbidden || cod != httperr.SinAbono {
+		t.Fatalf("respuesta = %d %s; quiero 403 %s", status, cod, httperr.SinAbono)
 	}
 	if f := fotografiar(t, e); f.Viajes != 0 {
 		t.Errorf("se creó un viaje con el abono revocado: %+v", f)
