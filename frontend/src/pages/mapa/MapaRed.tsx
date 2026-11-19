@@ -7,6 +7,7 @@ import type { EstacionEstado } from '../../services/api/estaciones';
 import { crearRedEnVivo } from '../../stores/red';
 import AvisoDesactualizado from './AvisoDesactualizado';
 import DetalleEstacion from './DetalleEstacion';
+import ListaEstaciones from './ListaEstaciones';
 import {
   descripcionAccesible,
   estadoVisual,
@@ -31,34 +32,80 @@ export default function MapaRed(props: Props) {
   const marcadores = createMemo(() =>
     red.estaciones().map((e) => marcadorDe(e, e.id === seleccionId())),
   );
+  // Vista «Mapa» o «Lista» (FR-011, R21). El mapa sigue montado aunque se vea la
+  // lista, para no reconstruir Leaflet ni perder el encuadre al volver.
+  const [vista, setVista] = createSignal<Vista>('mapa');
 
   return (
     <div class="flex h-full flex-col md:flex-row">
-      <div class="relative min-h-[55vh] flex-1">
-        <MapaBase
-          marcadores={marcadores()}
-          onSeleccionar={setSeleccionId}
-          class="absolute inset-0"
-        />
+      <div class="flex min-h-[55vh] flex-1 flex-col">
+        <ConmutadorVista vista={vista()} onCambiar={setVista} />
 
-        <div class="pointer-events-none absolute inset-x-0 top-2 z-[1000] flex flex-col items-center gap-2 px-2">
-          <AvisoDesactualizado
-            ultimaActualizacionOk={red.ultimaActualizacionOk()}
-            desactualizado={red.desactualizado()}
-          />
-          <Show when={red.error()}>
-            <p role="alert" class="rounded bg-red-50 px-3 py-1 text-sm text-red-800 shadow">
-              {red.error()}. Reintentando…
-            </p>
+        <div class="relative flex-1">
+          <div
+            id="panel-mapa"
+            role="tabpanel"
+            aria-labelledby="pestana-mapa"
+            class={`absolute inset-0 ${vista() === 'mapa' ? '' : 'invisible'}`}
+          >
+            <MapaBase
+              marcadores={marcadores()}
+              onSeleccionar={setSeleccionId}
+              class="absolute inset-0"
+            />
+          </div>
+          <Show when={vista() === 'lista'}>
+            <div
+              id="panel-lista"
+              role="tabpanel"
+              aria-labelledby="pestana-lista"
+              class="absolute inset-0 overflow-y-auto bg-white pt-20"
+            >
+              <ListaEstaciones
+                estaciones={red.estaciones()}
+                seleccionId={seleccionId()}
+                onSeleccionar={setSeleccionId}
+              />
+            </div>
           </Show>
-          <Show when={!red.cargado() && !red.error()}>
-            <p class="rounded bg-white/90 px-3 py-1 text-sm shadow">Cargando estaciones…</p>
-          </Show>
-          <Show when={red.cargado() && red.estaciones().length === 0}>
-            <p class="rounded bg-white/90 px-3 py-1 text-sm shadow">
-              No hay estaciones para mostrar.
-            </p>
-          </Show>
+
+          <div class="pointer-events-none absolute inset-x-0 top-2 z-[1000] flex flex-col items-center gap-2 px-2">
+            <AvisoDesactualizado
+              ultimaActualizacionOk={red.ultimaActualizacionOk()}
+              desactualizado={red.desactualizado()}
+            />
+            {/* FR-010 (R20): primera carga fallida, sin ningún dato previo. */}
+            <Show when={red.error() && !red.cargado()}>
+              <div
+                role="alert"
+                class="pointer-events-auto flex flex-col items-center gap-2 rounded border-2 border-red-300 bg-red-50 px-4 py-3 text-center text-sm text-red-900 shadow"
+              >
+                <p class="font-semibold">No se pudo cargar la disponibilidad</p>
+                <p class="text-xs">Lo volveremos a intentar automáticamente.</p>
+                <button
+                  type="button"
+                  onClick={() => void red.refrescar()}
+                  class="rounded bg-red-700 px-3 py-1 font-medium text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                >
+                  Reintentar
+                </button>
+              </div>
+            </Show>
+            {/* Con datos previos se mantienen los últimos contadores (R17). */}
+            <Show when={red.error() && red.cargado()}>
+              <p role="alert" class="rounded bg-red-50 px-3 py-1 text-sm text-red-800 shadow">
+                {red.error()}. Reintentando…
+              </p>
+            </Show>
+            <Show when={!red.cargado() && !red.error()}>
+              <p class="rounded bg-white/90 px-3 py-1 text-sm shadow">Cargando estaciones…</p>
+            </Show>
+            <Show when={red.cargado() && red.estaciones().length === 0}>
+              <p class="rounded bg-white/90 px-3 py-1 text-sm shadow">
+                No hay estaciones para mostrar.
+              </p>
+            </Show>
+          </div>
         </div>
       </div>
 
@@ -75,6 +122,68 @@ export default function MapaRed(props: Props) {
         </Show>
         <Leyenda />
       </aside>
+    </div>
+  );
+}
+
+type Vista = 'mapa' | 'lista';
+
+const VISTAS: { id: Vista; texto: string }[] = [
+  { id: 'mapa', texto: 'Mapa' },
+  { id: 'lista', texto: 'Lista' },
+];
+
+// Pestañas accesibles (patrón WAI-ARIA «tabs»): solo la activa es tabulable y
+// las flechas, Inicio y Fin cambian de vista.
+function ConmutadorVista(props: { vista: Vista; onCambiar: (v: Vista) => void }) {
+  const botones: HTMLButtonElement[] = [];
+
+  const mover = (ev: KeyboardEvent, indice: number) => {
+    const ultimo = VISTAS.length - 1;
+    const destino =
+      ev.key === 'ArrowRight'
+        ? (indice + 1) % VISTAS.length
+        : ev.key === 'ArrowLeft'
+          ? (indice + ultimo) % VISTAS.length
+          : ev.key === 'Home'
+            ? 0
+            : ev.key === 'End'
+              ? ultimo
+              : null;
+    if (destino === null) return;
+    ev.preventDefault();
+    props.onCambiar(VISTAS[destino].id);
+    botones[destino]?.focus();
+  };
+
+  return (
+    <div
+      role="tablist"
+      aria-label="Vista de la disponibilidad"
+      class="flex gap-1 border-b border-slate-200 bg-white px-2 pt-2"
+    >
+      <For each={VISTAS}>
+        {(v, i) => (
+          <button
+            ref={(el) => (botones[i()] = el)}
+            type="button"
+            role="tab"
+            id={`pestana-${v.id}`}
+            aria-controls={`panel-${v.id}`}
+            aria-selected={props.vista === v.id}
+            tabIndex={props.vista === v.id ? 0 : -1}
+            onClick={() => props.onCambiar(v.id)}
+            onKeyDown={(ev) => mover(ev, i())}
+            class={`rounded-t px-4 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+              props.vista === v.id
+                ? 'border border-b-white border-slate-200 bg-white text-slate-900 -mb-px'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            {v.texto}
+          </button>
+        )}
+      </For>
     </div>
   );
 }
