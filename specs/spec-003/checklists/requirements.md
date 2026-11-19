@@ -51,14 +51,19 @@ UI `frontend/src/pages/devolucion/index.test.tsx`, manual `quickstart.md` §3 (S
 | **FR-005** persiste inicio, fin, duración, coste y destino | `TestDevolucion_ViajeCorto_FinalizaYGratuito` (incluye `estacion_destino_id`) · `TestDevolucion_RelojInconsistente` (guardas de duración/coste) |
 | **FR-006** un viaje solo se cierra una vez | `TestDevolucion_DobleConfirmacion_SoloUnaEfecto` (T3f: exactamente 1 × 200 + 1 × 409) · S3 p.7 |
 | **FR-007** rechazos sin efectos (sin viaje / anclaje ocupado / inexistente / retirado) | `TestDevolucion_SinViajeActivo_RechazaSinEfectos` (T3e) + `TestDevolucion_AnclajesInvalidos_Rechazan` (T3g) · S3 p.7 |
+| **FR-008** solo el propietario con rol usuario puede cerrar (AC4) | `TestDevolucion_Permisos_SinSesionYRolNoUsuario` (T3k: 401 `NO_AUTENTICADO` sin sesión · 403 `ROL_NO_PERMITIDO` con rol `operario_taller`; viaje `en_curso` y anclaje intacto) |
+| **FR-009** el cierre no exige abono vigente (AC5) | `TestDevolucion_AbonoCaducado_PuedeDevolver` (T3l: abono vencido → 200, viaje `finalizado` con coste registrado) |
+| **AC6** 30:45 → 1 minuto cobrado, nunca 0,00 € ni 0,15 € | `TestCalcularCoste_FraccionesDeExcedente` (30:45 → 0,20 € y 46:30 → 3,40 € = 17 min × 0,20, minuto empezado) |
 | Edge: bici averiada durante el viaje | `TestDevolucion_BiciAveriadaDuranteViaje_QuedaAncladaYaveriada` (T3h) |
 | Edge: reloj inconsistente | `TestDevolucion_RelojInconsistente_CosteNoNegativo` (T3i) |
 | **SC-001** 100 % viajes ≤ 30 min con coste 0,00 € | T3a/T3c + integración + S3 p.3 |
-| **SC-002** 100 % viajes > 30 min cobrados solo excedente | T3b/T3d + S3 p.6 |
+| **SC-002** 100 % viajes > 30 min cobrados solo excedente | T3b/T3d + `TestCalcularCoste_FraccionesDeExcedente` (minuto empezado) + S3 p.6 |
 | **SC-003** devolución válida < 10 s | T3j (aserción de latencia en `TestDevolucion_ViajeCorto_FinalizaYGratuito`) |
 | **SC-004** usuario libre de inmediato, 0 dobles cierres | T3f + `TestDevolucion_ViajeCorto…` (0 `en_curso`) + S3 p.4 (nuevo viaje aceptado) |
 | Constitución IV: frescura de estado ≤ 30 s | S3 p.5 (`actualizado_en` de `estacion:2:estado` post-commit; `anclajes_libres` recalculado R9) |
 | UI: formulario, éxito con etiqueta, errores 409 | `index.test.tsx` (3 tests: éxito tramo gratuito, `SIN_VIAJE_ACTIVO`, `ANCLAJE_OCUPADO`) |
 
-**Resultado**: 7 unit + 6 integración (Go) + 3 componente (Vitest) en verde;
+**Resultado**: 8 unit + 8 integración (Go) + 3 componente (Vitest) en verde
+(2026-11-19: +`TestCalcularCoste_FraccionesDeExcedente` T030,
++`TestDevolucion_Permisos…` T028 y `+TestDevolucion_AbonoCaducado…` T029);
 S3 manual: todas las comprobaciones OK (2026-10-27).

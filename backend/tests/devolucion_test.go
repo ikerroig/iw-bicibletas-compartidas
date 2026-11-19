@@ -462,3 +462,82 @@ func TestDevolucion_RelojInconsistente_CosteNoNegativo(t *testing.T) {
 		t.Errorf("fecha_fin no registrada")
 	}
 }
+
+// T3k (T028): permisos de cierre (FR-008, AC4) — sin sesión → 401;
+// con sesión de rol no-usuario → 403 ROL_INSUFICIENTE; en ambos casos el
+// viaje permanece en_curso y el anclaje libre intacto (nada se cierra).
+func TestDevolucion_Permisos_SinSesionYRolNoUsuario(t *testing.T) {
+	d := depsTest(t)
+	e := prepararEscenario(t, d)
+	app := nuevaApp(d)
+
+	// Usuario con rol operario_taller (no puede cerrar viajes).
+	hash := nuevoHash(t)
+	var operarioID int64
+	if err := d.Pool.QueryRow(ctx,
+		`INSERT INTO usuarios (nombre, email, password_hash, rol, abono_activo, fecha_vencimiento_abono)
+		 VALUES ('Operario', 'operario@test.local', $1, 'operario_taller', true, CURRENT_DATE + 365)
+		 RETURNING id`, hash).Scan(&operarioID); err != nil {
+		t.Fatalf("crear operario: %v", err)
+	}
+	tokenOperario, err := auth.CrearToken(d.JWTSecret, operarioID, "Operario", "operario_taller")
+	if err != nil {
+		t.Fatalf("token operario: %v", err)
+	}
+
+	casos := []struct {
+		nombre, token, codigo string
+		status                int
+	}{
+		{"sin sesión", "", "NO_AUTENTICADO", http.StatusUnauthorized},
+		{"rol operario_taller", tokenOperario, "ROL_NO_PERMITIDO", http.StatusForbidden},
+	}
+	for _, c := range casos {
+		r := postDevolucion(app, c.token, e.anclajeLibre)
+		if r.status != c.status {
+			t.Errorf("%s: esperaba %d, obtuve %d: %s", c.nombre, c.status, r.status, r.raw)
+			continue
+		}
+		if cod := errorCodigo(r); cod != c.codigo {
+			t.Errorf("%s: esperaba código %s, obtuve %q", c.nombre, c.codigo, cod)
+		}
+	}
+
+	// Sin efectos: el viaje sigue abierto y el anclaje libre intacto.
+	if estado, _ := viajeEstado(t, d, e.viajeID); estado != "en_curso" {
+		t.Errorf("viaje: esperaba en_curso, obtuve %q", estado)
+	}
+	if estadoAnclaje, bici := anclajeEstado(t, d, e.anclajeLibre); estadoAnclaje != "libre" || bici != nil {
+		t.Errorf("anclaje alterado: estado=%q bici=%v", estadoAnclaje, bici)
+	}
+}
+
+// T3l (T029): abono caducado (FR-009, AC5) — el cierre NO exige abono
+// vigente: usuario con abono_activo = false y fecha vencida devuelve la
+// bici con 200, viaje finalizado y coste registrado.
+func TestDevolucion_AbonoCaducado_PuedeDevolver(t *testing.T) {
+	d := depsTest(t)
+	e := prepararEscenario(t, d)
+	app := nuevaApp(d)
+
+	insert(t, d,
+		`UPDATE usuarios SET abono_activo = false, fecha_vencimiento_abono = CURRENT_DATE - 30
+		 WHERE id = $1`, e.usuarioID)
+
+	r := postDevolucion(app, e.token, e.anclajeLibre)
+	if r.status != http.StatusOK {
+		t.Fatalf("esperaba 200, obtuve %d: %s", r.status, r.raw)
+	}
+
+	estado, coste := viajeEstado(t, d, e.viajeID)
+	if estado != "finalizado" {
+		t.Errorf("viaje: esperaba finalizado, obtuve %q", estado)
+	}
+	if coste != 0.00 {
+		t.Errorf("coste: esperaba 0.00 (15 min ≤ 30), obtuve %.2f", coste)
+	}
+	estadoAnclaje, bici := anclajeEstado(t, d, e.anclajeLibre)
+	if estadoAnclaje != "ocupado" || bici == nil || *bici != e.biciID {
+		t.Errorf("anclaje: estado=%q bici=%v (esperaba ocupado con la bici del viaje)", estadoAnclaje, bici)
+	}
+}

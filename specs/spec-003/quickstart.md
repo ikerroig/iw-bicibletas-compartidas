@@ -41,7 +41,7 @@ go test ./...                                    # integración end-to-end contr
 | T3h | Bici reportada averiada durante el viaje (HU-05) → devolución | `200`, viaje `finalizado` y tarificado; la bici queda **anclada y `averiada`** (no suma en `bicis_disponibles`) |
 | T3i | Reloj inconsistente (`fecha_fin < fecha_inicio` forzada en BD) | coste ≥ 0; se usa hora validada |
 | T3j | Latencia de una devolución válida (SC-003) | completa en < 10 s (asertado en el test de integración y cronometrado en el manual) |
-| T3k | Permisos (FR-008, AC4): `POST /devoluciones` sin sesión y con token de rol `operario` | sin sesión → `401`; operario → `403 RolInsuficiente`; en ambos el viaje sigue `en_curso` y el anclaje intacto |
+| T3k | Permisos (FR-008, AC4): `POST /devoluciones` sin sesión y con token de rol `operario_taller` | sin sesión → `401 NO_AUTENTICADO`; operario → `403 ROL_NO_PERMITIDO`; en ambos el viaje sigue `en_curso` y el anclaje intacto |
 | T3l | Abono caducado (FR-009, AC5): usuario con abono vencido y viaje activo devuelve la bici | `200`, viaje `finalizado` con `coste_total` registrado (el abono no condiciona el cierre) |
 
 ## 3. Escenario manual S3 (misma prueba del quickstart global)

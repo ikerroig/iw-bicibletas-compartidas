@@ -92,10 +92,10 @@
 `refinamiento/analyze-inicial.md` (A1, A2, A4, A7): los criterios nuevos del
 clarify (FR-008/FR-009) están implementados pero sin pruebas.
 
-- [ ] T028 [P] [US1] Test de integración de **permisos** en `backend/tests/devolucion_test.go` (FR-008, AC4): sin sesión → `401`; token con rol `operario` → `403 RolInsuficiente`; en ambos casos el viaje sigue `en_curso` y el anclaje intacto (montaje `httptest` + `routes.Register`, patrón del propio fichero) — *hallazgo A1*
-- [ ] T029 [P] [US1] Test de integración de **abono caducado** en `backend/tests/devolucion_test.go` (FR-009, AC5): usuario con `abono_activo = false` y `fecha_vencimiento_abono` pasada, con viaje activo → `POST /devoluciones` devuelve `200`, viaje `finalizado` con `coste_total` registrado — *hallazgo A2*
-- [ ] T030 [P] [US1] Aserto de **redondeo fraccionario > 1 min** en `backend/internal/services/devolucion/tarifa_test.go` (AC6): 46:30 → 17 minutos excedentes × tarifa (no 16) — *hallazgo A7*
-- [ ] T031 [US1] Ampliar la tabla *Acceptance Coverage* de `specs/spec-003/checklists/requirements.md` con las filas de FR-008, FR-009, AC4–AC6 y el nuevo aserto de T030, apuntando al test que lo demuestra — *hallazgo A4*
+- [X] T028 [P] [US1] Test de integración de **permisos** en `backend/tests/devolucion_test.go` (FR-008, AC4): sin sesión → `401 NO_AUTENTICADO`; token con rol `operario_taller` → `403 ROL_NO_PERMITIDO`; en ambos casos el viaje sigue `en_curso` y el anclaje intacto (montaje `httptest` + `routes.Register`, patrón del propio fichero) — *hallazgo A1*
+- [X] T029 [P] [US1] Test de integración de **abono caducado** en `backend/tests/devolucion_test.go` (FR-009, AC5): usuario con `abono_activo = false` y `fecha_vencimiento_abono` pasada, con viaje activo → `POST /devoluciones` devuelve `200`, viaje `finalizado` con `coste_total` registrado — *hallazgo A2*
+- [X] T030 [P] [US1] Aserto de **redondeo fraccionario > 1 min** en `backend/internal/services/devolucion/tarifa_test.go` (AC6): 46:30 → 17 minutos excedentes × tarifa (no 16) — *hallazgo A7*
+- [X] T031 [US1] Ampliar la tabla *Acceptance Coverage* de `specs/spec-003/checklists/requirements.md` con las filas de FR-008, FR-009, AC4–AC6 y el nuevo aserto de T030, apuntando al test que lo demuestra — *hallazgo A4*
 
 **Checkpoint**: `go test ./...` en verde con las 4 tareas nuevas; el
 analyze final (`refinamiento/analyze-final.md`) sin hallazgos abiertos
