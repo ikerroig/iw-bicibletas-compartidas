@@ -168,6 +168,14 @@ export const MisViajes: Component = () => {
             <For each={anios()}>{(a) => <option value={String(a)}>{a}</option>}</For>
           </select>
         </label>
+        <Show when={(mes() === "") !== (anio() === "")}>
+          <p
+            data-testid="aviso-filtro-incompleto"
+            class="text-sm text-amber-700"
+          >
+            Elige también el año para filtrar por mes (o deja ambos en —).
+          </p>
+        </Show>
         <Show when={filtrando()}>
           <button
             type="button"

@@ -74,8 +74,18 @@ Garantías del `200`:
 |---|---|---|---|
 | 401 | `NO_AUTENTICADO` | Sin JWT o token inválido/expirado | Ninguno |
 | 422 | `ENTRADA_INVALIDA` | `page < 1`, `page_size` fuera de `1…200`, `desde`/`hasta` con formato distinto de `YYYY-MM-DD` o `desde > hasta` | Ninguno |
+| 500 | `ERROR_INTERNO` | Fallo inesperado de BD al consultar (registro en log) | Ninguno; la lectura no modifica datos |
 
-No hay más códigos de error: la lectura nunca modifica datos y "página fuera de rango" o "periodo vacío" **no** son errores.
+No hay más códigos de error **de negocio**: la lectura nunca modifica datos
+y "página fuera de rango" o "periodo vacío" **no** son errores. El `500` es
+el fallo genérico de infraestructura con el envelope global.
+
+> **Nota de coordinación (refinamiento 2026-11-19, converge)**: el OpenAPI
+> global (`historialViajes`) lista solo `200` y `401`; el `422` de esta
+> validación no está aún en `specs/spec-001/contracts/openapi.yaml`.
+> Alinear el fichero global exige acuerdo (const. III) — **pendiente con
+> el equipo**; este documento documenta el comportamiento real implementado
+> y testeado (T4i).
 
 ### Ejemplos de consulta
 

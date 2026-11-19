@@ -164,6 +164,17 @@ func getHistorial(t *testing.T, app *gin.Engine, token, query string) (*httptest
 	return w, r
 }
 
+// codigoError extrae error.codigo del envelope global (contrato).
+func codigoError(body []byte) string {
+	var e struct {
+		Error struct {
+			Codigo string `json:"codigo"`
+		} `json:"error"`
+	}
+	_ = json.Unmarshal(body, &e)
+	return e.Error.Codigo
+}
+
 func rangoMesActual(t *testing.T) (desde, hasta string) {
 	t.Helper()
 	ahora := time.Now()
@@ -286,10 +297,13 @@ func TestHistorialT4dAislamientoY401(t *testing.T) {
 		t.Errorf("carla ve datos ajenos: usuario %d suma %v", r.Items[0].UsuarioID, r.SumaCoste)
 	}
 
-	// Sin token → 401 NO_AUTENTICADO.
+	// Sin token → 401 NO_AUTENTICADO (contrato).
 	w, _ := getHistorial(t, app, "", "")
 	if w.Code != http.StatusUnauthorized {
 		t.Errorf("sin token: status = %d, esperaba 401", w.Code)
+	}
+	if cod := codigoError(w.Body.Bytes()); cod != "NO_AUTENTICADO" {
+		t.Errorf("sin token: codigo = %q, esperaba NO_AUTENTICADO (body %s)", cod, w.Body.String())
 	}
 }
 
@@ -386,6 +400,10 @@ func TestHistorialT4iEntradaInvalida(t *testing.T) {
 		w, _ := getHistorial(t, app, esc.tokenAna, q)
 		if w.Code != http.StatusUnprocessableEntity {
 			t.Errorf("consulta %q: status = %d, esperaba 422 (body %s)", q, w.Code, w.Body.String())
+			continue
+		}
+		if cod := codigoError(w.Body.Bytes()); cod != "ENTRADA_INVALIDA" {
+			t.Errorf("consulta %q: codigo = %q, esperaba ENTRADA_INVALIDA (body %s)", q, cod, w.Body.String())
 		}
 	}
 }
