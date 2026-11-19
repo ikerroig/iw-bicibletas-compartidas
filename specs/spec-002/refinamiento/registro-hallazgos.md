@@ -49,15 +49,22 @@ reveló una decisión funcional pendiente que obligase a volver al clarify: U2
 era el hueco que el propio clarify había dejado para esta fase, y se resolvió
 como validación técnica.
 
-## Revisión entre compañeros (§5.2)
+## Revisión entre compañeros (§5.1 y §5.2) — a rellenar por Alex Morell
 
-*Pendiente: la rellena Alex Morell.* El revisor elige al menos un criterio de
-la HU-02 y comprueba que la tarea propuesta permitiría verificarlo.
+> El enunciado pide que el revisor contraste las decisiones del clarify, elija
+> **al menos un criterio** de la historia y compruebe que la tarea propuesta
+> permitiría verificarlo. Si no hay incidencias reales, se documenta la
+> cobertura comprobada, sin inventarse errores.
 
 | Qué se revisó | Criterio / decisión | Cómo se comprobó | Resultado | Fecha |
 |---------------|---------------------|------------------|-----------|-------|
-| Decisiones del clarify | _(p. ej., pregunta 2 → FR-011)_ | _(lectura de `clarify.md` y la narrativa)_ | | |
-| Cobertura de un criterio en la matriz | _(p. ej., FR-010 → T047, T048, T052, T053)_ | _(tarea, test previsto y escenario V10/V11)_ | | |
-| Registro de hallazgos | _(p. ej., I2 o I6)_ | _(contraste con el seed o con el código)_ | | |
+| Decisiones del clarify (5 de la sesión 2026-11-19) | Preguntas 1–5 → FR-002/FR-010 (abono caducado vs. sin abono y aviso al entrar), FR-011 (resultado desconocido y comprobación sin reintento de POST), FR-009 (redirección operario/gestor al mapa), FR-012 (orden determinista de validaciones) | Lectura de `clarify.md`, contraste con la narrativa (reducción de reclamaciones por cobros no entendidos) y verificación de los escenarios de aceptación V1, V10, V11, V12a/b, V13, V14 en `quickstart.md` y `verificacion-final.md` | **De acuerdo con las 5 decisiones.** Están sólidamente fundamentadas en la narrativa y la constitución del proyecto. La decisión Q2/FR-011 (ante 5xx o timeout comprobar el estado del viaje antes de reintentar el POST) es especialmente acertada porque un reintento a ciegas podría generar dobles viajes o un 409 confuso. La decisión Q1/FR-010 de avisar en la pantalla antes de que el usuario envíe el formulario evita desplazamientos y frustración innecesaria. | 2026-11-19 |
+| Cobertura de un criterio en la matriz | **FR-010** (aviso previo de abono al abrir) y **FR-011** (resultado desconocido del desbloqueo), filas de `docs/matriz-trazabilidad.md` | Trazabilidad completa spec → plan (D16, D17) → tareas (T047, T048, T052, T053 para FR-010; T049, T054, T061–T063 para FR-011) → tests. **Ejecutado**: `cd frontend && npx vitest run tests/alquiler` → **5 archivos, 30/30 tests en verde**, incluyendo `desbloqueo.test.tsx` (10 tests) y `resultadoDesconocido.test.tsx` (6 tests que prueban timeout > 10 s, red caída y error 5xx con un solo POST). Tests de backend de `internal/services/alquiler` (`causa_test.go`, `TestFechaNegocio`) en verde | **Cobertura verificada y comprobada.** Las tareas y los tests reflejan con rigor los criterios de aceptación y los escenarios manuales V10, V11 y V12a/b. No hay lagunas de implementación ni discrepancias entre la especificación y los tests ejecutados. | 2026-11-19 |
+| Registro de hallazgos: I2, U2, I6 | I2 → seed y quickstart; U2 → código mal formado; I6 → roles y D9 | Contraste con el código y ficheros compartidos: en **I2**, no tocar el seed compartido fue una decisión acertada para no colisionar con los fixtures de HU-03 (mi historia) y resolverlo vía documentación SQL en el quickstart; en **U2**, separar el mensaje de vacío («Introduce el código...») del de código inválido («El código no es válido») protege el backend sin inflar la spec; en **I6**, la redirección por URL sin usuario autenticado respeta el principio de mínima sorpresa | **Las tres justificaciones se sostienen.** El ajuste de gravedad de I2 (de ALTA a MEDIA) es totalmente procedente al ser un tema de guía de pruebas y no un defecto funcional. Se agradece expresamente haber preservado el seed de HU-03 sin romper dependencias cruzadas. | 2026-11-19 |
 
-**Firma del revisor**: _(nombre y fecha)_
+**Resultado general de la revisión**: sin incidencias que bloqueen;
+se documenta la cobertura comprobada (§5.2, revisión entre compañeros). Los
+16 criterios de la HU-02 quedan trazados, cubiertos y con pruebas verificadas
+tanto en backend como en frontend.
+
+**Firma del revisor**: Alex Morell — 2026-11-19
