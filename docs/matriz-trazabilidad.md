@@ -40,12 +40,12 @@ Decisiones: `specs/spec-001/research.md` (Rn) · Tareas: `specs/spec-001/tasks.m
 | FR-011, SC-008 — listado textual | R21 | **T103**, **T104**, **T111**, **T113** | Vitest: `listaEstaciones.test.tsx` (incl. foco y `aria-controls`) · S1g ✅ (antes P2.7 ❌) | ✅ |
 | FR-012 — acceso sin sesión o con sesión caducada | R5, R22 | T014, T021, **T106** | Go: `TestEstacionesExigeSesion` (401) · Vitest: `sesionCaducada.test.tsx` (T106) · S1h ✅ · P3.3–P3.6 | ✅ |
 | FR-013 — encuadre si el usuario está fuera del área | R23 | **T107**, **T108** | Vitest: `encuadre.test.tsx` (posición antes/después de los datos, dentro/fuera) · S1i ✅ (antes H1 ❌) | ✅ |
-| SC-004 — mapa < 5 s y detalle < 2 s | Plan, *Performance Goals* | T100 | S1e: en local sin limitar, marcadores ≤ 263 ms y detalle 8 ms (`verificacion-final.md`); falta repetirlo con «Fast 4G» | 👁 |
+| SC-004 — mapa < 5 s y detalle < 2 s | Plan, *Performance Goals* | T100 | S1e con «Fast 4G» y caché vacía (`verificacion-final.md`, `evidencias/s1e-fast4g/`): marcadores ≤ 0,85 s en producción y ≤ 4,02 s en desarrollo; detalle ≤ 73 ms; con la ubicación denegada, 60/60 marcadores en la vista | ✅ |
 | Regresión de todo lo anterior tras el refinamiento | — | T109, T110 | `go test ./...` (9 ok), `npm test` (81/81), S1–S1i (`refinamiento/verificacion-final.md`) | ✅ |
 
 **Cobertura HU-01**: 13 FR + 8 SC = 21 criterios; **21/21 con tarea y
-prueba prevista**. Tras el refinamiento (2026-11-19): **20 ✅** y 1 👁
-(SC-004: cumple de sobra en local; falta repetir la medición con «Fast 4G»).
+prueba prevista**. Tras el refinamiento (2026-11-19): **21 ✅** (SC-004
+medido también con el perfil «Fast 4G», en `verificacion-final.md`).
 
 ## HU-02 — Desbloqueo de bicicleta por código de anclaje (spec-002) · Iker Roig · Revisor: Alex Morell
 
