@@ -72,7 +72,9 @@ Decisiones: `specs/spec-002/research.md` (Dn) · Tareas: `specs/spec-002/tasks.m
 **Cobertura HU-02**: 12 FR + 4 SC = 16 criterios; **16/16 con tarea y
 prueba prevista**. Tras implementar el refinamiento (2026-11-19, commit
 `058b3bd`): **16 ✅**, incluida la mejora técnica del mensaje de FR-001 (U2).
-Pendiente de confirmar con `/speckit-converge` (§5.3).
+`/speckit-converge` (§5.3): la primera pasada añadió T061–T063 (FR-011: plazo en
+la consulta de comprobación) y la segunda dio **converged**
+(`specs/spec-002/refinamiento/converge-2.md`).
 
 ## HU-03 — Devolución y tarificación (spec-003) · Alex Morell · Revisor: Iker Roig
 
