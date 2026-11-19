@@ -1,0 +1,8 @@
+ ✓ src/pages/devolucion/index.test.tsx (4 tests) 177ms
+ ✓ src/pages/taller/index.test.tsx (1 test) 230ms
+
+ Test Files  14 passed (14)
+      Tests  81 passed (81)
+   Start at  13:11:48
+   Duration  15.78s (transform 7.49s, setup 35.75s, collect 11.95s, tests 8.96s, environment 50.00s, prepare 7.39s)
+

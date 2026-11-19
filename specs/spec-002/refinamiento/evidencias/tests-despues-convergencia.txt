@@ -1,0 +1,26 @@
+ ✓ src/pages/viajes/index.test.tsx (6 tests) 379ms
+ ✓ src/pages/analitica/index.test.tsx (6 tests) 399ms
+ ✓ tests/mapa/desactualizado.test.tsx (5 tests) 575ms
+ ✓ tests/alquiler/guardia.test.tsx (5 tests) 402ms
+ ✓ tests/mapa/encuadre.test.tsx (4 tests) 771ms
+   ✓ encuadre inicial del mapa (FR-013) > (a) usuario FUERA del área y su posición llega ANTES que los datos → se encuadra la red  393ms
+ ✓ tests/alquiler/aviso.test.tsx (4 tests) 510ms
+   ✓ aviso de viaje en curso > con viaje muestra hora, código y enlace al viaje  309ms
+ ✓ tests/mapa/mapa.test.tsx (15 tests) 1452ms
+ ✓ tests/mapa/sesionCaducada.test.tsx (2 tests) 999ms
+   ✓ sesión no válida durante la consulta (FR-012) > sin sesión, la vista de disponibilidad redirige al login y, tras entrar, vuelve al mapa  595ms
+   ✓ sesión no válida durante la consulta (FR-012) > si la sesión caduca con el mapa abierto: cierra sesión, va al login y al entrar vuelve al mapa  395ms
+ ✓ tests/mapa/listaEstaciones.test.tsx (9 tests) 1639ms
+   ✓ listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado  565ms
+ ✓ tests/alquiler/resultadoDesconocido.test.tsx (6 tests) 1414ms
+   ✓ resultado desconocido del desbloqueo (FR-011) > red caída al enviar y el viaje sí se creó → avisa, comprueba y muestra el viaje  614ms
+ ✓ tests/alquiler/desbloqueo.test.tsx (10 tests) 1580ms
+   ✓ desbloqueo > muestra el viaje activo en lugar del formulario  393ms
+   ✓ desbloqueo > envía el código sin espacios y pasa al viaje en curso  341ms
+ ✓ tests/mapa/estadoVisual.test.ts (11 tests) 28ms
+ ✓ src/pages/devolucion/index.test.tsx (4 tests) 122ms
+ ✓ src/pages/taller/index.test.tsx (1 test) 154ms
+ ✓ src/pages/balanceo/index.test.tsx (4 tests) 176ms
+ ✓ tests/alquiler/menu.test.tsx (5 tests) 222ms
+ Test Files  16 passed (16)
+      Tests  97 passed (97)

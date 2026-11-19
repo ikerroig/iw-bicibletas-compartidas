@@ -21,8 +21,7 @@ import (
 
 // Causas de rechazo. Ninguna deja efectos: la transacción se revierte.
 var (
-	ErrAbonoVencido          = errors.New("alquiler: abono no vigente")
-	ErrViajeActivo           = errors.New("alquiler: el usuario ya tiene un viaje activo")
+	ErrViajeActivo          = errors.New("alquiler: el usuario ya tiene un viaje activo")
 	ErrAnclajeNoExiste       = errors.New("alquiler: anclaje inexistente")
 	ErrEstacionFueraServicio = errors.New("alquiler: estación fuera de servicio")
 	ErrAnclajeFueraServicio  = errors.New("alquiler: anclaje fuera de servicio")
@@ -193,13 +192,14 @@ func validarUsuario(ctx context.Context, tx pgx.Tx, usuarioID int64) error {
 	err := tx.QueryRow(ctx, `SELECT abono_activo, fecha_vencimiento_abono FROM usuarios WHERE id = $1 FOR SHARE`, usuarioID).
 		Scan(&u.AbonoActivo, &u.FechaVencimientoAbono)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrAbonoVencido // JWT de un usuario ya borrado: no hay abono que valga
+		// JWT de un usuario ya borrado: no hay abono que valga.
+		return &RechazoAbono{Causa: ErrSinAbono, Mensaje: mensajeSinAbono}
 	}
 	if err != nil {
 		return fmt.Errorf("alquiler: leer usuario: %w", err)
 	}
-	if !models.AbonoVigente(u, fechaNegocio(time.Now())) {
-		return ErrAbonoVencido
+	if c := causaAbono(u, fechaNegocio(time.Now())); !c.Vigente {
+		return c.rechazo() // FR-002: sin abono o caducado, con el mensaje (D15)
 	}
 
 	var activo bool

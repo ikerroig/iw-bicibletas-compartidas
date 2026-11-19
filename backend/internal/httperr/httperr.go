@@ -17,6 +17,7 @@ const (
 	Interno               = "INTERNO"
 
 	AbonoVencido          = "ABONO_VENCIDO"
+	SinAbono              = "SIN_ABONO" // HU-02 D15: abono inactivo o sin fecha
 	ViajeActivo           = "VIAJE_ACTIVO"
 	SinViajeActivo        = "SIN_VIAJE_ACTIVO"
 	AnclajeNoExiste       = "ANCLAJE_NO_EXISTE"

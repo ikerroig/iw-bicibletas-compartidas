@@ -116,6 +116,44 @@ Sin tareas: autenticación, `httperr`, `db.EnTransaccion`, `RecalcularEstacion` 
 
 ---
 
+## Phase 6: Refinamiento de HU-02 (2026-11-19, tras el clarify de refinamiento)
+
+> Origen: [refinamiento/pruebas-previas.md](./refinamiento/pruebas-previas.md) y [refinamiento/clarify.md](./refinamiento/clarify.md) (sesión 2026-11-19), enunciado §5.2 paso 1. Responsable: Iker Roig · Revisor: Alex Morell. Deltas D15–D17, D9 y D4 de [plan.md](./plan.md). Cubre FR-002 (ampliado), FR-009 (ampliado), FR-010, FR-011, FR-012 y SC-001 (ampliado). Se ejecuta con `/speckit-implement` y se verifica con `/speckit-converge` (§5.3).
+
+### Contrato
+
+- [X] T043 [US1] **D15, D16** en `specs/spec-001/contracts/openapi.yaml`: en `/alquileres/desbloqueo`, documentar en el 403 los códigos `SIN_ABONO` y `ABONO_VENCIDO` y sus mensajes; en `/alquileres/activo`, añadir a la respuesta 200 la propiedad requerida `abono` (`vigente: boolean`, `codigo: [string, 'null']` con enum `SIN_ABONO`/`ABONO_VENCIDO`, `mensaje: [string, 'null']`). Cambio aditivo: **avisar al equipo antes de empezar esta tarea** (hallazgo K1), además de dejarlo en la PR (T058)
+
+### Tests (escribir antes y comprobar que fallan donde aplique)
+
+- [X] T044 [P] [US1] **FR-002, SC-001 (D15)**: crear `backend/internal/services/alquiler/causa_test.go` con tests de `causaAbono(u models.Usuario, hoy time.Time)`: `abono_activo = false` → no vigente, `SIN_ABONO`, «No tienes abono anual»; activo sin fecha → `SIN_ABONO`; activo con fecha `2026-11-09` y hoy `2026-11-19` → `ABONO_VENCIDO`, «Tu abono anual caducó el 09/11/2026»; activo con fecha igual a hoy → vigente, código y mensaje vacíos
+- [X] T045 [US1] **FR-002, SC-001 (D15)**: actualizar `backend/tests/integration/spec002_abono_test.go` (gate T1): sin abono → 403 `SIN_ABONO` «No tienes abono anual»; caducado → 403 `ABONO_VENCIDO` con el mensaje y la fecha exactos; vence hoy → 201; en los rechazos, anclaje, bicicleta y viajes sin cambios. Actualizar también `backend/tests/integration/spec002_estacion_test.go` (T037): la revocación pone `abono_activo = false`, así que ahora espera `SIN_ABONO`
+- [X] T046 [P] [US1] **FR-012 (D4)**: crear `backend/tests/integration/spec002_orden_test.go` con un caso por cada par de reglas consecutivas que fallan a la vez: abono caducado + código inexistente → `ABONO_VENCIDO`; viaje activo + código inexistente → `VIAJE_ACTIVO`; estación fuera de servicio + anclaje vacío → «La estación de este anclaje está fuera de servicio»; anclaje fuera de servicio y vacío → «Este anclaje está fuera de servicio»; anclaje vacío en estación operativa → «Este anclaje no tiene ninguna bicicleta». *Test de caracterización: el orden ya existe (P3.5 de las pruebas previas) y puede pasar desde el principio*
+- [X] T047 [US1] **FR-010 (D16)**: ampliar `backend/tests/contract/spec002_test.go` (tras T043): `GET /alquileres/activo` de un usuario con abono vigente devuelve `abono.vigente = true` con `codigo` y `mensaje` a `null`; el de un usuario caducado, `vigente = false`, `codigo = ABONO_VENCIDO` y un `mensaje` **idéntico** al del 403 del `POST`; ambas respuestas cumplen el contrato
+- [X] T048 [P] [US1] **FR-010 (D16)**: ampliar `frontend/tests/alquiler/desbloqueo.test.tsx`: con MSW devolviendo `abono.vigente = false`, la página muestra el `mensaje` con `role="alert"` antes de escribir nada, y el campo y el botón están desactivados (no se hace ningún `POST`); con `vigente = true`, el formulario está activo. Los rechazos `SIN_ABONO` y `ABONO_VENCIDO` del `POST` muestran su mensaje
+- [X] T049 [P] [US1] **FR-011 (D17)**: crear `frontend/tests/alquiler/resultadoDesconocido.test.tsx` con MSW y temporizadores falsos: (a) `POST` con error de red y `GET /activo` con viaje → «No sabemos si se ha desbloqueado; comprobando…» y después la vista del viaje; (b) `POST` 500 y `GET` sin viaje → «No se ha desbloqueado, inténtalo de nuevo» con el formulario activo; (c) `POST` sin respuesta durante más de 10 s → se cancela y se comprueba; (d) `POST` y `GET` fallan → botón «Volver a comprobar», que al pulsarlo repite solo el `GET`; (e) un 4xx (`ANCLAJE_NO_EXISTE`) muestra su causa sin consultar el viaje. En todos los casos se cuenta **un único** `POST`
+- [X] T050 [P] [US1] **FR-009 (D9)**: crear `frontend/tests/alquiler/guardia.test.tsx`: con sesión de `gestor`, `operario_taller`, `operario_logistica` o con token pero sin usuario guardado, navegar a `/alquiler` lleva a `/` y el formulario no llega a mostrarse; con rol `usuario` se muestra
+- [X] T059 [P] [US1] **FR-001, validación técnica (D2, hallazgo U2)**: ampliar `backend/tests/integration/spec002_codigo_test.go`: código vacío o solo espacios → 422 `VALIDACION` «Introduce el código del anclaje»; 65 caracteres o con `\u0000` → 422 `VALIDACION` «El código no es válido»; en ambos, sin efectos
+
+### Implementación
+
+- [X] T051 [US1] **D15** en `backend/internal/services/alquiler/service.go`: función `causaAbono` (vigente, código y mensaje con la fecha en `DD/MM/AAAA`), errores `ErrSinAbono` y `ErrAbonoCaducado` (este con la fecha) y uso en `validarUsuario` sin cambiar `models.AbonoVigente`; en `backend/internal/handlers/alquiler/handler.go`, mapearlos a 403 `SIN_ABONO` y 403 `ABONO_VENCIDO` con el mensaje de `causaAbono`; en `backend/internal/httperr/httperr.go` (compartido), añadir la constante `SinAbono = "SIN_ABONO"`. Hace pasar T044 y T045
+- [X] T052 [US1] **D16** en `backend/internal/services/alquiler/service.go` y `backend/internal/handlers/alquiler/handler.go` (tras T051): `Activo` lee el abono del usuario y la respuesta de `GET /alquileres/activo` incluye `abono` calculado con `causaAbono`. Hace pasar T047
+- [X] T053 [US1] **D16** en el frontend: tipo `EstadoAbono` y nueva forma de `viajeActivo()` en `frontend/src/services/api/alquiler.ts`; `frontend/src/stores/viaje.ts` guarda también el abono; `frontend/src/pages/alquiler/Desbloqueo.tsx` muestra el aviso y desactiva el formulario; el handler por defecto de `/alquileres/activo` en `frontend/tests/handlers.ts` (compartido) devuelve `abono: { vigente: true, codigo: null, mensaje: null }`. `AvisoViaje.tsx` debe seguir funcionando igual. **No cambiar la firma de `fijarViajeEnCurso(v: ViajeActivo | null)` ni de `viajeEnCurso()`**: las usa spec-003 (`frontend/src/pages/devolucion/index.tsx` y su test); el abono va en una señal aparte del store. Hace pasar T048
+- [X] T054 [US1] **D17** en `frontend/src/services/api/alquiler.ts` (plazo de 10 s con `AbortController` en `desbloquear`) y `frontend/src/pages/alquiler/Desbloqueo.tsx` (estado «comprobando», consulta única del viaje, mensaje de no desbloqueado y botón «Volver a comprobar»; sin reenvío del `POST`). Hace pasar T049
+- [X] T055 [US1] **D9** en `frontend/src/pages/alquiler/Desbloqueo.tsx`: `<Navigate href="/" />` si `sesion.usuario()?.rol !== 'usuario'`, antes de cargar el viaje. No se toca `routes.tsx`. Hace pasar T050
+- [X] T060 [US1] **D2 (hallazgo U2)** en `backend/internal/handlers/alquiler/handler.go`: separar el mensaje del 422 según el motivo (vacío → «Introduce el código del anclaje»; demasiado largo o con caracteres de control → «El código no es válido»). Va en secuencia con T051 (mismo fichero). Hace pasar T059
+
+### Validación
+
+- [X] T056 [US1] Validación manual de V1, V7 y V10–V14 de `quickstart.md` en el navegador y por API; registrar en `refinamiento/verificacion-final.md` la entrada, el resultado esperado y el observado **antes** (P2.3, P3.3, P3.5, P3.9 y el caso no probado de pérdida de conexión de `pruebas-previas.md`) y **después** de T051–T055 (enunciado §5.3, paso 4)
+- [X] T057 [US1] Regresión de HU-02: `go vet ./...` y `go test -count=1 ./...` en `backend/`; `npx tsc --noEmit`, `npm run lint` y `npm test` en `frontend/`; repetir V2–V9; guardar las salidas en `refinamiento/evidencias/` (enunciado §5.4, «Regresión»)
+- [X] T058 Comunicar al equipo en la PR los cambios en piezas compartidas, todos aditivos: constante `SinAbono` en `httperr`, `SIN_ABONO` y `abono` en el OpenAPI y el handler por defecto de `frontend/tests/handlers.ts` (const. III). *Aviso enviado al grupo el 2026-11-19 antes de T043; se repite en la descripción de la PR*
+
+**Checkpoint**: HU-02 cumple FR-001…FR-012 y SC-001…SC-004; T044–T050 y T059 en verde y V1, V10–V14 comprobados en el navegador.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -123,10 +161,12 @@ Sin tareas: autenticación, `httperr`, `db.EnTransaccion`, `RecalcularEstacion` 
 - **Setup y Foundational**: sin tareas, ya en `main`.
 - **User Story 1**: T009 → tests T010–T015, T028, T030 y T031 → implementación T016–T023 y T029.
 - **Polish**: tras completar la US1.
+- **Refinamiento (Phase 6)**: T043 → tests T044–T050 y T059 → implementación T051–T055 y T060 → validación T056–T058. T051 antes de T052 (mismo fichero y depende de `causaAbono`); T051 y T060 tocan `handler.go`: en secuencia; T052 antes de T053 (forma de la respuesta); T053, T054 y T055 tocan `Desbloqueo.tsx`: en secuencia. T044, T046, T048, T049, T050 y T059 se pueden escribir en paralelo.
 
 ### User Story Dependencies
 
 - **US1**: única historia. Sin dependencias de otras specs; spec-003 cerrará los viajes que esta crea.
+- **Refinamiento 2026-11-19 (revisión de dependencias, §5.2 paso 1)**: spec-003 (Alex) usa `fijarViajeEnCurso` y `viajeEnCurso` de `stores/viaje.ts`; T053 conserva sus firmas. Solo la HU-02 consume `GET /alquileres/activo`, así que el campo `abono` no afecta a nadie más. Ninguna otra spec usa `ABONO_VENCIDO` ni `models.AbonoVigente` (comprobado con `grep` en `backend/` y `frontend/`), y `AbonoVigente` no cambia.
 
 ### Within Each User Story
 
@@ -168,6 +208,7 @@ La spec solo tiene la US1, y su flujo básico ya existe. El MVP se completa con 
 3. Reglas críticas: abono, código y estación (T016–T018).
 4. Viaje activo, tiempos tras el commit y menú (T019–T023 y T029).
 5. Validación y PR (T024–T027).
+6. Refinamiento del 2026-11-19 (Phase 6): contrato (T043), tests (T044–T050, T059), implementación (T051–T055, T060) y validación (T056–T058).
 
 ### Parallel Team Strategy
 
@@ -180,3 +221,9 @@ Spec individual de Iker Roig. T009, T020 y T029 tocan piezas compartidas, por lo
 - `[X]` indica trabajo ya presente en `e090f41`, no generado después.
 - No se reescribe el historial: los documentos y los Deltas van en commits posteriores.
 - Numeración propia de esta spec; `T033–T039` del tasks.md global siguen siendo la referencia del plan transversal.
+
+## Phase 7: Convergence
+
+- [X] T061 Poner un plazo (10 s, como el desbloqueo) a la consulta de comprobación de `cargarViajeEnCurso()` cuando la llama `Desbloqueo.tsx` tras un resultado desconocido, y tratar el plazo agotado como fallo de la consulta (mensaje y botón «Volver a comprobar»), con un caso nuevo en `frontend/tests/alquiler/resultadoDesconocido.test.tsx` en el que el `GET` nunca responde per FR-011 (partial)
+- [X] T062 Eliminar `viajeActivo()` de `frontend/src/services/api/alquiler.ts`, que se quedó sin usos al introducir `estadoAlquiler()` per plan: D16 (unrequested)
+- [X] T063 Documentar en `specs/spec-002/research.md` (D17) que cualquier error que no sea un `ApiError` también se trata como resultado desconocido, o restringir `resultadoDesconocido()` de `Desbloqueo.tsx` a los tres casos de D17 per plan: D17 (unrequested)

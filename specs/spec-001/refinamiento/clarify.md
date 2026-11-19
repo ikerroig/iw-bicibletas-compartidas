@@ -54,8 +54,6 @@ III).
 **Iker Roig — pregunta 5 de la sesión del 2026-11-19: encuadre del mapa cuando
 el usuario está fuera del área de la red (FR-013).**
 
-*Borrador: pendiente de revisar y ajustar con mis palabras.*
-
 **Qué duda había.** La spec decía qué hacer si el usuario deniega la
 ubicación (encuadrar toda la red), pero no qué hacer si la concede y está
 lejos de las estaciones. La implementación centraba el mapa en el usuario
@@ -64,9 +62,11 @@ siempre que diera permiso.
 **Cómo lo detecté.** No salió del clarify, sino de las pruebas previas
 (hallazgo H1). Al probar la HU-01 en mi navegador, con mi ubicación real fuera
 de Valencia, el mapa se abría centrado donde yo estaba y las 60 estaciones
-quedaban fuera de la pantalla. Parecía que la red estaba vacía. Pasaba cuando
-mi posición llegaba antes que los datos de las estaciones; si llegaba
-después, no. Por eso en una primera prueba no lo vi.
+quedaban fuera de la pantalla. Parecía que la red estaba vacía. La
+implementación centraba el mapa en el usuario siempre que diera permiso, sin
+mirar si estaba cerca de alguna estación, así que pasaba tanto si mi posición
+llegaba antes que los datos de las estaciones como después
+([verificacion-final.md](./verificacion-final.md), S1i, columna «antes»).
 
 **Qué opciones había.**
 - A. Centrar en el usuario solo si está dentro del área de la red; si no,

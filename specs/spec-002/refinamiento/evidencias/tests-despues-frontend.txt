@@ -1,0 +1,31 @@
+ ✓ src/pages/analitica/index.test.tsx (6 tests) 445ms
+ ✓ src/pages/viajes/index.test.tsx (6 tests) 453ms
+ ✓ tests/mapa/desactualizado.test.tsx (5 tests) 979ms
+   ✓ aviso de datos desactualizados > sin datos y pasados 30 s, el mapa muestra solo el mensaje de FR-010  314ms
+ ✓ tests/mapa/encuadre.test.tsx (4 tests) 1300ms
+   ✓ encuadre inicial del mapa (FR-013) > (a) usuario FUERA del área y su posición llega ANTES que los datos → se encuadra la red  589ms
+   ✓ encuadre inicial del mapa (FR-013) > (c) usuario DENTRO del área → se centra en él (antes o después de los datos)  360ms
+ ✓ tests/alquiler/guardia.test.tsx (5 tests) 795ms
+   ✓ guardia de la pantalla de desbloqueo > con rol gestor lleva al mapa sin mostrar el formulario  393ms
+ ✓ tests/alquiler/aviso.test.tsx (4 tests) 862ms
+   ✓ aviso de viaje en curso > con viaje muestra hora, código y enlace al viaje  640ms
+ ✓ tests/mapa/sesionCaducada.test.tsx (2 tests) 1120ms
+   ✓ sesión no válida durante la consulta (FR-012) > sin sesión, la vista de disponibilidad redirige al login y, tras entrar, vuelve al mapa  822ms
+ ✓ tests/mapa/mapa.test.tsx (15 tests) 2040ms
+   ✓ MapaRed > pinta TODAS las estaciones de la API (SC-001) con texto/aria-label distinto por estado  576ms
+   ✓ MapaRed > un marcador fuera de servicio es seleccionable y abre su detalle (FR-009)  355ms
+   ✓ MapaRed > el detalle se actualiza con los datos en vivo de la estación seleccionada  357ms
+ ✓ tests/mapa/listaEstaciones.test.tsx (9 tests) 2062ms
+   ✓ listado de estaciones (FR-011) > el conmutador «Mapa / Lista» es accesible y se maneja con el teclado  800ms
+ ✓ tests/alquiler/resultadoDesconocido.test.tsx (5 tests) 1716ms
+   ✓ resultado desconocido del desbloqueo (FR-011) > red caída al enviar y el viaje sí se creó → avisa, comprueba y muestra el viaje  954ms
+ ✓ tests/alquiler/desbloqueo.test.tsx (10 tests) 2035ms
+   ✓ desbloqueo > muestra el viaje activo en lugar del formulario  595ms
+   ✓ desbloqueo > envía el código sin espacios y pasa al viaje en curso  359ms
+ ✓ tests/mapa/estadoVisual.test.ts (11 tests) 12ms
+ ✓ src/pages/devolucion/index.test.tsx (4 tests) 137ms
+ ✓ src/pages/taller/index.test.tsx (1 test) 179ms
+ ✓ src/pages/balanceo/index.test.tsx (4 tests) 209ms
+ ✓ tests/alquiler/menu.test.tsx (5 tests) 261ms
+ Test Files  16 passed (16)
+      Tests  96 passed (96)
