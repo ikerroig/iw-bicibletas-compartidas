@@ -53,7 +53,25 @@ _(Pendiente: se rellena tras el clarify y el analyze de spec-002.)_
 
 ## HU-03 — Devolución y tarificación (spec-003) · Alex Morell · Revisor: Iker Roig
 
-_(Pendiente.)_
+Decisiones: `specs/spec-003/research.md` (D1–D7) · Tareas: `specs/spec-003/tasks.md` (T001–T033).
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001, FR-002 — devolución: bici fijada en anclaje libre, hora de llegada, usuario libre | D2 (transacción única con `FOR UPDATE` y orden de cierre) | T017, T019 | Go: `TestDevolucion_ViajeCorto_FinalizaYGratuito` · S3 | ✅ |
+| FR-003, SC-001 — ≤ 30 min → 0,00 € | D1 (`CalcularCoste`, umbral 1800 s) | T014, T016 | Go: `TestCalcularCoste_ViajeCortoGratuito`, `TestCalcularCoste_Borde30Minutos` · S3 | ✅ |
+| FR-004, SC-002 — solo el excedente × tarifa única, minuto empezado (ceil) | D1 (`ceil((s−1800)/60) × TARIFA_MINUTO`) | T016, **T030** | Go: `TestCalcularCoste_45Minutos`, `TestCalcularCoste_DosHoras`, `TestCalcularCoste_FraccionesDeExcedente` (46:30 → 3,40) · S3 | ✅ |
+| FR-005 — persiste inicio, llegada, duración y coste (entrada de la HU-04) | D2 (`UPDATE viajes` en la misma transacción) | T017 | Go: asertos de `fecha_fin`/`duracion_minutos`/`coste_total` en `TestDevolucion_ViajeCorto_FinalizaYGratuito` | ✅ |
+| FR-006 — un solo cierre por viaje; bici en un solo anclaje | D2 (V3: `rows=0` → `VIAJE_YA_CERRADO`) | T015, T017 | Go: `TestDevolucion_DobleConfirmacion_SoloUnaEfecto` (2 concurrentes → 1×200 + 1×409) | ✅ |
+| FR-007 — sin viaje activo → 409 y anclaje intacto | D3 (códigos de error) | T015, T017 | Go: `TestDevolucion_SinViajeActivo_RechazaSinEfectos`, `TestDevolucion_AnclajesInvalidos_Rechazan` | ✅ |
+| FR-008 — solo rol `usuario` propietario: 401 sin sesión / 403 otro rol, sin efectos | D7 (rol en la ruta) | T020, **T028** | Go: `TestDevolucion_Permisos_SinSesionYRolNoUsuario` | ✅ |
+| FR-009 — el abono caducado no impide devolver | Clarify 2026-11-19 (AC5) | **T029** | Go: `TestDevolucion_AbonoCaducado_PuedeDevolver` | ✅ |
+| SC-003 — devolución válida < 10 s | Plan, *Performance Goals* | T015 (T3j), T026 | Go: latencia en `TestDevolucion_ViajeCorto_FinalizaYGratuito` · S3 | ✅ |
+| SC-004 — desbloqueo inmediato posterior; 0 dobles cierres | D2 + D4 (invalidación Redis post-commit) | T015, T018, T026 | Go: T3f · S3 (`actualizado_en` nuevo) | ✅ |
+| Regresión del refinamiento (contrato ≤64, UI, suites) | Contract parcial (converge F1) | **T032**, T033, T024, T025 | Go: `TestDevolucion_CodigoLargo_ValidacionContrato` · `go test ./...` + `npm test` (81/81) tras el merge de `main` | ✅ |
+
+**Cobertura HU-03**: 9 FR + 4 SC = 13 criterios; **13/13 con tarea y
+prueba prevista, 13 ✅** (refinamiento 2026-11-19: AC4/AC5/AC6 cerrados con
+T028–T031; evidencia en `specs/spec-003/refinamiento/converge-2.md`).
 
 ## HU-04 — Historial de viajes y desglose mensual (spec-004) · Alex Morell · Revisor: Iker Roig
 
