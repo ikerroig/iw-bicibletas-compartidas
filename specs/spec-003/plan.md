@@ -8,7 +8,7 @@
 
 ## Summary
 
-Cerrar el ciclo de alquiler: el usuario fija la bicicleta en un anclaje libre de cualquier estación y el sistema finaliza el viaje registrando hora de llegada, liberando al usuario, anclando la bicicleta y tarificando (0,00 € si ≤ 30 min; solo excedente × `TARIFA_MINUTO` si > 30 min). Enfoque técnico: un único endpoint `POST /devoluciones` (Go/Gin) con **una transacción PostgreSQL** que valida el viaje activo con `SELECT … FOR UPDATE`, cierra el viaje, actualiza anclaje y bicicleta, calcula el coste según R8 del plan global y, tras el commit, reescribe la clave Redis `estacion:{id}:estado` de la estación destino (frescura ≤ 30 s, constitución IV). Frontend SolidJS: página `pages/devolucion/` con formulario de código de anclaje y confirmación del importe. Sin cambios de esquema: se usan las tablas `viajes`, `anclajes`, `bicicletas` y `estaciones` ya definidas en el modelo compartido.
+Cerrar el ciclo de alquiler: el usuario fija la bicicleta en un anclaje libre de cualquier estación y el sistema finaliza el viaje registrando hora de llegada, liberando al usuario, anclando la bicicleta y tarificando (0,00 € si ≤ 30 min; solo excedente × `TARIFA_MINUTO` si > 30 min, con redondeo al minuto empezado). Solo el propietario del viaje con rol `usuario` puede cerrarlo (FR-008) y el cierre no exige abono vigente (FR-009). Enfoque técnico: un único endpoint `POST /devoluciones` (Go/Gin) con **una transacción PostgreSQL** que valida el viaje activo con `SELECT … FOR UPDATE`, cierra el viaje, actualiza anclaje y bicicleta, calcula el coste según R8 del plan global y, tras el commit, reescribe la clave Redis `estacion:{id}:estado` de la estación destino (frescura ≤ 30 s, constitución IV). Frontend SolidJS: página `pages/devolucion/` con formulario de código de anclaje y confirmación del importe. Sin cambios de esquema: se usan las tablas `viajes`, `anclajes`, `bicicletas` y `estaciones` ya definidas en el modelo compartido.
 
 ## Technical Context
 
@@ -30,7 +30,7 @@ Cerrar el ciclo de alquiler: el usuario fija la bicicleta en un anclaje libre de
 
 **Scope/Scale**: 1 endpoint (`POST /devoluciones`), 1 servicio (`services/devolucion`), 1 página (`pages/devolucion`), 1 registro de rutas trivial compartido.
 
-**Unknowns**: **0 NEEDS CLARIFICATION.** Todos los puntos (fórmula de tarifa, concurrencia, edge cases, códigos de error, invalidación Redis) se resuelven en [research.md](./research.md), heredando R3/R7/R8 del plan global.
+**Unknowns**: **0 NEEDS CLARIFICATION.** Todos los puntos (fórmula de tarifa, concurrencia, edge cases, códigos de error, invalidación Redis) se resuelven en [research.md](./research.md), heredando R3/R7/R8 del plan global. Tras la fase de refinamiento (§5.1), la sesión de `/speckit.clarify` del **2026-11-19** resolvió 5 preguntas (tarifa única del servicio, redondeo al minuto empezado, permisos de cierre FR-008, devolución con abono caducado FR-009 y estación sin anclajes) codificadas en [spec.md § Clarifications](./spec.md); D7 (permisos) ya anticipaba FR-008 y el cierre sigue sin consultar el abono (FR-009), por lo que **no hay cambios de arquitectura ni de esquema** derivados del clarify.
 
 ## Constitution Check
 
