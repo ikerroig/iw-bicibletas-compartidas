@@ -80,10 +80,10 @@
 `refinamiento/analyze-inicial.md` (A1–A6): el clarify 2026-11-19 añadió
 AC4–AC6 que la implementación no prueba por completo.
 
-- [ ] T016 [US1] Test de integración **AC4/roles** en `backend/tests/historial_test.go` (`TestHistorialT4kRoles`): token `operario_taller` y token `gestor` → `200` con su propio historial (aislamiento por JWT); con `?usuario_id=<id ajeno>` el parámetro se ignora y sigue siendo el historial propio — *hallazgo A1*
-- [ ] T017 [US1] Ampliar la fixture de `TestHistorialT4jLatencia` a ~365 viajes finalizados (un año de uso habitual) antes de cronometrar y asertar `< 3 s` — *hallazgo A2 (SC-004 / quickstart T4j)*
+- [X] T016 [US1] Test de integración **AC4/roles** en `backend/tests/historial_test.go` (`TestHistorialT4kRoles`): token `operario_taller` y token `gestor` → `200` con su propio historial (aislamiento por JWT); con `?usuario_id=<id ajeno>` el parámetro se ignora y sigue siendo el historial propio — *hallazgo A1*
+- [X] T017 [US1] Ampliar la fixture de `TestHistorialT4jLatencia` a ~365 viajes finalizados (un año de uso habitual) antes de cronometrar y asertar `< 3 s` — *hallazgo A2 (SC-004 / quickstart T4j)*
 - [X] T018 [US1] Quickstart: añadir fila **T4k** (AC4: cualquier rol autenticado ve su propio historial) y mapear AC5→T4a, AC6→T4a+T4e en la tabla SC — *hallazgo A3*
-- [ ] T019 [US1] Crear la tabla *Acceptance Coverage* en `specs/spec-004/checklists/requirements.md` (FR/SC/AC → test que lo demuestra, incl. T4k) — *hallazgo A4*
+- [X] T019 [US1] Crear la tabla *Acceptance Coverage* en `specs/spec-004/checklists/requirements.md` (FR/SC/AC → test que lo demuestra, incl. T4k) — *hallazgo A4*
 - [X] T020 [US1] plan.md: nota en Unknowns sobre la sesión de clarify 2026-11-19 (C1–C3) remitiendo a `refinamiento/clarify.md` — *hallazgo A5*
 - [X] T021 [US1] clarify.md: renombrar decisiones D6–D13 → C1–C8 para eliminar la colisión con la numeración D1–D8 de `research.md` — *hallazgo A6*
 

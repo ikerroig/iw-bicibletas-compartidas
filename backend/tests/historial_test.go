@@ -14,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"si16/backend/internal/auth"
 	"si16/backend/internal/deps"
 )
 
@@ -394,13 +395,91 @@ func TestHistorialT4jLatencia(t *testing.T) {
 	app := nuevaApp(d)
 	esc := prepararHistorial(t, d)
 
+	// SC-004 / quickstart T4j: un año completo de uso habitual (~365 viajes
+	// finalizados) ANTES de cronometrar (hallazgo A2).
+	var bici, eOrigen, eDestino int64
+	if err := d.Pool.QueryRow(ctx,
+		`SELECT b.id, o.id, d.id FROM bicicletas b
+		   CROSS JOIN estaciones o, estaciones d
+		  WHERE b.codigo = 'T-H-1' AND o.nombre = 'Origen H' AND d.nombre = 'Destino H'`).
+		Scan(&bici, &eOrigen, &eDestino); err != nil {
+		t.Fatalf("fixture año: %v", err)
+	}
+	if _, err := d.Pool.Exec(ctx,
+		`INSERT INTO viajes (usuario_id, bicicleta_id, estacion_origen_id,
+		                     estacion_destino_id, fecha_inicio, fecha_fin,
+		                     duracion_minutos, coste_total, estado)
+		 SELECT $1, $2, $3, $4,
+		        now() - (g || ' days')::interval,
+		        now() - (g || ' days')::interval + interval '20 minutes',
+		        20, (g % 5) * 0.50, 'finalizado'
+		   FROM generate_series(1, 365) g`,
+		esc.anaID, bici, eOrigen, eDestino); err != nil {
+		t.Fatalf("insertar año de viajes: %v", err)
+	}
+
 	inicio := time.Now()
-	w, _ := getHistorial(t, app, esc.tokenAna, "")
+	w, r := getHistorial(t, app, esc.tokenAna, "")
 	elapsed := time.Since(inicio)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d", w.Code)
 	}
+	if r.Total < 365 {
+		t.Fatalf("fixture del año incompleta: total = %d (esperaba ≥ 365)", r.Total)
+	}
 	if elapsed > 3*time.Second {
-		t.Errorf("historial tardó %v, objetivo < 3 s (SC-004)", elapsed)
+		t.Errorf("historial tardó %v con %d viajes, objetivo < 3 s (SC-004)", elapsed, r.Total)
+	}
+}
+
+// T4k (T016): AC4 del clarify 2026-11-19 — cualquier rol autenticado
+// consulta su propio historial (el propietario se resuelve desde el JWT);
+// un parámetro de usuario ajeno se ignora; sin sesión → 401 (T4d).
+func TestHistorialT4kRoles(t *testing.T) {
+	d := depsTest(t)
+	app := nuevaApp(d)
+	esc := prepararHistorial(t, d)
+
+	hash := nuevoHash(t)
+	crearRol := func(email, rol string) string {
+		t.Helper()
+		var id int64
+		if err := d.Pool.QueryRow(ctx,
+			`INSERT INTO usuarios (nombre, email, password_hash, rol, abono_activo, fecha_vencimiento_abono)
+			 VALUES ($1, $2, $3, $4, true, CURRENT_DATE + 365)
+			 RETURNING id`, rol, email, hash, rol).Scan(&id); err != nil {
+			t.Fatalf("crear %s: %v", rol, err)
+		}
+		tok, err := auth.CrearToken(d.JWTSecret, id, rol, rol)
+		if err != nil {
+			t.Fatalf("token %s: %v", rol, err)
+		}
+		return tok
+	}
+
+	for _, caso := range []struct{ nombre, token string }{
+		{"operario_taller", crearRol("operario-hist@test.local", "operario_taller")},
+		{"gestor", crearRol("gestor-hist@test.local", "gestor")},
+	} {
+		w, r := getHistorial(t, app, caso.token, "")
+		if w.Code != http.StatusOK {
+			t.Errorf("%s: status = %d, esperaba 200 (body %s)", caso.nombre, w.Code, w.Body.String())
+			continue
+		}
+		if r.Total != 0 || len(r.Items) != 0 || r.SumaCoste != 0 {
+			t.Errorf("%s: debe ver su propio historial (vacío aquí): total %d items %d suma %v",
+				caso.nombre, r.Total, len(r.Items), r.SumaCoste)
+		}
+	}
+
+	// El propietario se resuelve desde el JWT: un parámetro de usuario
+	// ajeno no altera el resultado (AC4: nunca por parámetro de entrada).
+	w, r := getHistorial(t, app, esc.tokenAna, fmt.Sprintf("?usuario_id=%d", esc.anaID+999999))
+	if w.Code != http.StatusOK {
+		t.Fatalf("parámetro ajeno: status = %d (body %s)", w.Code, w.Body.String())
+	}
+	if r.Total != esc.totalAna || r.SumaCoste != esc.sumaAna {
+		t.Errorf("parámetro alteró el historial: total %d suma %v, esperaba %d/%v",
+			r.Total, r.SumaCoste, esc.totalAna, esc.sumaAna)
 	}
 }
