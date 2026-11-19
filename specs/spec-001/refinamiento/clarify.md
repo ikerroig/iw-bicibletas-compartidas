@@ -49,9 +49,51 @@ cambia el contrato de la API, el esquema de PostgreSQL ni las claves de Redis,
 así que no afectan a historias de otros integrantes (constitución, principio
 III).
 
-**Decisión que explica el alumno** (§5.1, finalización): _(elegir al menos
-una; se proponen la 2 o la 5 de la sesión del 2026-11-19, porque son las que
-más se apartan de la implementación original)_
+## Decisión que explica el alumno (§5.1, finalización)
+
+**Iker Roig — pregunta 5 de la sesión del 2026-11-19: encuadre del mapa cuando
+el usuario está fuera del área de la red (FR-013).**
+
+*Borrador: pendiente de revisar y ajustar con mis palabras.*
+
+**Qué duda había.** La spec decía qué hacer si el usuario deniega la
+ubicación (encuadrar toda la red), pero no qué hacer si la concede y está
+lejos de las estaciones. La implementación centraba el mapa en el usuario
+siempre que diera permiso.
+
+**Cómo lo detecté.** No salió del clarify, sino de las pruebas previas
+(hallazgo H1). Al probar la HU-01 en mi navegador, con mi ubicación real fuera
+de Valencia, el mapa se abría centrado donde yo estaba y las 60 estaciones
+quedaban fuera de la pantalla. Parecía que la red estaba vacía. Pasaba cuando
+mi posición llegaba antes que los datos de las estaciones; si llegaba
+después, no. Por eso en una primera prueba no lo vi.
+
+**Qué opciones había.**
+- A. Centrar en el usuario solo si está dentro del área de la red; si no,
+  encuadrar toda la red.
+- B. No centrar nunca en el usuario y poner un botón «Mi ubicación».
+- C. Centrar siempre en el usuario y mostrar el aviso «Estás fuera del área»
+  con un botón «Ver toda la red».
+
+**Qué elegimos y por qué: la A.** La narrativa dice que lo primero que hace
+el usuario «antes de salir de casa» es mirar «dónde hay bicicletas». El mapa
+existe para responder a eso, y un mapa sin estaciones no responde a nada.
+Con la A, quien está en la ciudad sigue viendo primero las estaciones que
+tiene cerca, y quien está fuera ve la red completa sin hacer nada.
+
+**Por qué descarté las otras.** La B quita la ventaja de ver las estaciones
+cercanas, que es útil precisamente para el usuario típico, que está en la
+ciudad. La C obliga a pulsar un botón para llegar a lo que el usuario venía a
+ver, y sigue enseñando primero un mapa vacío.
+
+**Cómo se comprobó.** El «área de la red» es el rectángulo que abarca todas
+las estaciones, ampliado un 20 % y al menos unos 2 km. El margen mínimo lo
+añadí al implementar: con estaciones muy juntas o alineadas, el 20 % de un
+rectángulo casi sin anchura dejaba fuera a alguien de la calle de al lado.
+Hay cuatro tests (fuera antes de los datos, fuera después, dentro y permiso
+denegado). En el navegador, con una posición en Alicante se ven las 60
+estaciones, y con una en Valencia se centra en el usuario
+([verificacion-final.md](./verificacion-final.md), S1i).
 
 ## Cobertura tras la sesión 2026-11-19
 
