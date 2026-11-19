@@ -464,16 +464,16 @@ func TestDevolucion_RelojInconsistente_CosteNoNegativo(t *testing.T) {
 }
 
 // T3k (T028): permisos de cierre (FR-008, AC4) — sin sesión → 401;
-// con sesión de rol no-usuario → 403 ROL_INSUFICIENTE; en ambos casos el
+// con sesión de rol no-usuario (operario/gestor) → 403 ROL_NO_PERMITIDO; en ambos casos el
 // viaje permanece en_curso y el anclaje libre intacto (nada se cierra).
 func TestDevolucion_Permisos_SinSesionYRolNoUsuario(t *testing.T) {
 	d := depsTest(t)
 	e := prepararEscenario(t, d)
 	app := nuevaApp(d)
 
-	// Usuario con rol operario_taller (no puede cerrar viajes).
+	// Usuario con rol operario_taller y usuario con rol gestor (no pueden cerrar viajes).
 	hash := nuevoHash(t)
-	var operarioID int64
+	var operarioID, gestorID int64
 	if err := d.Pool.QueryRow(ctx,
 		`INSERT INTO usuarios (nombre, email, password_hash, rol, abono_activo, fecha_vencimiento_abono)
 		 VALUES ('Operario', 'operario@test.local', $1, 'operario_taller', true, CURRENT_DATE + 365)
@@ -485,12 +485,24 @@ func TestDevolucion_Permisos_SinSesionYRolNoUsuario(t *testing.T) {
 		t.Fatalf("token operario: %v", err)
 	}
 
+	if err := d.Pool.QueryRow(ctx,
+		`INSERT INTO usuarios (nombre, email, password_hash, rol, abono_activo, fecha_vencimiento_abono)
+		 VALUES ('Gestor', 'gestor@test.local', $1, 'gestor', true, CURRENT_DATE + 365)
+		 RETURNING id`, hash).Scan(&gestorID); err != nil {
+		t.Fatalf("crear gestor: %v", err)
+	}
+	tokenGestor, err := auth.CrearToken(d.JWTSecret, gestorID, "Gestor", "gestor")
+	if err != nil {
+		t.Fatalf("token gestor: %v", err)
+	}
+
 	casos := []struct {
 		nombre, token, codigo string
 		status                int
 	}{
 		{"sin sesión", "", "NO_AUTENTICADO", http.StatusUnauthorized},
 		{"rol operario_taller", tokenOperario, "ROL_NO_PERMITIDO", http.StatusForbidden},
+		{"rol gestor", tokenGestor, "ROL_NO_PERMITIDO", http.StatusForbidden},
 	}
 	for _, c := range casos {
 		r := postDevolucion(app, c.token, e.anclajeLibre)
@@ -542,9 +554,11 @@ func TestDevolucion_AbonoCaducado_PuedeDevolver(t *testing.T) {
 	}
 }
 
-// T032: contrato devoluciones.md — `codigo_anclaje` ≤ 64 chars.
-// 65 → 422 ENTRADA_INVALIDA sin efectos; 64 → pasa la validación (409 por
+// T032: contrato devoluciones.md — `codigo_anclaje` ≤ 64 chars (caracteres Unicode, no bytes).
+// 65 ASCII → 422 ENTRADA_INVALIDA sin efectos; 64 ASCII → pasa la validación (409 por
 // código inexistente, no 422).
+// Caso multibyte: 33 'Ñ' (66 bytes UTF-8 pero 33 caracteres <= 64) → pasa validación (409);
+// 65 'Ñ' (130 bytes UTF-8, 65 caracteres > 64) → 422 ENTRADA_INVALIDA.
 func TestDevolucion_CodigoLargo_ValidacionContrato(t *testing.T) {
 	d := depsTest(t)
 	e := prepararEscenario(t, d)
@@ -565,5 +579,21 @@ func TestDevolucion_CodigoLargo_ValidacionContrato(t *testing.T) {
 	if r64.status != http.StatusConflict || errorCodigo(r64) != "ANCLAJE_NO_ENCONTRADO" {
 		t.Errorf("64 chars: esperaba 409 ANCLAJE_NO_ENCONTRADO (validación superada), obtuve %d %q: %s",
 			r64.status, errorCodigo(r64), r64.raw)
+	}
+
+	// Multibyte: 33 caracteres 'Ñ' tienen 66 bytes en UTF-8 (> 64 bytes pero <= 64 runes).
+	// Debe superar la validación de caracteres del contrato y llegar al servicio (409 por anclaje inexistente).
+	r33Ñ := postDevolucion(app, e.token, strings.Repeat("Ñ", 33))
+	if r33Ñ.status != http.StatusConflict || errorCodigo(r33Ñ) != "ANCLAJE_NO_ENCONTRADO" {
+		t.Errorf("33 'Ñ' (66 bytes, 33 runes): esperaba 409 ANCLAJE_NO_ENCONTRADO, obtuve %d %q: %s",
+			r33Ñ.status, errorCodigo(r33Ñ), r33Ñ.raw)
+	}
+
+	// Multibyte > 64 chars: 65 caracteres 'Ñ' (130 bytes UTF-8, 65 runes > 64).
+	// Debe fallar con 422 ENTRADA_INVALIDA.
+	r65Ñ := postDevolucion(app, e.token, strings.Repeat("Ñ", 65))
+	if r65Ñ.status != http.StatusUnprocessableEntity || errorCodigo(r65Ñ) != "ENTRADA_INVALIDA" {
+		t.Errorf("65 'Ñ' (130 bytes, 65 runes): esperaba 422 ENTRADA_INVALIDA, obtuve %d %q: %s",
+			r65Ñ.status, errorCodigo(r65Ñ), r65Ñ.raw)
 	}
 }

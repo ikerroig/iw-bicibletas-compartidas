@@ -88,11 +88,13 @@
 
 ## Phase 5: Refinamiento (fase 4 — analyze 2026-11-19)
 
+**Historia**: HU-03 (US1) · **Responsable**: Alex Morell · **Revisor**: Iker Roig
+
 **Purpose**: Cerrar los huecos de verificación detectados en
 `refinamiento/analyze-inicial.md` (A1, A2, A4, A7): los criterios nuevos del
 clarify (FR-008/FR-009) están implementados pero sin pruebas.
 
-- [X] T028 [P] [US1] Test de integración de **permisos** en `backend/tests/devolucion_test.go` (FR-008, AC4): sin sesión → `401 NO_AUTENTICADO`; token con rol `operario_taller` → `403 ROL_NO_PERMITIDO`; en ambos casos el viaje sigue `en_curso` y el anclaje intacto (montaje `httptest` + `routes.Register`, patrón del propio fichero) — *hallazgo A1*
+- [X] T028 [P] [US1] Test de integración de **permisos** en `backend/tests/devolucion_test.go` (FR-008, AC4): sin sesión → `401 NO_AUTENTICADO`; token con rol `operario_taller` o `gestor` → `403 ROL_NO_PERMITIDO`; en ambos casos el viaje sigue `en_curso` y el anclaje intacto (montaje `httptest` + `routes.Register`, patrón del propio fichero) — *hallazgo A1*
 - [X] T029 [P] [US1] Test de integración de **abono caducado** en `backend/tests/devolucion_test.go` (FR-009, AC5): usuario con `abono_activo = false` y `fecha_vencimiento_abono` pasada, con viaje activo → `POST /devoluciones` devuelve `200`, viaje `finalizado` con `coste_total` registrado — *hallazgo A2*
 - [X] T030 [P] [US1] Aserto de **redondeo fraccionario > 1 min** en `backend/internal/services/devolucion/tarifa_test.go` (AC6): 46:30 → 17 minutos excedentes × tarifa (no 16) — *hallazgo A7*
 - [X] T031 [US1] Ampliar la tabla *Acceptance Coverage* de `specs/spec-003/checklists/requirements.md` con las filas de FR-008, FR-009, AC4–AC6 y el nuevo aserto de T030, apuntando al test que lo demuestra — *hallazgo A4*
@@ -175,11 +177,13 @@ Task: "Component test in frontend/src/pages/devolucion/index.test.tsx"
 
 ## Phase 6: Convergence (2026-11-19)
 
+**Historia**: HU-03 (US1) · **Responsable**: Alex Morell · **Revisor**: Iker Roig
+
 **Purpose**: Cerrar las brechas detectadas por `/speckit.converge` entre
 artefactos y código (2 hallazgos: 0 CRITICAL/HIGH, 1 MEDIUM, 1 LOW).
 
 - [X] T032 [US1] Añadir en `backend/internal/handlers/devolucion/handler.go` la validación de longitud `≤ 64` de `codigo_anclaje` (`422 ENTRADA_INVALIDA`) con su test en `backend/tests/devolucion_test.go` per contracts/devoluciones.md (partial)
-- [X] T033 Corregir en `specs/spec-003/checklists/requirements.md` la fila UI: son 4 tests en `frontend/src/pages/devolucion/index.test.tsx` (el 4º añadido en d8d1626), no 3, per T027 (partial)
+- [X] T033 [US1] Corregir en `specs/spec-003/checklists/requirements.md` la fila UI: son 4 tests en `frontend/src/pages/devolucion/index.test.tsx` (el 4º añadido en d8d1626), no 3, per T027 (partial)
 
 **Checkpoint**: `go vet ./...` + `go test ./...` + `npm test` en verde; repetir
 `/speckit.converge` → se espera `converged`

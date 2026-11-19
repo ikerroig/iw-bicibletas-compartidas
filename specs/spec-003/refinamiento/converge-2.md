@@ -15,8 +15,20 @@
 
 | ID | Estado | Evidencia |
 |----|--------|-----------|
-| F1 (≤64 chars, contrato) | **Resuelto** | `handler.go` valida longitud tras trim → `422 ENTRADA_INVALIDA`; `TestDevolucion_CodigoLargo_ValidacionContrato` (65 → 422 sin efectos · 64 → pasa a 409 `ANCLAJE_NO_ENCONTRADO`) en verde |
+| F1 (≤64 chars, contrato) | **Resuelto** | `handler.go` valida longitud en runas tras trim → `422 ENTRADA_INVALIDA`; `TestDevolucion_CodigoLargo_ValidacionContrato` (65 ASCII/Unicode → 422 sin efectos · 64 ASCII y 33 multibyte `Ñ` → pasa a 409 `ANCLAJE_NO_ENCONTRADO`) en verde |
 | F2 (recuento UI del checklist) | **Resuelto** | Fila UI del checklist: «4 tests» con los nombres; línea Resultado actualizada a 8 unit + 9 integración + 4 componente |
+
+### Evidencia reproducible antes / después de la corrección F1 (T032, §5.3 paso 4)
+
+Para la corrección de código de F1 (T032), se reproduce el fallo previo ejecutando el test `TestDevolucion_CodigoLargo_ValidacionContrato` sobre la versión inmediatamente anterior a la corrección (`9dbed49~1`):
+
+| Caso / Entrada | Resultado Esperado | Resultado Observado Antes (`9dbed49~1`) | Resultado Observado Después (`9dbed49` / actual) |
+|----------------|-------------------|------------------------------------------|--------------------------------------------------|
+| `codigo_anclaje` de 65 caracteres (`strings.Repeat("A", 65)`) | `422 ENTRADA_INVALIDA` (sin efectos sobre viaje ni anclaje) | `409 ANCLAJE_NO_ENCONTRADO` ❌ (se delegaba al servicio sin validar longitud per contrato) | `422 ENTRADA_INVALIDA` ✅ (`codigo_anclaje no puede superar 64 caracteres`) |
+| `codigo_anclaje` de 64 caracteres (`strings.Repeat("A", 64)`) | `409 ANCLAJE_NO_ENCONTRADO` (supera validación y busca el anclaje) | `409 ANCLAJE_NO_ENCONTRADO` ✅ | `409 ANCLAJE_NO_ENCONTRADO` ✅ |
+| `codigo_anclaje` multibyte de 33 «Ñ» (66 bytes, 33 caracteres Unicode ≤ 64) | `409 ANCLAJE_NO_ENCONTRADO` (longitud en caracteres válida per contrato) | `409 ANCLAJE_NO_ENCONTRADO` (sin validación) | `409 ANCLAJE_NO_ENCONTRADO` ✅ (`utf8.RuneCountInString` cuenta caracteres, no bytes) |
+
+> **Nota sobre T028–T030**: Para las tareas T028 (permisos FR-008 / AC4), T029 (abono caducado FR-009 / AC5) y T030 (redondeo fraccionario AC6), el código preexistente ya cumplía la funcionalidad esperada por omisión o diseño; se añadieron exclusivamente suites de pruebas automatizadas y asertos de caracterización para blindar el comportamiento frente a regresiones, por lo que no existía fallo de implementación previo que corregir.
 
 ## Inventario re-verificado (2ª pasada)
 

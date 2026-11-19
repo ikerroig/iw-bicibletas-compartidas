@@ -5,6 +5,7 @@ package devolucion
 import (
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 
@@ -38,8 +39,8 @@ func Handler(d deps.Deps) gin.HandlerFunc {
 				"codigo_anclaje es obligatorio")
 			return
 		}
-		// Contrato devoluciones.md: longitud ≤ 64 tras trim.
-		if len(req.CodigoAnclaje) > 64 {
+		// Contrato devoluciones.md: longitud ≤ 64 caracteres tras trim.
+		if utf8.RuneCountInString(req.CodigoAnclaje) > 64 {
 			apierr.Respond(c, http.StatusUnprocessableEntity, "ENTRADA_INVALIDA",
 				"codigo_anclaje no puede superar 64 caracteres")
 			return
