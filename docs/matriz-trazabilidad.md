@@ -49,7 +49,32 @@ prueba prevista**. Tras el refinamiento (2026-11-19): **20 ✅** y 1 👁
 
 ## HU-02 — Desbloqueo de bicicleta por código de anclaje (spec-002) · Iker Roig · Revisor: Alex Morell
 
-_(Pendiente: se rellena tras el clarify y el analyze de spec-002.)_
+Decisiones: `specs/spec-002/research.md` (Dn) · Tareas: `specs/spec-002/tasks.md` (Tnnn) · Escenarios manuales: `Vn` de `specs/spec-002/quickstart.md` · Evidencia «antes»: `Pn.n` de `specs/spec-002/refinamiento/pruebas-previas.md`. Los tests de backend están en `backend/tests/integration/spec002_*_test.go`, salvo que se indique otro sitio.
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001 — código sin distinguir mayúsculas ni espacios | D2 | T011, T017 | Go: `TestCodigoSinDistinguirMayusculasNiEspacios` · V2 · P2.8 | ✅ |
+| FR-001 (validación técnica) — mensaje de código mal formado | D2 (mensajes, hallazgo U2) | T011, T017, **T059**, **T060** | Go: `TestCodigoInvalidoEsErrorDeValidacion` + ampliación T059 (vacío vs. «El código no es válido») · V7 ✅ (antes P2.3: mensaje engañoso) | ✅ |
+| FR-002, SC-001 — abono vigente y causa concreta | D1, **D15** | T001, T010, T016, **T044**, **T045**, **T051** | Go: `TestFechaNegocio`, `TestAbonoVenceALaMedianocheDeEspana`, `TestDesbloqueoConAbonoQueVenceHoy`, `TestDesbloqueoRechazaAbonoNoVigente` (T045: `SIN_ABONO` / `ABONO_VENCIDO` con fecha), `causa_test.go` (T044) · V1 ✅ (antes P3.3: mismo mensaje) | ✅ |
+| FR-003, SC-002 — un solo viaje activo | R7 global, `ux_viajes_usuario_activo` | T002 | Go: `TestSegundoDesbloqueoRechazado`, `TestDesbloqueosConcurrentesMismoUsuario` · V4 · P2.9, P3.6 | ✅ |
+| FR-004, SC-004 — anclaje existe, en servicio y con bici disponible | D4, D5 | T002, T012, T018 | Go: `TestDesbloqueoRechazosDeAnclajeSinEfectos`, `TestDesbloqueoCodigoInexistente`, `TestDesbloqueoEsperaAlCambioDeEstacion`, `TestDesbloqueosConcurrentesMismoAnclaje` · V5 · P2.1, P2.4–P2.7, P2.10 | ✅ |
+| FR-005 — desacoplar, hora de inicio y viaje | Plan, *Summary* (transacción única) | T004 | Go: `TestDesbloqueoValidoCreaViajeYActualizaEstado` · V2, V8 · P1.2, P1.6 | ✅ |
+| FR-006 — viaje asociado hasta la devolución | D14, `stores/viaje.ts` | T004, T007, T041 | Vitest: «muestra el viaje activo en lugar del formulario» · V3 · P1.4 | ✅ |
+| FR-007 — atomicidad | D11, D12, D13 | T002, T036, T037, T039, T040 | Go: `TestConexionPerdidaNoDejaViajeParcial`, `TestCommitSobreviveALaCancelacion`, `TestDesbloqueoEsperaALaRevocacionDelAbono`, `TestDesbloqueoTienePlazoAnteBloqueoRetenido` | ✅ |
+| FR-008 — datos del viaje al desbloquear y al volver | D3, D14 | T014, T015, T019, T021, T022, T038, T041, T042 | Go: `TestContratoAlquileres` · Vitest: «muestra inicio, código de bicicleta y estación…», `aviso.test.tsx` · V2, V9 · P1.2, P1.4, P1.5 | ✅ |
+| FR-009 — solo el rol `usuario`; menú y acceso por URL | D9 (corregida) | T028, T029, **T050**, **T055** | Go: `TestDesbloqueoRequiereRolUsuario` · Vitest: `menu.test.tsx` + `guardia.test.tsx` (T050) · V6, V13 ✅ (antes P3.9: formulario visible) | ✅ |
+| FR-010 — aviso del abono al abrir la pantalla | **D16** | **T047**, **T048**, **T052**, **T053** | Go: `TestContratoAlquileres` ampliado (T047, mismo texto que el 403) · Vitest: `desbloqueo.test.tsx` ampliado (T048) · V10, V11 ✅ (antes P3.2: el aviso solo llegaba al enviar) | ✅ |
+| FR-011 — resultado desconocido del desbloqueo | **D17** (+ D12) | **T049**, **T054** | Vitest: `resultadoDesconocido.test.tsx` (red caída, 5xx, > 10 s, consulta fallida, un único `POST`) · V12a, V12b ✅ (antes: no probado) | ✅ |
+| FR-012 — una sola causa, en orden fijo | D4 | **T046** | Go: `spec002_orden_test.go` (T046, caracterización) · V14 ✅ · P3.5 | ✅ |
+| SC-003 — desbloqueo en < 10 s | D6, D11 | T013, T030, T035 | Go: `TestDesbloqueoEnMenosDe10s`, `TestDesbloqueoConRedisDegradado`, `TestHookRecibeContextoVigenteTrasCancelacion` · P1.3 (24–32 ms) | ✅ |
+| Regresión de todo lo anterior tras el refinamiento | — | **T056**, **T057** | `go test ./...` (todo ok), `npm test` (96/96), V1–V14 (`specs/spec-002/refinamiento/verificacion-final.md`) | ✅ |
+
+**Cobertura HU-02**: 12 FR + 4 SC = 16 criterios; **16/16 con tarea y
+prueba prevista**. Tras implementar el refinamiento (2026-11-19, commit
+`058b3bd`): **16 ✅**, incluida la mejora técnica del mensaje de FR-001 (U2).
+`/speckit-converge` (§5.3): la primera pasada añadió T061–T063 (FR-011: plazo en
+la consulta de comprobación) y la segunda dio **converged**
+(`specs/spec-002/refinamiento/converge-2.md`).
 
 ## HU-03 — Devolución y tarificación (spec-003) · Alex Morell · Revisor: Iker Roig
 
