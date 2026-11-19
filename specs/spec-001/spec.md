@@ -18,6 +18,13 @@
 - Q: ¿Qué debe ver el usuario de una estación fuera de servicio, en el mapa y en su detalle? → A: Aparece en el mapa con un estado visual propio «Fuera de servicio» (no solo color), con prioridad sobre «sin bicicletas»/«sin anclajes libres»; es seleccionable; su detalle muestra «Fuera de servicio» y no muestra contadores («—»), sin presentarla como opción de recogida ni de devolución.
 - Q: ¿Cómo debe contarse un anclaje ocupado por una bicicleta averiada: como libre, como disponible o como ninguno de los dos? ¿Y se le dice algo al usuario? → A: No cuenta ni como bicicleta disponible ni como anclaje libre; el detalle muestra solo esos dos contadores, sin desglose de averías, y se acepta que su suma sea menor que la capacidad total.
 
+### Session 2026-11-19
+
+- Q: ¿Qué debe ver el usuario si la primera carga del mapa falla y todavía no hay ningún dato anterior que enseñar? → A: Un mensaje de error claro («No se pudo cargar la disponibilidad») con botón «Reintentar» y reintento automático; no se pintan marcadores ni contadores.
+- Q: Además del mapa, ¿debe haber un listado de texto con las estaciones y sus contadores, para quien no pueda usar el mapa o cuando el mapa de fondo no cargue? → A: Sí: un listado de texto siempre disponible (p. ej., pestaña «Lista») con nombre, estado y contadores de cada estación, que sigue funcionando aunque el mapa de fondo no cargue.
+- Q: Si el usuario tiene abierto el detalle de una estación y sus datos cambian en el servidor, ¿el detalle se actualiza solo? → A: Sí: el detalle abierto se actualiza solo dentro de los mismos 30 s (contadores y estado, incluido el paso a «Fuera de servicio»), sin cerrarse ni perder la selección.
+- Q: ¿Qué pasa si alguien sin sesión iniciada intenta ver el mapa, o si la sesión caduca mientras lo está mirando? → A: El backend rechaza las peticiones de disponibilidad sin sesión válida; el frontend redirige al inicio de sesión y, tras autenticarse, devuelve al usuario al mapa. Si la sesión caduca con el mapa abierto, ocurre lo mismo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Mapa en vivo de la red de estaciones (Priority: P1)
@@ -74,6 +81,19 @@ en una estación y medir que se refleja en ≤ 30 s.
   la última actualización y reintenta automáticamente; si han pasado más de
   30 s desde la última actualización correcta, muestra además un aviso visible
   de «datos desactualizados» (ver FR-007).
+- El mapa de fondo (proveedor externo de teselas) no carga o el usuario no
+  puede usar un mapa (p. ej., lector de pantalla): la disponibilidad sigue
+  consultable desde el listado de estaciones (ver FR-011).
+- La primera carga de disponibilidad falla y no existe ningún estado previo
+  conocido: la vista muestra el mensaje «No se pudo cargar la disponibilidad»
+  con un botón «Reintentar» y reintenta automáticamente; no se pintan
+  marcadores ni contadores hasta recibir datos correctos (ver FR-010).
+- El usuario tiene abierto el detalle de una estación cuando esta cambia: el
+  detalle se actualiza en ≤ 30 s sin cerrarse; si la estación pasa a fuera de
+  servicio, sus contadores se sustituyen por «—» (ver FR-004).
+- Un usuario sin sesión intenta abrir el mapa, o su sesión caduca con el mapa
+  abierto: el servidor rechaza la consulta y el usuario es llevado al inicio
+  de sesión; tras entrar vuelve al mapa (ver FR-012).
 - Dos cambios sucesivos en la misma estación dentro de la ventana de 30 s: la
   vista termina reflejando el estado final más reciente.
 
@@ -93,7 +113,10 @@ en una estación y medir que se refleja en ≤ 30 s.
   pantalla de un usuario con la aplicación abierta y conexión activa.
 - **FR-004**: El sistema MUST permitir seleccionar una estación del mapa para
   ver su detalle (estado de servicio y, si está operativa, sus contadores;
-  ver FR-009).
+  ver FR-009). Mientras el detalle está abierto, MUST actualizarse
+  automáticamente con el mismo límite de FR-003 (contadores y estado, incluido
+  el paso a «Fuera de servicio» o la vuelta a operativa), sin cerrarse ni
+  perder la selección.
 - **FR-005**: Los contadores mostrados MUST provenir del estado en vivo
   gestionado por el sistema; queda prohibido presentarlos como datos manuales o
   históricos estáticos sin expiración.
@@ -121,6 +144,22 @@ en una estación y medir que se refleja en ≤ 30 s.
   Su detalle MUST mostrar «Fuera de servicio» y MUST NOT mostrar contadores de
   bicicletas disponibles ni de anclajes libres (se muestra «—»), de modo que no
   se presenten como opción de recogida ni de devolución.
+- **FR-010**: Si la carga inicial de disponibilidad falla sin que exista un
+  estado previo conocido, la vista MUST mostrar el mensaje «No se pudo cargar
+  la disponibilidad» con un botón «Reintentar» y MUST reintentar
+  automáticamente; MUST NOT pintar marcadores ni contadores (ni valores por
+  defecto) hasta recibir una respuesta correcta, momento en que el mensaje
+  desaparece.
+- **FR-011**: Además del mapa, el sistema MUST ofrecer un listado textual de
+  todas las estaciones, accesible en todo momento (p. ej., pestaña «Lista»),
+  que muestre para cada una su nombre, su estado (con los mismos textos de
+  FR-008 y FR-009) y sus contadores, con la misma frescura que el mapa
+  (FR-003). El listado MUST seguir funcionando aunque el mapa de fondo no
+  cargue.
+- **FR-012**: El servidor MUST rechazar las consultas de disponibilidad que no
+  vengan de una sesión válida. Ante un acceso sin sesión, o si la sesión
+  caduca con la vista abierta, la aplicación MUST redirigir al inicio de sesión
+  y, tras autenticarse, MUST devolver al usuario a la vista de disponibilidad.
 
 ### Key Entities
 
@@ -166,10 +205,14 @@ en una estación y medir que se refleja en ≤ 30 s.
   con el estado «Fuera de servicio» y su detalle no muestra contadores; el
   paso de una estación a fuera de servicio (o su vuelta a operativa) se refleja
   en la vista en un máximo de 30 s.
+- **SC-008**: El 100 % de las estaciones del mapa aparecen también en el
+  listado textual con el mismo estado y los mismos contadores, y el listado
+  sigue siendo consultable con el mapa de fondo bloqueado.
 
 ## Assumptions
 
-- La consulta del mapa está disponible para usuarios con sesión iniciada; el
+- La consulta del mapa está disponible solo para usuarios con sesión iniciada
+  (ver FR-012); el
   estado del abono no restringe la lectura de disponibilidad (solo las
   operaciones que lo exigen, como el desbloqueo de HU-02).
 - El abono anual activo/inactivo es un atributo preexistente de la cuenta de
