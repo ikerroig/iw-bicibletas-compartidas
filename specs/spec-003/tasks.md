@@ -178,8 +178,8 @@ Task: "Component test in frontend/src/pages/devolucion/index.test.tsx"
 **Purpose**: Cerrar las brechas detectadas por `/speckit.converge` entre
 artefactos y código (2 hallazgos: 0 CRITICAL/HIGH, 1 MEDIUM, 1 LOW).
 
-- [ ] T032 [US1] Añadir en `backend/internal/handlers/devolucion/handler.go` la validación de longitud `≤ 64` de `codigo_anclaje` (`422 ENTRADA_INVALIDA`) con su test en `backend/tests/devolucion_test.go` per contracts/devoluciones.md (partial)
-- [ ] T033 Corregir en `specs/spec-003/checklists/requirements.md` la fila UI: son 4 tests en `frontend/src/pages/devolucion/index.test.tsx` (el 4º añadido en d8d1626), no 3, per T027 (partial)
+- [X] T032 [US1] Añadir en `backend/internal/handlers/devolucion/handler.go` la validación de longitud `≤ 64` de `codigo_anclaje` (`422 ENTRADA_INVALIDA`) con su test en `backend/tests/devolucion_test.go` per contracts/devoluciones.md (partial)
+- [X] T033 Corregir en `specs/spec-003/checklists/requirements.md` la fila UI: son 4 tests en `frontend/src/pages/devolucion/index.test.tsx` (el 4º añadido en d8d1626), no 3, per T027 (partial)
 
 **Checkpoint**: `go vet ./...` + `go test ./...` + `npm test` en verde; repetir
 `/speckit.converge` → se espera `converged`

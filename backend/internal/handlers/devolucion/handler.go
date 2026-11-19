@@ -38,6 +38,12 @@ func Handler(d deps.Deps) gin.HandlerFunc {
 				"codigo_anclaje es obligatorio")
 			return
 		}
+		// Contrato devoluciones.md: longitud ≤ 64 tras trim.
+		if len(req.CodigoAnclaje) > 64 {
+			apierr.Respond(c, http.StatusUnprocessableEntity, "ENTRADA_INVALIDA",
+				"codigo_anclaje no puede superar 64 caracteres")
+			return
+		}
 
 		viaje, aerr := svc.CerrarViaje(c.Request.Context(), auth.UsuarioID(c), req.CodigoAnclaje)
 		if aerr != nil {

@@ -61,9 +61,10 @@ UI `frontend/src/pages/devolucion/index.test.tsx`, manual `quickstart.md` §3 (S
 | **SC-003** devolución válida < 10 s | T3j (aserción de latencia en `TestDevolucion_ViajeCorto_FinalizaYGratuito`) |
 | **SC-004** usuario libre de inmediato, 0 dobles cierres | T3f + `TestDevolucion_ViajeCorto…` (0 `en_curso`) + S3 p.4 (nuevo viaje aceptado) |
 | Constitución IV: frescura de estado ≤ 30 s | S3 p.5 (`actualizado_en` de `estacion:2:estado` post-commit; `anclajes_libres` recalculado R9) |
-| UI: formulario, éxito con etiqueta, errores 409 | `index.test.tsx` (3 tests: éxito tramo gratuito, `SIN_VIAJE_ACTIVO`, `ANCLAJE_OCUPADO`) |
+| UI: formulario, éxito con etiqueta, errores 409 | `index.test.tsx` (4 tests: éxito tramo gratuito, `SIN_VIAJE_ACTIVO`, `ANCLAJE_OCUPADO`, aviso de viaje en curso desaparece) |
 
-**Resultado**: 8 unit + 8 integración (Go) + 3 componente (Vitest) en verde
+**Resultado**: 8 unit + 9 integración (Go) + 4 componente (Vitest) en verde
 (2026-11-19: +`TestCalcularCoste_FraccionesDeExcedente` T030,
-+`TestDevolucion_Permisos…` T028 y `+TestDevolucion_AbonoCaducado…` T029);
++`TestDevolucion_Permisos…` T028, `+TestDevolucion_AbonoCaducado…` T029,
++`TestDevolucion_CodigoLargo…` T032);
 S3 manual: todas las comprobaciones OK (2026-10-27).

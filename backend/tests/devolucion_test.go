@@ -541,3 +541,29 @@ func TestDevolucion_AbonoCaducado_PuedeDevolver(t *testing.T) {
 		t.Errorf("anclaje: estado=%q bici=%v (esperaba ocupado con la bici del viaje)", estadoAnclaje, bici)
 	}
 }
+
+// T032: contrato devoluciones.md — `codigo_anclaje` ≤ 64 chars.
+// 65 → 422 ENTRADA_INVALIDA sin efectos; 64 → pasa la validación (409 por
+// código inexistente, no 422).
+func TestDevolucion_CodigoLargo_ValidacionContrato(t *testing.T) {
+	d := depsTest(t)
+	e := prepararEscenario(t, d)
+	app := nuevaApp(d)
+
+	r := postDevolucion(app, e.token, strings.Repeat("A", 65))
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("65 chars: esperaba 422, obtuve %d: %s", r.status, r.raw)
+	}
+	if cod := errorCodigo(r); cod != "ENTRADA_INVALIDA" {
+		t.Errorf("65 chars: esperaba ENTRADA_INVALIDA, obtuve %q", cod)
+	}
+	if estado, _ := viajeEstado(t, d, e.viajeID); estado != "en_curso" {
+		t.Errorf("viaje alterado por rechazo de entrada: %q", estado)
+	}
+
+	r64 := postDevolucion(app, e.token, strings.Repeat("A", 64))
+	if r64.status != http.StatusConflict || errorCodigo(r64) != "ANCLAJE_NO_ENCONTRADO" {
+		t.Errorf("64 chars: esperaba 409 ANCLAJE_NO_ENCONTRADO (validación superada), obtuve %d %q: %s",
+			r64.status, errorCodigo(r64), r64.raw)
+	}
+}
