@@ -109,14 +109,13 @@ func (s *Service) CerrarViaje(ctx context.Context, usuarioID int64, codigoAnclaj
 
 	// 3. Reloj validado + cálculo tarifario (FR-003/FR-004, D1).
 	ahora := time.Now().UTC()
-	duracion := int(ahora.Sub(viaje.FechaInicio).Minutes())
-	if duracion < 0 {
-		duracion = 0 // reloj inconsistente: nunca negativo (T3i)
-	}
 	segundos := int64(ahora.Sub(viaje.FechaInicio).Seconds())
 	if segundos < 0 {
-		segundos = 0
+		segundos = 0 // reloj inconsistente: nunca negativo (T3i)
 	}
+	// duracion_minutos = ceil(segundos/60) (data-model R8): con los mismos
+	// segundos que la tarifa, un viaje cobrado nunca figura con ≤ 30 min (SC-001).
+	duracion := DuracionMinutos(segundos)
 	coste := CalcularCoste(segundos, s.tarifaMinuto)
 
 	// 4. UPDATE condicionado del viaje (rows=0 → perdió la carrera, V3).
