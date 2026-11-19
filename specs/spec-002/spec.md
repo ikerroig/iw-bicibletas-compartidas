@@ -21,7 +21,7 @@
 ### Session 2026-11-19
 
 - Q: Cuando un usuario sin abono vigente intenta desbloquear, ¿qué debe ver y en qué momento? → A: Mensajes distintos según la causa («No tienes abono anual» / «Tu abono anual caducó el DD/MM/AAAA») y, además, aviso del motivo al abrir la pantalla de desbloqueo, con el formulario desactivado; el backend sigue rechazando igualmente.
-- Q: Si el usuario pulsa «Desbloquear» y la respuesta del servidor no llega, ¿qué debe ver y cómo sabe si el viaje se ha creado? → A: Mensaje «No sabemos si se ha desbloqueado; comprobando…»; la aplicación consulta el viaje activo y muestra el viaje si existe o «No se ha desbloqueado, inténtalo de nuevo» si no, con un botón para volver a comprobar. No se reintenta el desbloqueo automáticamente.
+- Q: Si el usuario pulsa «Desbloquear» y la respuesta del servidor no llega, ¿qué debe ver y cómo sabe si el viaje se ha creado? → A: Mensaje «No sabemos si se ha desbloqueado; comprobando…»; la aplicación consulta el viaje activo y muestra el viaje si existe o «No se ha desbloqueado, inténtalo de nuevo» si no, con un botón para volver a comprobar. No se reintenta el desbloqueo automáticamente. *(Ampliado al actualizar el plan, hallazgo I5 del analyze: un error 5xx del servidor se trata igual, porque tampoco garantiza que el viaje no se haya creado; research D12 y D17.)*
 - Q: Si un gestor u operario escribe directamente la dirección de la pantalla de desbloqueo, ¿qué debe pasar? → A: Se le redirige a su página de inicio (el mapa) sin mostrar el formulario; el backend sigue rechazando la operación.
 - Q: ¿Debe limitarse el número de intentos de desbloqueo con códigos erróneos que puede hacer un usuario en poco tiempo? → A: No; queda fuera de alcance porque los códigos de anclaje son públicos y predecibles, y las reglas de abono vigente y viaje único ya limitan el daño.
 - Q: Si una solicitud de desbloqueo incumple varias reglas a la vez, ¿qué causa se le muestra al usuario? → A: Una sola causa, en orden fijo: abono → viaje activo → anclaje (existe → estación en servicio → anclaje en servicio → tiene bicicleta → bicicleta disponible).
@@ -57,13 +57,15 @@ ya con viaje activo, verificando ambos rechazos.
    desbloqueo, **Then** el sistema rechaza la operación y muestra un mensaje
    que distingue «No tienes abono anual» de «Tu abono anual caducó el
    DD/MM/AAAA».
+3. **Given** un usuario que ya cuenta con un trayecto iniciado, **When**
+   intenta liberar otra bicicleta, **Then** el sistema deniega el acceso e
+   impide realizar múltiples viajes simultáneos.
 4. **Given** un usuario sin abono vigente, **When** abre la pantalla de
    desbloqueo, **Then** ve el motivo antes de introducir ningún código y el
    formulario aparece desactivado.
 5. **Given** un usuario con abono vigente que envía un código válido, **When**
-   la respuesta del servidor no llega o es un error interno (error de red,
-   error 5xx o más de 10 s), **Then**
-   la aplicación muestra «No sabemos si se ha desbloqueado; comprobando…»,
+   la respuesta del servidor no llega o no permite saber el resultado (error
+   de red, error 5xx del servidor o más de 10 s), **Then** la aplicación muestra «No sabemos si se ha desbloqueado; comprobando…»,
    consulta su viaje activo y le enseña el viaje si se creó o «No se ha
    desbloqueado, inténtalo de nuevo» si no, sin reenviar el desbloqueo.
 6. **Given** un gestor u operario con sesión iniciada, **When** escribe la
@@ -72,17 +74,14 @@ ya con viaje activo, verificando ambos rechazos.
 7. **Given** un usuario con el abono caducado, **When** introduce un código
    de anclaje que no existe, **Then** el sistema rechaza la operación con la
    causa del abono, porque es la primera regla que falla.
-3. **Given** un usuario que ya cuenta con un trayecto iniciado, **When**
-   intenta liberar otra bicicleta, **Then** el sistema deniega el acceso e
-   impide realizar múltiples viajes simultáneos.
 
 ### Edge Cases
 
 - El código introducido no existe o contiene errores: se rechaza sin crear
   viaje ni modificar el anclaje.
 - El anclaje apunta a una estación fuera de servicio: se rechaza con causa.
-- El anclaje está vacío o la bicicleta asociada está averiada o fuera de
-  servicio: se rechaza y no se inicia viaje.
+- El anclaje está vacío o la bicicleta asociada está averiada o en taller:
+  se rechaza y no se inicia viaje.
 - Dos desbloqueos casi simultáneos del mismo usuario: como máximo uno crea un
   viaje activo.
 - El abono caducar entre el inicio de sesión y el desbloqueo: se detecta en el
@@ -91,9 +90,11 @@ ya con viaje activo, verificando ambos rechazos.
   anclaje, de la bicicleta ni de ningún viaje existente.
 - Un usuario con viaje activo pierde la conexión al intentar desbloquear: no
   se crea un viaje parcial; el usuario conserva únicamente su viaje previo.
+  Lo que ve en pantalla lo fija FR-011.
 - La respuesta a un desbloqueo no llega o no permite saber el resultado
-  (error de red, error interno del servidor o más de 10 s sin respuesta): la aplicación no da el desbloqueo por fallido ni por hecho;
-  comprueba el viaje activo y muestra el resultado real (FR-011).
+  (error de red, error 5xx del servidor o más de 10 s sin respuesta): la
+  aplicación no da el desbloqueo por fallido ni por hecho; comprueba el viaje
+  activo y muestra el resultado real (FR-011).
 
 ## Requirements *(mandatory)*
 
@@ -136,7 +137,7 @@ ya con viaje activo, verificando ambos rechazos.
   rechazando en el momento de la solicitud (FR-002), aunque la pantalla se
   haya abierto con el abono todavía vigente.
 - **FR-011**: Si la respuesta a un desbloqueo no llega o no permite saber el
-  resultado (error de red, error interno del servidor o más de 10 s sin
+  resultado (error de red, error 5xx del servidor o más de 10 s sin
   respuesta), la aplicación MUST mostrar «No sabemos si se ha
   desbloqueado; comprobando…» y consultar el viaje activo del usuario: si
   existe, MUST mostrarlo como en FR-008; si no existe, MUST mostrar «No se ha
@@ -151,10 +152,10 @@ ya con viaje activo, verificando ambos rechazos.
 
 ### Key Entities
 
-- **Usuario**: Cuenta del servicio; incluye el atributo preexistente de abono
-  anual (activo/inactivo) y sus viajes asociados.
+- **Usuario**: Cuenta del servicio; incluye los atributos preexistentes de
+  abono anual (activo/inactivo y fecha de vencimiento) y sus viajes asociados.
 - **Anclaje**: Hueco individual de una estación; código identificador único y
-  estado (ocupado/libre).
+  estado (ocupado, libre o fuera de servicio).
 - **Bicicleta**: Unidad de la flota; estado (disponible, en uso, averiada, en taller) y ubicación
   por anclaje cuando está estacionada.
 - **Viaje**: Registro de alquiler en curso; usuario, bicicleta, estación de

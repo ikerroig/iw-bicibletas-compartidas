@@ -51,6 +51,19 @@ huecos en la propia spec. Cada pregunta sale de uno o dos de ellos.
 **Hueco no preguntado**: el 4 (mensaje para un código demasiado largo, P2.3).
 Es de bajo impacto: el rechazo ya funciona y solo cambia el texto. Se deja
 para el analyze, por si conviene unificar los mensajes de validación.
+*Resultado*: el analyze lo recogió como hallazgo U2 y el grupo decidió
+tratarlo como validación técnica del plan, con un mensaje propio («El código
+no es válido»), sin tocar la spec (research D2, opción A del registro de
+hallazgos).
+
+**Ampliación posterior de la pregunta 2** (hallazgo I5 del analyze): al
+actualizar el plan, FR-011 se amplió para tratar también un **error 5xx del
+servidor** como resultado desconocido, no solo la falta de respuesta. No es
+una decisión funcional nueva, sino la misma respuesta aplicada a un caso que
+la pregunta no nombraba: un 5xx tampoco garantiza que el viaje no se haya
+creado, porque el commit puede haberse confirmado (research D12). Consultar el
+viaje activo es inofensivo si no se creó. Queda anotado en la spec, junto a la
+respuesta.
 
 **Historia afectada**: todas las preguntas afectan solo a la HU-02. Para
 cumplir la pregunta 1 el frontend necesita conocer la fecha de vencimiento,

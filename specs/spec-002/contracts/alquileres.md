@@ -55,7 +55,7 @@ Envelope uniforme `{"error":{"codigo","mensaje"}}`. Ningún rechazo tiene efecto
 | 409 | `VIAJE_ACTIVO` | El usuario ya tiene un viaje en curso |
 | 409 | `ANCLAJE_NO_DISPONIBLE` | Estación o anclaje fuera de servicio, o anclaje vacío (también si otro usuario acaba de llevarse la bicicleta) |
 | 409 | `BICICLETA_NO_DISPONIBLE` | Bicicleta averiada o en taller |
-| 422 | `VALIDACION` | Cuerpo inválido o código que no cumple la validación |
+| 422 | `VALIDACION` | Cuerpo inválido o código vacío: «Introduce el código del anclaje». Código de más de 64 caracteres o con caracteres de control: «El código no es válido» (research D2, 2026-11-19) |
 
 Si coinciden varias causas se devuelve una sola, la primera que falla en este orden (FR-012, research D4): abono → viaje activo → anclaje existe → estación en servicio → anclaje en servicio → anclaje con bicicleta → bicicleta disponible.
 

@@ -90,8 +90,9 @@ backend/
 │   ├── routes/spec_002_routes.go        # RegisterSpec002
 │   └── routes/register.go               # 1 línea compartida
 └── tests/
-    ├── integration/spec002_*_test.go    # Gates T1 y T2
+    ├── integration/spec002_*_test.go    # Gates T1 y T2 (+ spec002_orden_test.go, FR-012)
     └── contract/spec002_test.go
+# y backend/internal/services/alquiler/causa_test.go (D15, unitario)
 
 frontend/
 ├── src/services/api/alquiler.ts
@@ -99,7 +100,10 @@ frontend/
 ├── src/components/AvisoViaje.tsx        # Aviso de viaje en curso (D14)
 ├── src/stores/viaje.ts                  # Viaje en curso compartido
 ├── src/routes.tsx, src/components/Layout.tsx   # 1 línea compartida en cada uno
-└── tests/alquiler/desbloqueo.test.tsx
+└── tests/alquiler/
+    ├── desbloqueo.test.tsx              # incluye el aviso de abono (D16)
+    ├── resultadoDesconocido.test.tsx    # D17, FR-011
+    └── guardia.test.tsx                 # D9, FR-009
 ```
 
 **Structure Decision**: se usa el árbol del plan global sin añadir raíces. `specs/spec-001/contracts/openapi.yaml` sigue siendo la referencia de la API; si difiere de [contracts/alquileres.md](./contracts/alquileres.md), prevalece el OpenAPI y se corrige este documento.
@@ -130,6 +134,7 @@ frontend/
 | D17 | FR-011 | Plazo de 10 s en el `POST`; ante red caída, plazo agotado o 5xx, comprobar el viaje activo y botón «Volver a comprobar»; sin reenvío automático |
 | D9 | FR-009 | Redirigir a `/` desde `Desbloqueo.tsx` si el rol no es `usuario` |
 | D4 | FR-012 | Sin cambio de código; test que fija el orden de las causas |
+| D2 | FR-001 (validación técnica) | 422 con mensaje propio «El código no es válido» para códigos de más de 64 caracteres o con caracteres de control (hallazgo U2) |
 
 ## Complexity Tracking
 

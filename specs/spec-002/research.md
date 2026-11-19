@@ -16,6 +16,7 @@ Hereda del plan global R5 (autenticación y roles), R7 (integridad del alquiler)
 - **Decisión**: el backend aplica `TrimSpace` y `ToUpper` y consulta por igualdad exacta. Devuelve 422 `VALIDACION` si queda vacío, supera 64 caracteres (igual que `POST /devoluciones`) o contiene caracteres de control, incluido NUL.
 - **Racional**: FR-001. La igualdad usa el índice único de `codigo_anclaje`. Los códigos se guardan en mayúsculas (`E01-A01`), invariante que se documenta en [data-model.md](./data-model.md). PostgreSQL rechaza NUL en texto, y sin validar acabaría en 500.
 - **Alternativas consideradas**: `upper(codigo_anclaje) = $1`: rechazada porque no usa el índice y exigiría uno nuevo, es decir, cambio de esquema. Normalizar en el frontend: rechazada por la constitución I.
+- **Mensajes (añadido 2026-11-19, hallazgo U2 del analyze)**: el 422 `VALIDACION` distingue dos mensajes. Código vacío o cuerpo inválido → «Introduce el código del anclaje»; código de más de 64 caracteres o con caracteres de control → «El código no es válido». Antes ambos casos decían «Introduce el código del anclaje», que es engañoso si el usuario sí ha escrito algo (P2.3 de las pruebas previas). Se mantiene como validación técnica en el plan y no en la spec (decisión del grupo, opción A): el límite de 64 caracteres protege la base de datos, no es una regla del negocio, y el usuario que teclea un código real nunca lo alcanza.
 
 ## D3. Datos del viaje activo
 
