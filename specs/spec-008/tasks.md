@@ -2,7 +2,7 @@
 
 **Input**: Design documents from `/specs/spec-008/` — [plan.md](./plan.md), [spec.md](./spec.md) (1 user story, P1), [research.md](./research.md) (D1–D9), [data-model.md](./data-model.md) (V1–V8), [contracts/analitica.md](./contracts/analitica.md), [quickstart.md](./quickstart.md)
 
-**Prerequisites**: plan.md ✅, spec.md ✅ (checklist validado + 3 clarificaciones 2026-11-01), research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
+**Prerequisites**: plan.md ✅, spec.md ✅ (checklist validado + 3 clarificaciones 2026-11-01 y decisión de alcance 2026-11-20), research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
 
 **Tests**: **INCLUIDOS (obligatorios)** — [quickstart.md](./quickstart.md) define T8a–T8i como gate de verificación de esta spec (consistencia gráficos↔CSV FR-006/SC-002, bordes del rango inclusivo, denegación de roles SC-003, formato CSV SC-004); se escriben ANTES de implementar.
 
@@ -75,7 +75,7 @@
 
 - [x] T016 [P] Gate de calidad + estática: re-ejecutar T8a/T8b/T8c/T8f/T8g (consistencia, bordes del rango, agrupación, 422, roles) en `go test ./...`; `go vet ./...`, `gofmt -l` (solo cuentan avisos reales, no CRLF del working tree), `npm test` y `npm run build` (typecheck TS — requiere chart.js instalado, ver T020)
 - [x] T017 Ejecutar el escenario manual S8 y la validación SC-001…SC-004 de [quickstart.md](./quickstart.md) contra `localhost:5173` + API (login `gestor@si16.test`, agregados de 30 días, descarga y apertura del CSV con tildes/ñ, rango futuro → "sin datos en el periodo", rango invertido → 422, `ana@si16.test` → 403); registrar resultado en la sección 5 de [quickstart.md](./quickstart.md)
-- [x] T018 [P] Revisar coherencia final spec ↔ código: barrido de FR-001…FR-007, clarificaciones 2026-11-01 (inclusividad Europe/Madrid, 00–23 lunes→domingo por inicio, CSV R11) y SC-001…SC-004 contra lo implementado (entrada de `/speckit.converge`), verificar que **no** se tocó `specs/spec-007/`, el plan global ni código de otras specs, y actualizar los checkboxes de este `tasks.md`
+- [x] T018 [P] Revisar coherencia final spec ↔ código: barrido de FR-001…FR-007, clarificaciones 2026-11-01 (inclusividad Europe/Madrid, 00–23 lunes→domingo por inicio, CSV R11), decisión de alcance 2026-11-20 y SC-001…SC-004 contra lo implementado (entrada de `/speckit.converge`), verificar que **no** se tocó `specs/spec-007/`, el plan global ni código de otras specs, y actualizar los checkboxes de este `tasks.md`
 
 ---
 
