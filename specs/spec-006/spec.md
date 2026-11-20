@@ -4,7 +4,19 @@
 
 **Created**: 2026-10-20
 
-**Status**: Implemented locally
+**Status**: Implemented locally; refinement in progress
+
+## Clarifications
+
+Las decisiones de refinamiento de HU-06 se detallan en [research.md](./research.md)
+con los identificadores C-001 a C-005:
+
+- reparar y ubicar una bicicleta son operaciones independientes;
+- una bicicleta operativa sin anclaje no aparece como disponible en el mapa;
+- la avería detectada se conserva en el historial y el parte añade piezas y
+  notas firmadas por el operario;
+- el mantenimiento preventivo se registra como intervención resuelta;
+- la ubicación exige un anclaje libre y una estación operativa.
 
 **Input**: User description: "HU-06 — Registro de intervenciones técnicas y reparación en taller (historia.md, SI-16)."
 

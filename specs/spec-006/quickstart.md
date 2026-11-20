@@ -26,3 +26,25 @@
 - go test ./tests -run 'TestTaller' -count=1 -v: 3 pruebas superadas.
 - npm test -- --run --reporter=dot: 11 ficheros y 62 pruebas superadas.
 - npm run build: compilación TypeScript y Vite superada.
+
+## Evidencia de refinamiento
+
+- El 2026-11-20, `go test ./tests -run 'TestTaller' -count=1 -v` terminó con
+  las tres pruebas de HU-06 superadas.
+- `npm test -- --run --reporter=dot` terminó con 11 ficheros y 62 pruebas
+  superadas; `npm run build` también terminó correctamente.
+
+## Recorrido manual de cierre previo a revisión
+
+- Con `taller@si16.test`, la ficha de `BICI-0001` mostró el código y el
+  historial vacío inicial.
+- Se registró un mantenimiento preventivo con notas. La API devolvió el parte
+  resuelto con `operario_id` y `fecha_reparacion`, y la bicicleta siguió
+  disponible sin anclaje.
+- Se confirmó la ubicación en el anclaje libre `E01-A01`. La respuesta mostró
+  la estación y sus contadores; la bicicleta quedó ubicada y volvió a contar
+  como disponible.
+- La ruta frontend `/taller` respondió `200`.
+- En esta máquina Windows PostgreSQL se publicó temporalmente en `5433`, ya
+  que el puerto configurado `55432` está bloqueado por el sistema; no se
+  modificó `.env`.
