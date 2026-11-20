@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"si16/backend/internal/apierr"
+	"si16/backend/internal/auth"
 	"si16/backend/internal/deps"
 	"si16/backend/internal/models"
 	"si16/backend/internal/services/balanceo"
@@ -71,7 +72,7 @@ func HandlerTraslado(d deps.Deps) gin.HandlerFunc {
 			return
 		}
 		origen, destino, e := balanceo.NewConEstacion(d.Pool, d.Estacion).
-			ConfirmarTraslado(c.Request.Context(), req)
+			ConfirmarTraslado(c.Request.Context(), auth.UsuarioID(c), req)
 		if e != nil {
 			apierr.Respond(c, e.Status, e.Codigo, e.Mensaje)
 			return

@@ -71,10 +71,9 @@ type filaEstacion struct {
 }
 
 // ConfirmarTraslado ejecuta el traslado completo (data-model.md §4):
-// bloqueo FOR UPDATE, validación 409, movimiento de anclajes, COMMIT y
-// post-commit (Redis de ambas + evaluación inline de umbrales). Devuelve los
-// EstacionEstado recalculados de la propia respuesta (FR-007, SC-003).
-func (s *Servicio) ConfirmarTraslado(ctx context.Context, req models.TrasladoRequest) (models.EstacionEstado, models.EstacionEstado, *apierr.Error) {
+// bloqueo FOR UPDATE, validación 409, movimiento de anclajes y registro de
+// auditoría en una transacción; después actualiza Redis y evalúa umbrales.
+func (s *Servicio) ConfirmarTraslado(ctx context.Context, operarioID int64, req models.TrasladoRequest) (models.EstacionEstado, models.EstacionEstado, *apierr.Error) {
 	var cero models.EstacionEstado
 	if s.estacion == nil {
 		return cero, cero, errInterno()
@@ -229,6 +228,15 @@ func (s *Servicio) ConfirmarTraslado(ctx context.Context, req models.TrasladoReq
 			log.Printf("balanceo: anclar destino: %v", err)
 			return cero, cero, errInterno()
 		}
+	}
+
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO traslados_balanceo
+			(estacion_origen_id, estacion_destino_id, unidades, operario_id)
+		 VALUES ($1, $2, $3, $4)`,
+		origen.id, destino.id, req.Unidades, operarioID); err != nil {
+		log.Printf("balanceo: registrar traslado: %v", err)
+		return cero, cero, errInterno()
 	}
 
 	if err := tx.Commit(ctx); err != nil {
