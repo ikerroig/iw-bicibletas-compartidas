@@ -84,6 +84,7 @@ func poblar(t *testing.T, d deps.Deps, estacion int64, prefijo string, ocupados,
 
 type escenarioBalanceo struct {
 	tokenLog     string // operario_logistica (rol válido)
+	operarioID   int64
 	tokenUsuario string
 	tokenGestor  string
 	tokenTaller  string
@@ -101,7 +102,7 @@ func prepararBalanceo(t *testing.T, d deps.Deps) escenarioBalanceo {
 	_, tokenUsuario := crearUsuario(t, d, "bal-usuario@test.local", false)
 	_, tokenGestor := crearUsuarioRol(t, d, "bal-gestor@test.local", "gestor")
 	_, tokenTaller := crearUsuarioRol(t, d, "bal-taller@test.local", "operario_taller")
-	_, tokenLog := crearUsuarioRol(t, d, "bal-log@test.local", "operario_logistica")
+	operarioID, tokenLog := crearUsuarioRol(t, d, "bal-log@test.local", "operario_logistica")
 
 	vacia := crearEstacionBal(t, d, "B-Vacia", 20)
 	poblar(t, d, vacia, "V", 1, 19, "disponible")
@@ -109,7 +110,7 @@ func prepararBalanceo(t *testing.T, d deps.Deps) escenarioBalanceo {
 	poblar(t, d, llena, "L", 19, 1, "disponible")
 
 	return escenarioBalanceo{
-		tokenLog: tokenLog, tokenUsuario: tokenUsuario,
+		tokenLog: tokenLog, operarioID: operarioID, tokenUsuario: tokenUsuario,
 		tokenGestor: tokenGestor, tokenTaller: tokenTaller,
 		vacia: vacia, llena: llena,
 	}
@@ -358,6 +359,18 @@ func TestBalanceoT7dPanel(t *testing.T) {
 	if len(panel.Items) != 4 {
 		t.Fatalf("items = %d, esperado 4 (solo abiertas)", len(panel.Items))
 	}
+	var tieneIndiceUrgencia bool
+	if err := d.Pool.QueryRow(ctx,
+		`SELECT EXISTS (
+		   SELECT 1 FROM pg_indexes
+		    WHERE schemaname = current_schema()
+		      AND indexname = 'ix_alertas_balanceo_urgencia'
+		 )`).Scan(&tieneIndiceUrgencia); err != nil {
+		t.Fatalf("consultar índice de urgencia: %v", err)
+	}
+	if !tieneIndiceUrgencia {
+		t.Fatal("falta el índice de expresión de urgencia de T022")
+	}
 	esperado := []int64{e0, e100, e9, e91} // urgencia DESC, fecha ASC
 	for i, id := range esperado {
 		if panel.Items[i].EstacionID != id {
@@ -440,6 +453,20 @@ func TestBalanceoT7fTrasladoValido(t *testing.T) {
 	r := postTraslado(app, bal.tokenLog, body)
 	if r.status != http.StatusOK {
 		t.Fatalf("traslado → status %d, esperado 200 (body: %s)", r.status, r.raw)
+	}
+	var auditOrigen, auditDestino, auditUnidades, auditOperario int64
+	var auditFecha time.Time
+	if err := d.Pool.QueryRow(ctx,
+		`SELECT estacion_origen_id, estacion_destino_id, unidades, operario_id, fecha
+		   FROM traslados_balanceo
+		  ORDER BY id DESC LIMIT 1`).Scan(
+		&auditOrigen, &auditDestino, &auditUnidades, &auditOperario, &auditFecha); err != nil {
+		t.Fatalf("leer auditoría de traslado: %v", err)
+	}
+	if auditOrigen != bal.llena || auditDestino != destino || auditUnidades != 3 ||
+		auditOperario != bal.operarioID || auditFecha.IsZero() {
+		t.Errorf("auditoría incorrecta: origen=%d destino=%d unidades=%d operario=%d fecha=%v",
+			auditOrigen, auditDestino, auditUnidades, auditOperario, auditFecha)
 	}
 
 	origenEstado, _ := r.body["origen"].(map[string]any)
@@ -554,6 +581,10 @@ func TestBalanceoT7gTrasladoInconsistente(t *testing.T) {
 	for _, c := range casos {
 		t.Run(c.nombre, func(t *testing.T) {
 			antes := anteriores()
+			var auditoriasAntes int
+			if err := d.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM traslados_balanceo`).Scan(&auditoriasAntes); err != nil {
+				t.Fatalf("contar auditorías antes: %v", err)
+			}
 			r := postTraslado(app, bal.tokenLog, c.body)
 			if r.status != c.status {
 				t.Errorf("status = %d, esperado %d (body: %s)", r.status, c.status, r.raw)
@@ -563,6 +594,14 @@ func TestBalanceoT7gTrasladoInconsistente(t *testing.T) {
 			}
 			if ahora := anteriores(); !iguales(antes, ahora) {
 				t.Errorf("recuentos alterados: antes %s, después %s", antes, ahora)
+			}
+			var auditoriasDespues int
+			if err := d.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM traslados_balanceo`).Scan(&auditoriasDespues); err != nil {
+				t.Fatalf("contar auditorías después: %v", err)
+			}
+			if auditoriasDespues != auditoriasAntes {
+				t.Errorf("se registró un traslado rechazado: auditorías antes=%d después=%d",
+					auditoriasAntes, auditoriasDespues)
 			}
 		})
 	}

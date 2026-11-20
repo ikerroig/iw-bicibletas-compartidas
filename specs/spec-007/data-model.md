@@ -2,20 +2,21 @@
 
 **Branch**: `spec-007` | **Date**: 2026-10-30 | **Plan**: [plan.md](./plan.md) | **Decisiones**: [research.md](./research.md)
 
-**Este documento NO aplica ningún cambio de esquema.** La fuente única de verdad es el modelo compartido en [specs/spec-001/data-model.md](../spec-001/data-model.md) (`0001_esquema_base.sql`, ya presente en esta rama); la HU-07 usa las tablas y claves Redis **tal como están definidas**. Cualquier divergencia de este documento respecto al modelo compartido se resuelve a favor del global y requiere acuerdo del equipo (constitución III). Las únicas propuestas que tocan el modelo compartido se recogen al final marcadas `⚠ PENDIENTE DE ACUERDO DEL EQUIPO` y **no se implementan** en esta spec.
+**Cambios de esquema aprobados por el equipo (2026-11-20)**: se añaden la tabla de auditoría `traslados_balanceo` y un índice parcial de expresión para el orden de urgencia, mediante las migraciones `0004_spec-007_traslados.sql` y `0005_spec-007_score.sql`. La HU-07 reutiliza las tablas restantes y las claves Redis del modelo compartido. Cualquier cambio futuro al esquema compartido requiere acuerdo previo del equipo (constitución III).
 
 ## Entidades utilizadas
 
 | Tabla / clave | Uso en la HU-07 | Operación |
 |---|---|---|
 | `alertas_balanceo` | Alerta de balanceo: creación, resolución, snapshot de ocupación, panel | **Lectura/escritura** |
+| `traslados_balanceo` | Auditoría de traslados confirmados: origen, destino, unidades, fecha y operario | **Inserción** en la transacción del traslado |
 | `estaciones` | Cómputo de ocupación (capacidad, estado); bloqueo `FOR UPDATE` en traslado; nombres del panel | Lectura + bloqueo |
 | `anclajes` | Recuento de bicis disponibles y anclajes libres; **reubicación** de bicis en el traslado | Lectura/escritura (DML) |
 | `bicicletas` | Exclusión de averiadas/en_taller del cómputo (FR-008); selección del lote | Lectura |
 | `usuarios` | — (solo el rol `operario_logistica` del JWT) | — |
 | Redis `estacion:{id}:estado` | Estado recalculado de origen y destino tras el traslado (FR-007, const. IV) | Escritura vía `cache.ActualizarEstadoEstacion` (helper existente) |
 
-Entidades **no** tocadas: `viajes`, `incidencias_mantenimientos`. Sin migraciones nuevas, sin claves Redis nuevas.
+Entidades **no** tocadas: `viajes`, `incidencias_mantenimientos`. No se añaden claves Redis.
 
 ## 1. Fórmula de ocupación (FR-001, FR-008 — R9 del modelo compartido)
 
@@ -117,6 +118,7 @@ UPDATE anclajes SET estado = 'ocupado', bicicleta_id = bici_i
 - Las bicicletas **conservan** `estado = 'disponible'`; solo cambian de anclaje/estación → la ocupación de ambas estaciones se deriva sola de R9 (punto 1).
 - **Validaciones previas** (server-side, const. I): `unidades ≥ 1`; origen ≠ destino (→ `422`); ambas estaciones existen y están `operativa`; `unidades ≤ bicis disponibles en origen` y `unidades ≤ anclajes libres en destino` (si no → `409 ESTACION_SIN_CAPACIDAD`, sin alterar nada). Detalle en [contracts/balanceo.md](./contracts/balanceo.md).
 - **Post-commit**: `cache.ActualizarEstadoEstacion(origen)` y `(destino)` (escritura de `estacion:{id}:estado`, TTL 120 s — contrato Redis intacto) + evaluación inline de umbrales de ambas (punto 2). La respuesta `200` devuelve `EstacionEstado` de origen y destino con los valores ya recalculados (FR-007, SC-003).
+- **Auditoría (T021)**: antes del `COMMIT`, insertar origen, destino, unidades y `operario_id` autenticado en `traslados_balanceo`; fecha asignada por PostgreSQL. El registro y el movimiento de anclajes son atómicos: un error revierte ambos.
 
 ## Máquina de estados de la alerta
 
@@ -143,18 +145,18 @@ resuelta ──re-cruza el umbral──> (nueva fila abierta; la resuelta no se 
 | V7 | Traslado: estaciones existentes/operativas y lote factible | OpenAPI (409), caso límite | `409 ESTACION_SIN_CAPACIDAD`, ROLLBACK íntegro |
 | V8 | Recálculo usa los valores confirmados reales (bloqueados) | caso límite (datos desactualizados) | `FOR UPDATE` + cómputo dentro de la transacción |
 
-## Migraciones
+## Migraciones aprobadas por el equipo (constitución III)
 
-**Ninguna.** La HU-07 no añade tablas, columnas, índices ni restricciones, y no toca el formato de Redis. Usa `0001_esquema_base.sql` (tabla `alertas_balanceo` con `ux_alerta_abierta` e `ix_alertas_abiertas`, tablas `estaciones`/`anclajes`/`bicicletas` con sus CHECKs e índices) y `cache.ActualizarEstadoEstacion` tal cual.
+Las migraciones `0004_spec-007_traslados.sql` y `0005_spec-007_score.sql` crean la auditoría de traslados y el índice parcial de expresión de urgencia, respectivamente. Se conserva `cache.ActualizarEstadoEstacion` y no se modifica el formato de Redis.
 
-## ⚠ PENDIENTE DE ACUERDO DEL EQUIPO (constitución III) — propuestas NO aplicadas
+## Histórico: decisión inicial de descarte (revocada por el acuerdo posterior)
 
-Las siguientes propuestas tocarían el **esquema compartido** (nuevas migraciones PostgreSQL). Quedan documentadas aquí como candidatas y **no se implementan** hasta que el equipo las apruebe; la HU-07 es perfectamente implementable y testeable sin ellas:
+La decisión inicial del equipo fue descartar ambas propuestas; el acuerdo posterior revocó ese descarte y aprobó las migraciones indicadas en la sección anterior. El texto siguiente describe únicamente aquella propuesta inicial, no el estado vigente:
 
-1. **`traslados_balanceo` (auditoría de operaciones)** — el `spec.md` (Key Entities) menciona la entidad "Operación de traslado" (origen, destino, unidades, fecha), pero el modelo compartido actual **no tiene tabla para ella** y el OpenAPI no la expone. Propuesta opcional:
-   - ¿Qué aportaría? histórico firmado de cada confirmación de lote (quién, cuándo, qué estación origen/destino, cuántas unidades) para auditoría y futura analítica (HU-08 podría querer repartir traslados).
+1. **`traslados_balanceo` (auditoría de operaciones)** — **Descartada en la primera decisión, ahora aprobada**. La justificación original sostenía que el efecto de cada traslado queda reflejado en anclajes y alertas, y que una tabla añadía complejidad. Propuesta original (histórico):
+   - ¿Qué aportaba? histórico firmado de cada confirmación de lote (quién, cuándo, qué estación origen/destino, cuántas unidades) para auditoría y futura analítica (HU-08 podría querer repartir traslados).
    - ¿Impacto? nueva migración `000N_spec-007_traslados.sql` con ordinal **acordado** (R6), INSERT en la transacción del traslado, y decisión sobre si el DELETE/limpieza afecta a seeds y tests de otras specs.
    - Sin esta tabla, el efecto del traslado queda reflejado en los anclajes (estado físico de la red) y en las alertas, que es lo que exigen FR-006/FR-007 y todo el alcance validado de la HU-07.
-2. **Índice adicional en `alertas_balanceo`** — la consulta del panel (punto 3) ordena por un `CASE` calculado; con el volumen real (~60 estaciones, pocas alertas abiertas) no se necesita índice propio, pero si el equipo prefiere materializar el score, requeriría acuerdo (columna generada o índice expression).
+2. **Índice adicional en `alertas_balanceo`** — **Descartado en la primera decisión, ahora aprobado**. La justificación original sostenía que el coste del `CASE` es despreciable con ~60 estaciones y que el orden ya está validado; el equipo aprobó después el índice parcial de expresión como extensión.
 
-**Decisión de esta spec**: MVP sin cambios de esquema (todo respaldado por el modelo y los contratos existentes). Cualquier incorporación de los puntos anteriores se somete a acuerdo del equipo **antes** de crear la migración (const. III y Acuerdos de Colaboración).
+**Estado actual**: T021 y T022 están aprobadas e implementadas conforme a las migraciones `0004_spec-007_traslados.sql` y `0005_spec-007_score.sql`; este estado sustituye la decisión inicial descrita arriba.
