@@ -59,3 +59,18 @@ operario_taller -> GET /incidencias -> incidencias abiertas ordenadas por fecha
   bicicleta.
 - El panel de incidencias vuelve a consultar el backend cada 10 segundos y
   conserva la actualización manual.
+
+## Trazabilidad del refinamiento SDD
+
+| Historia/criterio | Decisión de `clarify` | Tarea | Prueba o evidencia |
+| --- | --- | --- | --- |
+| HU-05 / FR-001 | C-001 y C-002: estación real si hay anclaje; excepción durante viaje | T011, T015 | `TestAveriaRechazaEstacionDistinta` y recorrido de reporte |
+| HU-05 / FR-002, FR-003, FR-007 | C-003: reintento idempotente | T004, T013, T016 | `TestAveriaBloqueaYEsIdempotente` y comprobación de desbloqueo |
+| HU-05 / FR-004, SC-003 | Excluir averiadas del mapa y contadores | T015, T017 | Mapa y contadores antes/después del reporte |
+| HU-05 / FR-005, SC-002 | Panel de taller con bicicleta, estación, tipo, descripción y fecha | T008, T016, T017 | Endpoint y pantalla `/incidencias` |
+| HU-05 / FR-006 | Confirmación de alta con respuesta 201/200 | T005, T013 | Respuesta de `POST /averias` |
+| HU-05 / FR-008 | Refresco cada 10 segundos y actualización manual | T012, T017 | Inspección y prueba manual del panel |
+| HU-05 / permisos | Solo usuario reporta y solo taller consulta pendientes | T005, T016, T018 | Respuestas 401/403 |
+
+Las filas pendientes no implican un cambio de alcance: indican qué evidencia
+debe aportar la verificación final y qué revisará el compañero.
