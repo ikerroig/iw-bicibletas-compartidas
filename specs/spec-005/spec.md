@@ -4,7 +4,17 @@
 
 **Created**: 2026-10-20
 
-**Status**: Implemented locally
+**Status**: Implemented locally; refinement in progress
+
+## Clarifications
+
+Las decisiones de refinamiento de HU-05 se detallan en [research.md](./research.md)
+con los identificadores C-001 a C-004:
+
+- una bicicleta anclada solo se puede reportar desde su estación real;
+- una bicicleta en viaje no tiene anclaje actual y conserva el flujo permitido;
+- un reintento devuelve la incidencia abierta sin duplicarla;
+- el panel se refresca cada 10 segundos y mantiene la actualización manual.
 
 **Input**: User description: "HU-05 — Notificación de averías e inhabilitación preventiva (historia.md, SI-16)."
 

@@ -31,3 +31,87 @@
    estación diferente por un código mal introducido o por datos obsoletos.
 7. El panel del taller se refresca cada 10 segundos, por debajo del límite de
    30 segundos indicado para la HU-05.
+
+## Registro de `clarify` y decisiones funcionales
+
+Esta sección conserva las decisiones tomadas al revisar la primera versión
+funcional de HU-05. No se añade alcance nuevo; se concretan reglas que la
+narrativa dejaba abiertas.
+
+### C-001. Estación válida para una bicicleta anclada
+
+- **Pregunta**: ¿qué ocurre si el usuario selecciona una estación distinta de
+  aquella en la que está anclada la bicicleta?
+- **Respuesta**: el reporte se rechaza con `409 BICICLETA_EN_OTRA_ESTACION` y
+  la bicicleta conserva su estado anterior.
+- **Justificación**: el reporte debe describir dónde se encuentra la bicicleta;
+  aceptar otra estación produciría una incidencia incoherente para el taller.
+- **Criterio verificable**: Dado que la bicicleta está anclada en A, cuando se
+  reporta indicando B, entonces se rechaza la petición y no cambia ni el estado
+  de la bicicleta ni el número de incidencias abiertas.
+
+### C-002. Reporte durante un viaje
+
+- **Pregunta**: ¿debe exigirse una coincidencia con una estación si la
+  bicicleta está en un viaje activo?
+- **Respuesta**: no. Una bicicleta en viaje no tiene anclaje actual; se admite
+  la estación declarada y se bloquea la bicicleta para nuevos alquileres.
+- **Justificación**: la HU-05 permite reportar una avería detectada durante el
+  viaje y la devolución se resuelve en HU-02/HU-03.
+- **Criterio verificable**: Dado un viaje activo, cuando el usuario envía un
+  reporte válido, entonces se registra una única incidencia y la bicicleta
+  pasa a `averiada`.
+
+### C-003. Reintentos y reportes duplicados
+
+- **Pregunta**: ¿qué respuesta recibe el usuario si reenvía el mismo reporte
+  tras perder la conexión?
+- **Respuesta**: la API devuelve `200`, indica `repetido: true` y devuelve la
+  incidencia abierta existente; no crea otra incidencia.
+- **Justificación**: el reintento debe ser seguro y no puede duplicar el
+  bloqueo de la bicicleta.
+- **Criterio verificable**: Dado un reporte ya registrado, cuando se repite la
+  misma petición, entonces se conserva una sola incidencia abierta.
+
+### C-004. Actualización del panel de taller
+
+- **Pregunta**: ¿cómo se cumple el refresco del panel en menos de 30 segundos?
+- **Respuesta**: la interfaz consulta de nuevo el listado cada 10 segundos y
+  mantiene además el botón de actualización manual.
+- **Justificación**: 10 segundos queda por debajo del límite de 30 segundos sin
+  introducir WebSockets ni cambiar el contrato existente.
+- **Criterio verificable**: Dado que el panel está abierto, cuando pasan 10
+  segundos, entonces se realiza una nueva consulta; el botón manual también
+  permite actualizarlo inmediatamente.
+
+## Informe de `analyze`
+
+El primer análisis compara `spec.md`, `plan.md`, `tasks.md` y la implementación
+actual. Los hallazgos no cambian el alcance de HU-05.
+
+| ID | Requisito o criterio | Evidencia | Decisión | Estado |
+| --- | --- | --- | --- | --- |
+| A-001 | FR-001, FR-006 | Formulario, handler `POST /averias` y respuesta 201/200 | Mantener | Cubierto por prueba y recorrido manual |
+| A-002 | FR-002, FR-003, FR-007, SC-001, SC-004 | Transacción con `FOR UPDATE`, incidencia única y `TestAveriaBloqueaYEsIdempotente` | Mantener | Cubierto por código y prueba |
+| A-003 | FR-004, SC-003 | Recálculo de estación, mapa y listas compartidos | Mantener | Cubierto: la estación pasó de 5 a 4 bicicletas disponibles |
+| A-004 | FR-005, SC-002 | `GET /incidencias`, panel de taller y control de rol | Mantener | Cubierto: el panel mostró bicicleta, estación, tipo, descripción y fecha |
+| A-005 | FR-008 | Intervalo de 10 segundos y botón manual en `pages/incidencias` | Mantener | Cubierto por inspección de `setInterval`, ruta y botón manual |
+| A-006 | permisos y estados incompatibles | Pruebas de rol de taller y rechazo de bicicleta en otra estación | Mantener | Cubierto por pruebas backend |
+
+La matriz anterior se conserva como punto de partida del análisis. Las tareas
+T015–T019 de `tasks.md` cierran las evidencias que faltan y permiten que otro
+integrante revise al menos un criterio de esta historia.
+
+## Informe de `converge`
+
+El estado de referencia para esta revisión es el commit `4343015` de la rama
+`spec-005`. La comparación código ↔ especificación confirma que las reglas
+principales están implementadas: reporte transaccional, bloqueo de la bicicleta,
+idempotencia, control de estación, autorización del panel y refresco cada 10
+segundos.
+
+La verificación previa a la revisión del compañero no ha detectado brechas
+funcionales nuevas. Quedan como tareas de cierre la revisión independiente por
+un compañero y la convergencia final posterior a sus observaciones. Si esa
+revisión no encuentra brechas, se conservará este informe como evidencia de
+resultado limpio.
