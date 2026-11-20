@@ -26,7 +26,7 @@
 
 - `go test ./internal/services/analitica`, `go vet ./...` y `npm run build` pasan en esta verificacion.
 - La suite frontend completa pasa: **16 archivos, 97 pruebas**. En Node 26 hay que proporcionar `NODE_OPTIONS=--localstorage-file=<temporal>` para que Vitest tenga `localStorage`; con esa opcion las 6 pruebas de HU-08 tambien pasan.
-- El intento actual de `go test -p 1 ./...` no pudo completar las pruebas de integracion: el daemon de Docker no estaba disponible y la instancia local de PostgreSQL rechazo la autenticacion del usuario de pruebas. El quickstart conserva resultados previos de integracion y S8 del 2026-11-01; se recomienda repetir la suite con el entorno Docker del proyecto antes de fusionar.
+- Docker y los servicios de `docker compose` estan ahora activos. El intento actual de `go test -p 1 ./...` sigue sin completar las pruebas de integracion: PostgreSQL rechaza la autenticacion del usuario de pruebas (`SQLSTATE 28P01`), incluso usando la ruta IPv4 del puerto publicado. El quickstart conserva resultados previos de integracion y S8 del 2026-11-01; hay que resolver la configuracion de credenciales de pruebas y repetir la suite antes de fusionar.
 - La revision cruzada por otro integrante es un requisito de equipo y no puede darse por realizada por esta convergencia.
 
 ## Tareas nuevas

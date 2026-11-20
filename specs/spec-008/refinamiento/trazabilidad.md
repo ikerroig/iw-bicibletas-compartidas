@@ -19,6 +19,6 @@
 
 ## Estado de validacion
 
-El quickstart registra ejecuciones automatizadas y manuales previas. En la verificacion de cierre, la suite frontend (97 pruebas), el build, las pruebas unitarias de analitica y `go vet` pasaron. La suite backend completa requiere repetirse con Docker activo y el PostgreSQL de pruebas autenticado; esa limitacion es de entorno y no se marca como una prueba superada en esta trazabilidad.
+El quickstart registra ejecuciones automatizadas y manuales previas. En la verificacion de cierre, la suite frontend (97 pruebas), el build, las pruebas unitarias de analitica y `go vet` pasaron. Docker y los contenedores del proyecto estan activos, pero la suite backend completa no pudo inicializarse porque PostgreSQL rechaza las credenciales de pruebas (`SQLSTATE 28P01`); no se marca como superada en esta trazabilidad.
 
 La revision cruzada exigida por la guia queda pendiente de un integrante distinto del autor.
