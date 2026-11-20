@@ -2,7 +2,7 @@
 
 **Branch**: `spec-008` | **Date**: 2026-11-01 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/spec-008/spec.md` (checklist completado, 0 NEEDS CLARIFICATION; 3 clarificaciones del 2026-11-01: rango inclusivo Europe/Madrid, agrupación por inicio 00–23 / lunes–domingo, CSV R11) + `historia.md` (HU-08) + plan técnico global compartido en [specs/spec-001/plan.md](../spec-001/plan.md) + modelo compartido en [specs/spec-001/data-model.md](../spec-001/data-model.md) y contratos en [specs/spec-001/contracts/](../spec-001/contracts/) (R11 CSV, R14 analítica/Chart.js), sobre la base ya implementada por spec-003/spec-004/spec-007 presente en esta rama.
+**Input**: Feature specification from `/specs/spec-008/spec.md` (checklist completado, 0 NEEDS CLARIFICATION; 3 clarificaciones del 2026-11-01: rango inclusivo Europe/Madrid, agrupación por inicio 00–23 / lunes–domingo, CSV R11; y decisión de alcance del 2026-11-20: conservar los gráficos horarios y semanales sin añadir ranking por estación ni modificar el contrato compartido) + `historia.md` (HU-08) + plan técnico global compartido en [specs/spec-001/plan.md](../spec-001/plan.md) + modelo compartido en [specs/spec-001/data-model.md](../spec-001/data-model.md) y contratos en [specs/spec-001/contracts/](../specs/spec-001/contracts/) (R11 CSV, R14 analítica/Chart.js), sobre la base ya implementada por spec-003/spec-004/spec-007 presente en esta rama.
 
 **Note**: Este plan **deriva del plan global** (spec-001) y de la base aportada por spec-003/spec-004/spec-007; no redefine pila, esquema PostgreSQL ni contrato Redis. Solo detalla lo necesario para la HU-08 dentro del marco ya acordado. El alcance es exactamente la HU-08: no se incorporan funcionalidades de otras historias ni se modifican specs/spec-007 ni el plan global.
 
@@ -30,7 +30,7 @@ Exponer al gestor municipal la analítica de uso de la red sobre viajes finaliza
 
 **Scope/Scale**: 2 endpoints (`GET /analitica/viajes`, `GET /analitica/export`), 1 servicio (`services/analitica`), 1 página (`pages/analitica`), 3 entradas de integración de una línea en 3 ficheros compartidos (`routes/register.go`, frontend `routes.tsx` e `index.tsx`) + bloques aditivos en `models/models.go` y `cmd/seed/main.go` + 1 dependencia frontend (`chart.js`, aplicada en T020).
 
-**Unknowns**: **0 NEEDS CLARIFICATION** — el spec está validado (checklist [requirements.md](./checklists/requirements.md)) y el OpenAPI global define ambos endpoints, sus parámetros, el schema `AnaliticaViajes` y las respuestas `422` (T019). Las decisiones de diseño están en [research.md](./research.md) (D1–D9).
+**Unknowns**: **0 NEEDS CLARIFICATION** — el spec está validado (checklist [requirements.md](./checklists/requirements.md)); la revisión del 2026-11-20 confirmó el alcance de `historia.md` y no requiere ampliar el schema `AnaliticaViajes`. El OpenAPI global define ambos endpoints, sus parámetros, el schema `AnaliticaViajes` y las respuestas `422` (T019). Las decisiones de diseño están en [research.md](./research.md) (D1–D9).
 
 ## Constitution Check
 
