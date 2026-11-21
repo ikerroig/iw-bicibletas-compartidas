@@ -26,8 +26,9 @@
 
 - `go test ./internal/services/analitica`, `go vet ./...` y `npm run build` pasan en esta verificacion.
 - La suite frontend completa pasa: **16 archivos, 97 pruebas**. En Node 26 hay que proporcionar `NODE_OPTIONS=--localstorage-file=<temporal>` para que Vitest tenga `localStorage`; con esa opcion las 6 pruebas de HU-08 tambien pasan.
-- Docker y los servicios de `docker compose` estan ahora activos. El intento actual de `go test -p 1 ./...` sigue sin completar las pruebas de integracion: PostgreSQL rechaza la autenticacion del usuario de pruebas (`SQLSTATE 28P01`), incluso usando la ruta IPv4 del puerto publicado. El quickstart conserva resultados previos de integracion y S8 del 2026-11-01; hay que resolver la configuracion de credenciales de pruebas y repetir la suite antes de fusionar.
-- La revision cruzada por otro integrante es un requisito de equipo y no puede darse por realizada por esta convergencia.
+- Docker y los servicios de `docker compose` estan activos. En la verificacion cruzada del 2026-11-21, la suite `go test -p 1 ./...`, `go vet ./...`, las 97 pruebas del frontend y `npm run build` pasaron usando PostgreSQL publicado temporalmente en `127.0.0.1:5433`; no se modifico `.env`.
+- La revision manual de los endpoints de HU-08 comprobo `200` para gestor, `422` para rango invertido, `403` para usuario normal, `401` sin token y respuesta vacia correcta para un rango futuro. El intento de levantar Vite desde este entorno concreto fallo por permisos de `esbuild` al resolver la ruta del repositorio; no afecta al build ni a las pruebas del frontend.
+- La revision cruzada queda registrada en `refinamiento/hallazgos.md`; no se encontraron incumplimientos ni trabajo funcional pendiente.
 
 ## Tareas nuevas
 

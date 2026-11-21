@@ -19,6 +19,8 @@
 
 ## Estado de validacion
 
-El quickstart registra ejecuciones automatizadas y manuales previas. En la verificacion de cierre, la suite frontend (97 pruebas), el build, las pruebas unitarias de analitica y `go vet` pasaron. Docker y los contenedores del proyecto estan activos, pero la suite backend completa no pudo inicializarse porque PostgreSQL rechaza las credenciales de pruebas (`SQLSTATE 28P01`); no se marca como superada en esta trazabilidad.
+Actualizacion de la verificacion cruzada (2026-11-21): la migracion y el seed se ejecutaron correctamente contra PostgreSQL publicado temporalmente en `127.0.0.1:5433` (el puerto `55432` definido en el entorno local no estaba disponible). La suite backend completa (`go test -p 1 ./...`) paso, junto con `go vet ./...`; la suite frontend paso con 16 archivos y 97 pruebas, y `npm run build` tambien paso. No se modifico el fichero `.env`.
 
-La revision cruzada exigida por la guia queda pendiente de un integrante distinto del autor.
+La API se comprobo manualmente con el seed: el gestor obtuvo `200` en agregados y export CSV; un rango futuro devolvio arrays y totales a cero; un rango invertido devolvio `422 ENTRADA_INVALIDA`; un usuario normal devolvio `403 ROL_NO_PERMITIDO`; y una peticion sin token devolvio `401`.
+
+La revision cruzada queda registrada en `refinamiento/hallazgos.md`. No se detectaron incumplimientos funcionales ni tareas nuevas.
