@@ -74,6 +74,42 @@
 
 ---
 
+## Phase 5: Refinamiento (fase 4 — analyze 2026-11-19)
+
+**Historia**: HU-04 (US1) · **Responsable**: Alex Morell · **Revisor**: Iker Roig
+
+**Purpose**: Cerrar los huecos de verificación detectados en
+`refinamiento/analyze-inicial.md` (A1–A6): el clarify 2026-11-19 añadió
+AC4–AC6 que la implementación no prueba por completo.
+
+- [X] T016 [US1] Test de integración **AC4/roles** en `backend/tests/historial_test.go` (`TestHistorialT4kRoles`): token `operario_taller` y token `gestor` → `200` con su propio historial (aislamiento por JWT); con `?usuario_id=<id ajeno>` el parámetro se ignora y sigue siendo el historial propio — *hallazgo A1*
+- [X] T017 [US1] Ampliar la fixture de `TestHistorialT4jLatencia` a ~365 viajes finalizados (un año de uso habitual) antes de cronometrar y asertar `< 3 s` — *hallazgo A2 (SC-004 / quickstart T4j)*
+- [X] T018 [US1] Quickstart: añadir fila **T4k** (AC4: cualquier rol autenticado ve su propio historial) y mapear AC5→T4a, AC6→T4a+T4e en la tabla SC — *hallazgo A3*
+- [X] T019 [US1] Crear la tabla *Acceptance Coverage* en `specs/spec-004/checklists/requirements.md` (FR/SC/AC → test que lo demuestra, incl. T4k) — *hallazgo A4*
+- [X] T020 [US1] plan.md: nota en Unknowns sobre la sesión de clarify 2026-11-19 (C1–C3) remitiendo a `refinamiento/clarify.md` — *hallazgo A5*
+- [X] T021 [US1] clarify.md: renombrar decisiones D6–D13 → C1–C8 para eliminar la colisión con la numeración D1–D8 de `research.md` — *hallazgo A6*
+
+**Checkpoint**: `go test ./...` + `npm test` en verde con T016/T017;
+analyze final sin hallazgos abiertos
+
+---
+
+## Phase 6: Convergence (2026-11-19)
+
+**Historia**: HU-04 (US1) · **Responsable**: Alex Morell · **Revisor**: Iker Roig
+
+**Purpose**: Cerrar las brechas detectadas por `/speckit.converge` entre
+artefactos y código (4 hallazgos: F1–F4 en converge-1.md).
+
+- [X] T022 [US1] Añadir en `specs/spec-004/contracts/viajes.md` la fila `500 ERROR_INTERNO` que puede devolver el servicio en fallo de BD y acotar redacción a códigos de negocio per converge F1
+- [X] T023 [US1] Registrar nota de coordinación en `specs/spec-004/contracts/viajes.md` sobre la adición de respuesta `422` a `historialViajes` en el OpenAPI global (`specs/spec-001/contracts/openapi.yaml`) sin modificarlo (principio III) per converge F2
+- [X] T024 [US1] Añadir helper `codigoError` y aserciones de `error.codigo` (`NO_AUTENTICADO` en 401 y `ENTRADA_INVALIDA` en 422) en tests T4d y T4i de `backend/tests/historial_test.go` per converge F3
+- [X] T025 [US1] Añadir aviso `aviso-filtro-incompleto` en la barra de filtros de `frontend/src/pages/viajes/index.tsx` y test de filtro a medias en `frontend/src/pages/viajes/index.test.tsx` per converge F4
+
+**Checkpoint**: `go vet ./...` + `go test ./...` + `npm test` en verde; converge-2 convergido
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -82,6 +118,8 @@
 - **Foundational (Phase 2)**: sin dependencias técnicas de la US1 (T003 en paralelo posible), pero **bloquea el escenario manual S4**
 - **User Story 1 (Phase 3)**: requiere Setup ✅; los tests (T004–T006) se escriben ANTES que la implementación
 - **Polish (Phase 4)**: depende de T003 + toda la US1
+- **Refinamiento (Phase 5)**: documentada en el analyze 2026-11-19; T016/T017 reutilizan el patrón de montaje de `historial_test.go` (T005) y T019 cierra el checklist
+- **Convergence (Phase 6)**: remediaciones F1–F4 documentadas en converge-1.md y verificadas en converge-2.md (T022–T025)
 
 ### Within User Story 1
 

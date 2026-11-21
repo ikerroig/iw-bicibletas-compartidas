@@ -158,6 +158,22 @@ describe("HU-04 · página Mis Viajes", () => {
     expect(screen.queryByTestId("fila-viaje")).toBeNull();
   });
 
+  it("filtro a medias (mes sin año): no envía desde/hasta y avisa", async () => {
+    render(() => <MisViajes />);
+    await screen.findAllByTestId("fila-viaje");
+
+    fireEvent.change(screen.getByTestId("select-mes"), {
+      target: { value: "10" },
+    });
+    const aviso = await screen.findByTestId("aviso-filtro-incompleto");
+    expect(aviso.textContent).toContain("año");
+
+    // Sin ambos lados no hay rango: se consulta el historial completo.
+    const ultima = peticiones[peticiones.length - 1];
+    expect(ultima).not.toContain("desde=");
+    expect(ultima).toContain("page=1");
+  });
+
   it("siguiente página pide page=2 y la información de paginación refleja el total", async () => {
     responder = async () =>
       respuesta({

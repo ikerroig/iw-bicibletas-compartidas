@@ -34,8 +34,27 @@
   del mes seleccionado, y la paginación usa `page`/`page_size` (50/200).
 - Q: Si el periodo tiene viajes pero la página pedida está fuera de rango,
   ¿qué sumatorio devuelve la API? — A: `items` vacío pero con el sumatorio
-  real del periodo completo: el sumatorio es propiedad del periodo, no de la
-  página visible; el 0,00 € se reserva a los periodos sin viajes.
+  real del periodo completo: el sumatorio es propiedad del periodo, no de
+  la página visible; el 0,00 € se reserva a los periodos sin viajes.
+
+### Session 2026-11-19
+
+- Q: ¿Puede algún usuario consultar el historial de viajes de otra
+  persona, y qué ve un operario o un gestor cuando entra en «Mis Viajes»?
+  — A: Nadie puede ver historial ajeno: el propietario se resuelve siempre
+  desde la sesión (JWT), nunca por parámetro de entrada. Cualquier rol
+  autenticado (usuario, operario, gestor) puede consultar su propio historial
+  en la API (200 con lista vacía para roles sin viajes, pues solo el rol `usuario`
+  puede realizar trayectos según HU-02/HU-03); el menú de navegación de la UI
+  ofrece el acceso «Mis viajes» exclusivamente al rol `usuario`. Sin sesión → 401.
+- Q: ¿Debe aparecer el viaje activo (en curso) en el historial «Mis
+  Viajes» mientras el usuario sigue andando? — A: No; solo viajes
+  finalizados. El viaje en curso no se lista ni computa en el sumatorio;
+  entra en el historial cuando HU-03 lo cierra.
+- Q: Cuando el usuario entra en «Mis Viajes» por primera vez sin tocar
+  ningún filtro, ¿qué debe ver y con qué sumatorio? — A: Todos sus viajes
+  finalizados, más recientes primero, con el sumatorio de todo el
+  historial; el filtro mes/año es opcional y solo estrecha la lista.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -70,6 +89,20 @@ la etiqueta en los viajes gratuitos.
 3. **Given** un viaje que no generó cargos por durar menos de 30 minutos,
    **When** se muestra en el historial, **Then** figura claramente identificado
    con el concepto "Tramo gratuito (0,00 €)".
+4. **Given** un usuario con sesión iniciada de cualquier rol (usuario,
+   operario o gestor), **When** consulta su historial en la API, **Then** ve
+   únicamente sus propios viajes finalizados (lista vacía para roles sin viajes
+   propios), resueltos desde la sesión y nunca desde un parámetro de entrada;
+   en la interfaz web el acceso al historial se restringe en el menú al rol `usuario`,
+   y sin sesión la API responde 401 sin mostrar ningún dato.
+5. **Given** un usuario con un viaje en curso, **When** abre «Mis Viajes»,
+   **Then** el viaje activo no aparece en la lista ni computa en el
+   sumatorio hasta que HU-03 lo cierra como finalizado.
+6. **Given** un usuario que entra en «Mis Viajes» sin aplicar ningún
+   filtro, **When** la vista se renderiza por primera vez, **Then** ve
+   todos sus viajes finalizados ordenados por fecha de inicio descendente
+   (más recientes primero) con el sumatorio de todo el historial; el
+   filtro mes/año es opcional.
 
 ### Edge Cases
 
@@ -87,6 +120,8 @@ la etiqueta en los viajes gratuitos.
   etiqueta "Tramo gratuito (0,00 €)" y su importe computa 0 en el sumatorio.
 - Usuario sin viajes registrados: se muestra el estado vacío del historial
   desde la primera carga.
+- Sin sesión o con la sesión expirada: la API responde 401 y la vista no
+  muestra ningún dato del historial (clarificación 2026-11-19).
 
 ## Requirements *(mandatory)*
 
@@ -95,7 +130,8 @@ la etiqueta en los viajes gratuitos.
 - **FR-001**: El sistema MUST mostrar al usuario una lista cronológica de sus
   trayectos finalizados con fecha y hora de inicio (dd/mm/aaaa HH:MM),
   estación de origen, estación de destino, duración y coste individual de
-  cada viaje.
+  cada viaje, ordenada por fecha de inicio descendente (más recientes
+  primero).
 - **FR-002**: El sistema MUST permitir filtrar el historial por mes y año,
   mostrando solo los viajes comprendidos en ese rango; el mes y el año de
   cada viaje MUST interpretarse en la zona horaria Europe/Madrid (hora
@@ -106,7 +142,12 @@ la etiqueta en los viajes gratuitos.
 - **FR-004**: El sistema MUST identificar cada viaje con coste 0,00 € con el
   concepto "Tramo gratuito (0,00 €)".
 - **FR-005**: El sistema MUST mostrar únicamente los viajes finalizados del
-  usuario con sesión iniciada; nunca los viajes de otros usuarios.
+  usuario con sesión iniciada; nunca los viajes de otros usuarios. El
+  propietario MUST resolverse desde la sesión (JWT) y nunca desde un
+  parámetro de entrada; sin sesión la API MUST responder 401. Cualquier
+  rol autenticado (usuario, operario, gestor) consulta su propio
+  historial (la API responde 200 sin efectos secundarios, devolviendo lista vacía
+  si el rol no puede realizar viajes; la UI reserva el menú al rol `usuario`).
 - **FR-006**: El sistema MUST ofrecer para cada viaje su estación de origen y
   destino como consulta de la "ruta" del viaje, sin seguimiento de trayectoria
   GPS.
@@ -147,8 +188,9 @@ la etiqueta en los viajes gratuitos.
 - "Ver mis rutas pasadas" se refiere a consultar la estación de origen y
   destino de cada viaje; no hay tracking GPS ni trayectorias intermedias
   (aclarecimiento de alcance del equipo, HU validada sin cambios).
-- La lista se ordena cronológicamente con los viajes más recientes primero
-  cuando la HU no fija dirección.
+- La lista se ordena por fecha de inicio descendente (más recientes
+  primero); la HU no fija dirección y así lo concreta FR-001 desde la
+  clarificación 2026-11-19.
 - Solo se listan viajes finalizados; el viaje activo se consulta en el flujo
   en curso, no en el historial.
 - La identificación del usuario se realiza mediante sesión iniciada.
