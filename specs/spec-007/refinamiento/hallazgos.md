@@ -20,3 +20,35 @@
 - Actualización posterior: el equipo revocó el descarte inicial de T021/T022 y aprobó las migraciones 0004/0005; ver el addendum de `clarify.md`.
 - Validación final: `go test -p 1 ./...`, `go vet ./...`, `npm run build` y las 97 pruebas frontend pasan; ver [converge-1.md](./converge-1.md).
 - `/speckit-converge` completado: no encontró brechas ni añadió tareas. La HU-07 queda lista para revisión cruzada.
+
+## Revisión cruzada de la PR
+
+**Fecha**: 2026-11-21
+**Alcance**: revisión local de `refinamiento/spec-007` en el commit `9180ff4`,
+comparada con `origin/main`. La HU-07 contiene una única historia de usuario;
+se seleccionan varios criterios representativos, incluyendo un criterio de
+funcionalidad, uno de estado y uno de permisos.
+
+| Historia/criterio revisado | Tarea y evidencia comprobadas | Resultado |
+| --- | --- | --- |
+| HU-07 / FR-005 y SC-002: panel ordenado por urgencia | T012, T018, T7d y `analyze-final.md`; el backend devuelve alertas abiertas con nombre de estación y orden por score y fecha | Cobertura correcta, sin incidencia |
+| HU-07 / FR-006 y FR-007: traslado válido y estados recalculados | T011, T021, T7f; el traslado `34 → 6` de 1 unidad devolvió ambos estados recalculados | Cobertura correcta, sin incidencia |
+| HU-07 / FR-009: autorización del operario de logística | T013, T7e; un usuario normal recibió `403` en el panel | Cobertura correcta, sin incidencia |
+| HU-07 / SC-001 y SC-004: generación y resolución de alertas | T010, T018, T019, T7a/T7b/T7h; la suite cubre umbrales, unicidad, worker y resolución | Cobertura correcta, sin incidencia |
+| HU-07 / caso límite de capacidad | T006, T011, T7g; un traslado de 999 unidades devolvió `409` sin aplicar el movimiento | Cobertura correcta, sin incidencia |
+
+### Verificación ejecutada
+
+- `go test -p 1 ./...`: correcto, incluyendo `backend/tests` (92,698 s),
+  contratos e integración.
+- `go vet ./...`: correcto.
+- `npm test -- --run --reporter=dot`: 16 ficheros y 97 pruebas superadas.
+- `npm run build`: correcto.
+- Recorrido manual: login de `logistica@si16.test`, panel con 7 alertas,
+  traslado válido `34 → 6`, respuesta `403` para `ana@si16.test`, respuesta
+  `409` para capacidad insuficiente y ruta `/balanceo` con `200`.
+
+**Resultado de la revisión**: no se han encontrado incidencias accionables ni
+contradicciones entre spec, plan, tareas, código y pruebas. No se añaden tareas
+correctoras. El merge queda condicionado únicamente a la revisión formal de la
+PR por el equipo.
