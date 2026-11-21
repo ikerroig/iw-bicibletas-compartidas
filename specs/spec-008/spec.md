@@ -29,6 +29,10 @@
   con `fecha_hora` en Europe/Madrid (AAAA-MM-DD HH:MM); nombre del fichero
   `viajes_AAAAMMDD_AAAAMMDD.csv`.
 
+### Session 2026-11-20
+
+- Q: ¿Qué alcance de desglose por estación debe tener HU-08 si el equipo no aprueba ampliar el contrato de datos compartido? → A: No añadir un ranking por estación y conservar los gráficos por hora del día y día de la semana. Justificación: es la opción más simple, coincide con `historia.md` y no requiere modificar el OpenAPI compartido; HU afectada: HU-08.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Analítica de la red con exportación (Priority: P1)
@@ -58,7 +62,6 @@ con los mismos totales que los gráficos.
 2. **Given** el análisis de la red, **When** el gestor requiere procesar los
    datos con software externo, **Then** la aplicación le permite descargar un
    archivo en formato CSV con el histórico filtrado.
-
 ### Edge Cases
 
 - El rango seleccionado no contiene viajes: los gráficos se muestran vacíos

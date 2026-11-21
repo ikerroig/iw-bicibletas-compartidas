@@ -119,3 +119,15 @@ Ejecutado el 2026-11-01 con `gestor@si16.test` / `password`, mientras Chart.js e
 ### 5.3 Página (`localhost:5173/analitica`)
 
 Los comportamientos de UI (totales, aviso "sin datos en el periodo", descarga autenticada con Blob/`<a download>`, botón deshabilitado durante la descarga, mensajes `role="alert"` para 403/422) están verificados por los 6 tests de `frontend/src/pages/analitica/index.test.tsx` (wrapper del gráfico mockeado). El `npm run build` pasa con Chart.js instalado; la ruta `/analitica` está dada de alta en `routes.tsx` y el nav.
+
+## 5.4 Revisión cruzada independiente (2026-11-21)
+
+Se repitieron las comprobaciones en la rama `refinamiento/spec-008`:
+
+- `go test -p 1 ./...`: pasa la suite backend completa.
+- `go vet ./...`: pasa sin avisos.
+- `npm test -- --run --reporter=dot`: 16 archivos y 97 pruebas superadas.
+- `npm run build`: pasa correctamente.
+- API real: gestor `200` en agregados y CSV; futuro `200` con ceros; rango invertido `422`; usuario normal `403`; sin token `401`.
+
+Para esta ejecución se usó PostgreSQL en `127.0.0.1:5433` porque el puerto local `55432` no estaba disponible; no se modificó `.env`. El arranque de Vite desde el entorno de revisión falló por permisos de `esbuild` al resolver la ruta del repositorio, pero no afecta a las pruebas ni al build del frontend.
