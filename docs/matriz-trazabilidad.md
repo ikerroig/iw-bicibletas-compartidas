@@ -124,16 +124,83 @@ T016–T025; evidencia en `specs/spec-004/refinamiento/converge-2.md`).
 
 ## HU-05 — Notificación de averías e inhabilitación (spec-005) · Josep Peiró · Revisor: Alberto Copa
 
-_(Pendiente.)_
+Decisiones: `specs/spec-005/research.md` (C-001–C-004) · Tareas: `specs/spec-005/tasks.md` · Escenario: `specs/spec-005/quickstart.md`.
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001 — reporte con descripción y estación real | Servicio valida bicicleta, sesión y estación; una bicicleta en viaje no exige estación anclada | T004, T005, T007, T011 | Go: `TestAveriaRechazaEstacionDistinta` · recorrido de reporte en la demo | ✅ |
+| FR-002 — cambio inmediato a averiada | Transacción con bloqueo de la bicicleta y actualización atómica | T004, T009, T013 | Go: `TestAveriaBloqueaYEsIdempotente` | ✅ |
+| FR-003 — averiada no alquilable ni disponible | El estado `averiada` impide el desbloqueo y se excluye del recuento | T004, T009, T013 | Go: `TestAveriaBloqueaYEsIdempotente` · quickstart HU-05 | ✅ |
+| FR-004 — exclusión del mapa y contadores | Recalcular la estación tras confirmar el reporte | T004, T009, T013, T018 | Go: `TestAveriadasNoSumanEnNingunContador`, `TestTodasAveriadasDaCeroYCero` | ✅ |
+| FR-005 — incidencia pendiente visible al taller | Persistir incidencia y exponer listado solo a taller | T004, T005, T008, T012, T018 | Go: `TestAveriaPanelSoloTaller` · demo HU-05 → panel de taller | ✅ |
+| FR-006 — confirmación al usuario | El formulario presenta el mensaje devuelto por la API | T005, T007, T010, T014 | Recorrido manual y demo: confirmación tras «Registrar avería» | ✅ |
+| FR-007 — reporte repetido idempotente | Índice de incidencia abierta y tratamiento explícito del reintento | T002, T004, T009, T013 | Go: `TestAveriaBloqueaYEsIdempotente` | ✅ |
+| FR-008 — refresco del panel < 30 s | Refresco automático cada 10 s y botón «Actualizar» | T008, T012, T018 | Quickstart HU-05 · demo con incidencia visible inmediatamente | ✅ |
+| SC-001 — 100 % de reportes cambian el estado | La mutación y la incidencia comparten transacción | T004, T009, T013 | Go: `TestAveriaBloqueaYEsIdempotente` | ✅ |
+| SC-002 — panel < 30 s y 0 alquileres de averiadas | Polling de 10 s y validación server-side del alquiler | T004, T008, T012, T018 | Go: panel solo taller · quickstart · demo funcional | ✅ |
+| SC-003 — mapas/listas excluyen averiadas | Una única definición de bicicleta operativa | T004, T013, T018 | Go: tests de contadores de HU-01 | ✅ |
+| SC-004 — 0 estados averiada/disponible inconsistentes | Bloqueo, transacción e idempotencia | T002, T004, T009, T013 | Go: `TestAveriaBloqueaYEsIdempotente` | ✅ |
+
+**Cobertura HU-05**: 8 FR + 4 SC = **12/12 con tarea y prueba prevista; 12 ✅**.
 
 ## HU-06 — Intervenciones técnicas y taller (spec-006) · Josep Peiró · Revisor: Alberto Copa
 
-_(Pendiente.)_
+Decisiones: `specs/spec-006/research.md` (C-001–C-005) · Tareas: `specs/spec-006/tasks.md` · Escenario: `specs/spec-006/quickstart.md`.
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001 — ficha con reporte e historial | Consulta conjunta de bicicleta, incidencias e intervenciones | T003, T008–T010, T017 | Go: `TestTallerFichaReparacionYUbicacion` · Vitest de taller · demo | ✅ |
+| FR-002 — parte con piezas, notas y operario | Validación de campos y autor obtenido del JWT | T004, T007–T010, T017 | Go: `TestTallerValidaRolYCampos` · Vitest de taller | ✅ |
+| FR-003 — cambio a operativa e intervención firmada | Guardado transaccional del parte, fecha y operario | T004, T005, T009, T011 | Go: `TestTallerFichaReparacionYUbicacion` | ✅ |
+| FR-004 — historial completo | No se sobrescriben intervenciones; la ficha devuelve todo el historial | T003, T004, T009 | Go: ficha tras guardar el parte · demo funcional | ✅ |
+| FR-005 — ubicación en anclaje libre y disponibilidad | Reparación y ubicación son pasos separados; la ubicación recalcula la estación | T006, T008–T010, T017 | Go: `TestTallerFichaReparacionYUbicacion` · Vitest · demo | ✅ |
+| FR-006 — incidencia atendida deja de estar pendiente | El parte resuelve las incidencias abiertas de la bicicleta | T004, T005, T009 | Go: `TestTallerFichaReparacionYUbicacion` | ✅ |
+| FR-007 — operativa sin ubicación no disponible | La bicicleta no cuenta hasta confirmar un anclaje | T004, T006, T009, T017 | Go: reparación y ubicación en dos pasos · quickstart HU-06 | ✅ |
+| SC-001 — 100 % de fichas muestran el reporte original | La ficha conserva y presenta la incidencia de HU-05 | T003, T009, T017 | Go + demo: reporte visible antes de reparar | ✅ |
+| SC-002 — 100 % de reparaciones con autor y fecha | Operario del JWT y fecha de servidor obligatorios | T004, T007, T009 | Go: `TestTallerFichaReparacionYUbicacion` | ✅ |
+| SC-003 — disponible ≤ 30 s tras ubicar | Recalcular estación después del commit | T006, T009, T017 | Go + quickstart + demo: ubicación confirmada | ✅ |
+| SC-004 — 0 operativas con incidencia pendiente | Parte e incidencia se actualizan en la misma transacción | T004, T005, T009 | Go: incidencia resuelta tras reparación | ✅ |
+
+**Cobertura HU-06**: 7 FR + 4 SC = **11/11 con tarea y prueba prevista; 11 ✅**.
 
 ## HU-07 — Alertas de balanceo de flota (spec-007) · Alberto Copa · Revisor: Josep Peiró
 
-_(Pendiente.)_
+Decisiones: `specs/spec-007/research.md` (D1–D8) · Tareas: `specs/spec-007/tasks.md` · Pruebas T7a–T7h: `specs/spec-007/quickstart.md`.
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001 — porcentaje de ocupación | Bicicletas disponibles ancladas / capacidad total | T005, T009 | T7a, T7c | ✅ |
+| FR-002 — alertas estrictas <10 % / >90 % | Evaluación inline y worker periódico | T005, T007, T009, T010 | T7a, T7h | ✅ |
+| FR-003 — una alerta abierta por estación/umbral | Índice parcial y `ON CONFLICT DO NOTHING` | T007, T009 | T7b | ✅ |
+| FR-004 — resolución automática al normalizar | Evaluación resuelve alertas fuera de condición | T007, T009 | T7b · S7 | ✅ |
+| FR-005 — panel ordenado por urgencia | Score descendente y antigüedad ascendente en empate | T007, T012, T016, T022 | T7d · demo HU-07 | ✅ |
+| FR-006 — traslado validado y atómico | Bloqueo de estaciones, capacidad y auditoría en transacción | T006, T007, T011, T021 | T7f, T7g · demo éxito/error | ✅ |
+| FR-007 — recálculo inmediato y global ≤ 30 s | Respuesta recalculada y Redis post-commit | T011, T016, T019 | T7f · S7 · demo | ✅ |
+| FR-008 — averiadas excluidas | La consulta solo cuenta disponibles ancladas | T005, T007, T009 | T7c | ✅ |
+| FR-009 — acceso exclusivo de logística | Autenticación y `RequireRole("operario_logistica")` | T007, T013, T016 | T7e | ✅ |
+| SC-001 — alerta en < 60 s | Worker cada 55 s con barrido < 5 s; inline en traslado | T007, T010, T019 | T7h · S7 | ✅ |
+| SC-002 — panel ordenado, sin duplicados/obsoletas | Consulta de abiertas y orden único | T007, T008, T016, T022 | T7b, T7d · demo | ✅ |
+| SC-003 — traslado visible inmediatamente y global ≤ 30 s | Respuesta con ambos estados + Redis | T011, T019 | T7f · S7 | ✅ |
+| SC-004 — 0 alertas obsoletas | Resolución automática en cada evaluación | T007, T009, T019 | T7b · S7 | ✅ |
+
+**Cobertura HU-07**: 9 FR + 4 SC = **13/13 con tarea y prueba prevista; 13 ✅**.
 
 ## HU-08 — Analítica de uso y exportación CSV (spec-008) · Alberto Copa · Revisor: Josep Peiró
 
-_(Pendiente.)_
+Decisiones y evidencia: `specs/spec-008/refinamiento/trazabilidad.md` · Tareas: `specs/spec-008/tasks.md`.
+
+| Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
+|----------|-------------------|--------|-----------------|--------|
+| FR-001 — rango inclusivo Europe/Madrid | Validación backend y filtro por fecha local de inicio | T005, T007, T009, T014 | `service_test.go`, T8b, T8f | ✅ |
+| FR-002 — 24 horas y 7 días | El servidor calcula buckets y el frontend pinta los arrays | T004, T007–T009, T014, T018, T020 | T8c · tests de página · demo | ✅ |
+| FR-003 — CSV del mismo rango | Exportación backend y descarga autenticada | T006–T007, T010–T013, T021 | T8a, T8e, T8h · demo | ✅ |
+| FR-004 — formato CSV interoperable | BOM UTF-8, RFC 4180, CRLF, columnas y nombre fijados | T006–T007, T010–T011, T017 | Tests CSV · T8h · S8 | ✅ |
+| FR-005 — acceso exclusivo de gestor | `RequireAuth` y `RequireRole("gestor")` en ambas rutas | T007, T011–T012, T014, T021 | T8g · demo de 403 y CSV autenticado | ✅ |
+| FR-006 — gráficos y CSV consistentes | Un filtro común alimenta agregados y exportación | T007, T009–T011, T016 | T8a · S8 | ✅ |
+| FR-007 — viajes finalizados de toda la red | Consultas sin usuario y con estado finalizado | T007, T009–T010 | T8d | ✅ |
+| SC-001 — gráficos < 5 s hasta un año | Consultas indexadas y prueba cronometrada | T007, T016–T017 | T8i · quickstart | ✅ |
+| SC-002 — CSV completo y consistente | Predicado compartido y comparación automatizada | T007, T010–T011, T016–T017 | T8a · S8 | ✅ |
+| SC-003 — 100 % de accesos no gestor denegados | Autorización server-side | T007, T012, T016–T017 | T8g · demo funcional | ✅ |
+| SC-004 — CSV sin pérdida de caracteres | Serialización Unicode con BOM | T006–T007, T017 | T8h · comprobación manual S8 | ✅ |
+
+**Cobertura HU-08**: 7 FR + 4 SC = **11/11 con tarea y prueba prevista; 11 ✅**.
