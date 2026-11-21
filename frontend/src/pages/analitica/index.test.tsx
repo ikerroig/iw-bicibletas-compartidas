@@ -69,7 +69,8 @@ beforeEach(() => {
   responderViajes = async () => json(analiticaConDatos);
   responderExport = async () => csv();
   exportPendiente = null;
-  localStorage.setItem("token", "tok-test");
+  // Es la misma clave que usa el store de sesión real.
+  localStorage.setItem("si16.token", "tok-test");
   // jsdom no implementa object URLs (descarga vía Blob + <a download>).
   URL.createObjectURL = () => "blob:mock";
   URL.revokeObjectURL = () => {};

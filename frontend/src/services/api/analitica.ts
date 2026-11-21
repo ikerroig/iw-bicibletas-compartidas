@@ -32,7 +32,9 @@ export async function descargarCSV(
 ): Promise<void> {
   const q = new URLSearchParams({ desde, hasta });
   const headers: Record<string, string> = {};
-  const t = localStorage.getItem("token");
+  // La sesión compartida guarda el JWT en `si16.token`. Se conserva el nombre
+  // antiguo como respaldo para no romper datos locales de versiones previas.
+  const t = localStorage.getItem("si16.token") ?? localStorage.getItem("token");
   if (t) headers.Authorization = `Bearer ${t}`;
 
   const res = await fetch(`/api/v1/analitica/export?${q.toString()}`, {

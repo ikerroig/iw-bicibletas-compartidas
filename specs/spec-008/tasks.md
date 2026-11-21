@@ -85,6 +85,10 @@
 
 - [x] T019 Añadir la respuesta `422 ENTRADA_INVALIDA` a `/analitica/viajes` y `/analitica/export` en `specs/spec-001/contracts/openapi.yaml`, reflejando el comportamiento que la rama ya consolida (patrón spec-003/004/007); [contracts/analitica.md](./contracts/analitica.md) detalla la semántica
 - [x] T020 Añadir la dependencia `chart.js` (`^4`) a `frontend/package.json` y actualizar `frontend/package-lock.json`; dependencia designada globalmente para los gráficos HU-08 en R14 del plan global
+- [x] T021 Corregir la descarga CSV para leer la clave de sesión compartida
+      `si16.token` (manteniendo `token` como compatibilidad), actualizar la
+      prueba de página para usar la clave real y verificar la exportación
+      autenticada durante la grabación funcional del 2026-11-21.
 
 ---
 
