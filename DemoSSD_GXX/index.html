@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo SI-16 · Historias de usuario</title>
+  <style>
+    :root { color-scheme: dark; --bg:#08111f; --card:#101d30; --card2:#16263d; --text:#f4f7fb; --muted:#9eb0c9; --accent:#45d6e8; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:Segoe UI,Arial,sans-serif; background:linear-gradient(135deg,#08111f,#0d1c31); color:var(--text); }
+    main { width:min(1180px,92vw); margin:0 auto; padding:48px 0 70px; }
+    header { border-bottom:1px solid #29405f; padding-bottom:28px; margin-bottom:30px; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:.78rem; font-weight:700; }
+    h1 { font-size:clamp(2rem,5vw,4rem); line-height:1.05; margin:12px 0; }
+    h2 { margin:0 0 10px; }
+    p { color:var(--muted); line-height:1.55; }
+    .video-card, .story { background:rgba(16,29,48,.9); border:1px solid #29405f; border-radius:18px; padding:20px; box-shadow:0 18px 45px #0003; }
+    video { width:100%; display:block; border-radius:12px; background:#000; }
+    .meta { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; color:var(--muted); font-size:.92rem; }
+    .meta span { background:var(--card2); border-radius:999px; padding:7px 12px; }
+    .stories { display:grid; gap:14px; margin-top:30px; }
+    .story { display:grid; grid-template-columns:1fr auto; gap:12px 20px; align-items:center; }
+    .story h2 { font-size:1.25rem; }
+    .story p { margin:4px 0 0; }
+    button { cursor:pointer; border:0; border-radius:999px; background:var(--accent); color:#08111f; font-weight:700; padding:11px 17px; }
+    button:hover { filter:brightness(1.12); }
+    .scenario { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; }
+    .scenario button { background:var(--card2); color:var(--text); border:1px solid #385477; font-size:.86rem; }
+    .scenario button:hover { background:#244263; }
+    footer { color:var(--muted); margin-top:32px; font-size:.9rem; }
+    @media (max-width:700px) { .story { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">DemoSSD_GXX · SI-16</div>
+    <h1>Historias de usuario y escenarios</h1>
+    <p>Presentación ilustrativa de los recorridos de la aplicación de bicicletas compartidas: casos habituales, límites, permisos y cambios de estado.</p>
+  </header>
+  <section class="video-card">
+    <video id="demo" controls preload="metadata" poster="frames/scene-00.png">
+      <source src="demo-si16.mp4" type="video/mp4">
+      Tu navegador no puede reproducir este vídeo.
+    </video>
+    <div class="meta"><span>24 escenarios</span><span>8 historias</span><span>2 min 36 s</span><span><a href="demo-si16.mp4" download style="color:var(--accent)">Descargar MP4</a></span></div>
+  </section>
+  <section class="stories" aria-label="Historias de usuario">
+    <article class="story"><div><h2>HU-01 · Disponibilidad en tiempo real</h2><p>Mapa, detalle de estación y actualización de disponibilidad.</p></div><button data-time="0">Reproducir</button><div class="scenario"><button data-time="0">Mapa de red</button><button data-time="6">Detalle de estación</button><button data-time="12">Actualización en vivo</button></div></article>
+    <article class="story"><div><h2>HU-02 · Desbloqueo</h2><p>Inicio de viaje, abono caducado y bloqueo de segundo viaje.</p></div><button data-time="18">Reproducir</button><div class="scenario"><button data-time="18">Inicio</button><button data-time="24">Abono caducado</button><button data-time="30">Viaje activo</button></div></article>
+    <article class="story"><div><h2>HU-03 · Devolución y tarifa</h2><p>Devolución, tramo gratuito y cobro del exceso.</p></div><button data-time="36">Reproducir</button><div class="scenario"><button data-time="36">Devolución</button><button data-time="42">≤ 30 minutos</button><button data-time="48">Más de 30 minutos</button></div></article>
+    <article class="story"><div><h2>HU-04 · Historial</h2><p>Listado cronológico, filtro mensual y tramo gratuito.</p></div><button data-time="54">Reproducir</button><div class="scenario"><button data-time="54">Historial</button><button data-time="60">Filtro</button><button data-time="66">Viaje gratuito</button></div></article>
+    <article class="story"><div><h2>HU-05 · Averías</h2><p>Reporte, inhabilitación preventiva y aviso al taller.</p></div><button data-time="72">Reproducir</button><div class="scenario"><button data-time="72">Reportar</button><button data-time="78">Inhabilitar</button><button data-time="84">Avisar al taller</button></div></article>
+    <article class="story"><div><h2>HU-06 · Taller</h2><p>Parte original, intervención técnica y reactivación.</p></div><button data-time="90">Reproducir</button><div class="scenario"><button data-time="90">Ver parte</button><button data-time="96">Reparar</button><button data-time="102">Reactivar</button></div></article>
+    <article class="story"><div><h2>HU-07 · Balanceo</h2><p>Alertas críticas, severidad y movimiento de bicicletas.</p></div><button data-time="108">Reproducir</button><div class="scenario"><button data-time="108">Alertas</button><button data-time="114">Severidad</button><button data-time="120">Mover bicicletas</button></div></article>
+    <article class="story"><div><h2>HU-08 · Analítica</h2><p>Gráficos, CSV, rango sin datos y permisos.</p></div><button data-time="126">Reproducir</button><div class="scenario"><button data-time="126">Gráficos</button><button data-time="132">CSV</button><button data-time="138">Límite y permisos</button></div></article>
+  </section>
+  <footer>La demo se ha preparado como evidencia audiovisual de la entrega. Los datos y usuarios de prueba se describen en el README del proyecto.</footer>
+</main>
+<script>
+  const video = document.querySelector('#demo');
+  document.querySelectorAll('[data-time]').forEach((button) => {
+    button.addEventListener('click', () => {
+      // La portada dura seis segundos; cada escena posterior dura lo mismo.
+      video.currentTime = 6 + Number(button.dataset.time);
+      video.play();
+      video.focus();
+    });
+  });
+</script>
+</body>
+</html>
