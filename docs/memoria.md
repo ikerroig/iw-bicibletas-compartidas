@@ -2,7 +2,7 @@
 
 **Asignatura:** Ingeniería Web · Práctica de desarrollo dirigido por especificaciones (SSD)  
 **Equipo:** Iker Roig, Alex Morell, Josep Peiró y Alberto Copa  
-**Versión examinada:** `main` local, base `e1cd83d` más tareas de cierre documental y T021 de HU-08 · 21 de noviembre de 2026  
+**Versión examinada:** `main` local, cierre funcional `26931de` más documentación y entregables finales · 21 de noviembre de 2026  
 **Repositorio GitHub:** <https://github.com/ikerroig/iw-bicibletas-compartidas>
 
 ## Portada y resumen
@@ -129,8 +129,8 @@ Los casos reproducibles por historia están en los [quickstarts](../specs/spec-0
 
 ### Acta de recorridos integrados
 
-Los dos recorridos se ejecutaron el **21-11-2026** sobre `main`, base
-`e1cd83d` más T021 de HU-08, con PostgreSQL en `127.0.0.1:5433`, Redis en
+Los dos recorridos se ejecutaron el **21-11-2026** sobre `main`, incluida
+T021 de HU-08 (commit `26931de`), con PostgreSQL en `127.0.0.1:5433`, Redis en
 `6379`, API en `:8080` y frontend en `:5173`. El resultado observado está
 conservado en la [grabación MP4](../DemoSSD_GXX/demo-si16.mp4).
 
@@ -209,7 +209,7 @@ enunciado con una muestra trazable por historia:
 | HU-05, FR-003/004 | Averiada no alquilable ni disponible | `go test ./tests -run 'TestAveria'` | servicio, contadores, quickstart y matriz | T004/T013/T018 · `be76c22` | Tres tests pasan; demo muestra reporte y panel | Josep | Alberto | Cerrado |
 | HU-06, FR-005/007 | Separar reparación de ubicación | `go test ./tests -run 'TestTaller'` | servicio de taller, pantalla y quickstart | T006/T009/T017 · `1fd6ebc` | Tres tests pasan; demo confirma parte y anclaje | Josep | Alberto | Cerrado |
 | HU-07, FR-005/007 | Orden de urgencia y recálculo post-commit | `go test -p 1 ./...`; escenario S7 | balanceo, worker, migraciones y matriz | T007/T011/T019 · `746366e` | T7a–T7h pasan; demo valida error y traslado | Alberto | Josep | Cerrado |
-| HU-08, FR-003/005/006 | Filtro común y JWT compartido para CSV | `npm test -- --run src/pages/analitica/index.test.tsx`; demo | cliente CSV, test, T021 y matriz | T013/T017/T021 · revisión `832719a` + cierre local | 6/6 tests; gráficos, 403, CSV y rango inválido observados | Alberto | Josep | Cerrado |
+| HU-08, FR-003/005/006 | Filtro común y JWT compartido para CSV | `npm test -- --run src/pages/analitica/index.test.tsx`; demo | cliente CSV, test, T021 y matriz | T013/T017/T021 · revisión `832719a` · cierre `26931de` | 6/6 tests; gráficos, 403, CSV y rango inválido observados | Alberto | Josep | Cerrado |
 
 ## 8. Conclusiones y trabajo futuro
 
