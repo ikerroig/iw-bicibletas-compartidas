@@ -43,8 +43,10 @@
   persona, y qué ve un operario o un gestor cuando entra en «Mis Viajes»?
   — A: Nadie puede ver historial ajeno: el propietario se resuelve siempre
   desde la sesión (JWT), nunca por parámetro de entrada. Cualquier rol
-  autenticado (usuario, operario, gestor) consulta su propio historial
-  como usuario del servicio; sin sesión → 401.
+  autenticado (usuario, operario, gestor) puede consultar su propio historial
+  en la API (200 con lista vacía para roles sin viajes, pues solo el rol `usuario`
+  puede realizar trayectos según HU-02/HU-03); el menú de navegación de la UI
+  ofrece el acceso «Mis viajes» exclusivamente al rol `usuario`. Sin sesión → 401.
 - Q: ¿Debe aparecer el viaje activo (en curso) en el historial «Mis
   Viajes» mientras el usuario sigue andando? — A: No; solo viajes
   finalizados. El viaje en curso no se lista ni computa en el sumatorio;
@@ -88,10 +90,11 @@ la etiqueta en los viajes gratuitos.
    **When** se muestra en el historial, **Then** figura claramente identificado
    con el concepto "Tramo gratuito (0,00 €)".
 4. **Given** un usuario con sesión iniciada de cualquier rol (usuario,
-   operario o gestor), **When** consulta su historial, **Then** ve
-   únicamente sus propios viajes finalizados, resueltos desde la sesión y
-   nunca desde un parámetro de entrada; sin sesión la API responde 401 y
-   no se muestra ningún dato.
+   operario o gestor), **When** consulta su historial en la API, **Then** ve
+   únicamente sus propios viajes finalizados (lista vacía para roles sin viajes
+   propios), resueltos desde la sesión y nunca desde un parámetro de entrada;
+   en la interfaz web el acceso al historial se restringe en el menú al rol `usuario`,
+   y sin sesión la API responde 401 sin mostrar ningún dato.
 5. **Given** un usuario con un viaje en curso, **When** abre «Mis Viajes»,
    **Then** el viaje activo no aparece en la lista ni computa en el
    sumatorio hasta que HU-03 lo cierra como finalizado.
@@ -143,7 +146,8 @@ la etiqueta en los viajes gratuitos.
   propietario MUST resolverse desde la sesión (JWT) y nunca desde un
   parámetro de entrada; sin sesión la API MUST responder 401. Cualquier
   rol autenticado (usuario, operario, gestor) consulta su propio
-  historial.
+  historial (la API responde 200 sin efectos secundarios, devolviendo lista vacía
+  si el rol no puede realizar viajes; la UI reserva el menú al rol `usuario`).
 - **FR-006**: El sistema MUST ofrecer para cada viaje su estación de origen y
   destino como consulta de la "ruta" del viaje, sin seguimiento de trayectoria
   GPS.

@@ -30,18 +30,24 @@ justificación y HU afectada.
   Viajes»?
 - **Respuesta**: **Solo historial propio**. El propietario se resuelve
   siempre desde la sesión (JWT), nunca por parámetro de entrada; cualquier
-  rol autenticado (usuario, operario, gestor) consulta su propio
-  historial; sin sesión → 401.
-- **Justificación**: FR-005 ya prohibía ver viajes ajenos pero no fijaba
-  *cómo* se garantiza ni qué reciben los otros roles. Con JWT como única
-  fuente no existe forma de pedir historial ajeno (mínimo privilegio);
-  operarios y gestores también pueden ser usuarios del servicio y deben
-  ver *su propio* viaje — la HU-04 es una consulta sin efectos, a
-  diferencia de la devolución (HU-03), que sí se restringe a rol
-  `usuario`. Un endpoint de lectura de historiales ajenos añadiría alcance
-  no pedido por el enunciado.
+  rol autenticado (usuario, operario, gestor) puede invocar la API para consultar
+  su propio historial (recibiendo una lista vacía si su rol no tiene viajes registrados);
+  sin sesión → 401. En la interfaz de usuario, el menú de navegación «Mis viajes» se ofrece
+  únicamente al rol `usuario` (`Layout.tsx`), dado que es el único rol con capacidad
+  para alquilar y devolver bicicletas en el sistema (HU-02 y HU-03).
+- **Justificación**: FR-005 prohíbe ver viajes ajenos. Con JWT como única
+  fuente en la API no existe forma de pedir historial ajeno (mínimo privilegio).
+  A nivel de backend, la consulta de historial (`GET /viajes`) es una lectura
+  idempotente sin efectos secundarios ni exposición de datos ajenos, por lo que
+  no existe motivo para responder con un 403: cualquier rol autenticado recibe
+  un 200 con sus propios viajes. Dado que las historias HU-02 (desbloqueo) y
+  HU-03 (devolución) restringen la creación de viajes al rol `usuario`, un operario
+  o gestor no acumula viajes en el sistema y su consulta devuelve siempre una
+  lista vacía (como verifica `TestHistorialT4kRoles`). Por coherencia de experiencia
+  de usuario, la navegación web (`Layout.tsx`) reserva el enlace «Mis viajes» al
+  rol `usuario`, evitando accesos sin contenido útil para el resto de perfiles.
 - **HU afectada**: HU-04 (FR-005, AC4); refuerzo del aislamiento
-  compartido con HU-03.
+  compartido con HU-02 y HU-03.
 
 #### C2 — Viaje activo en el historial · estado · HU-04
 

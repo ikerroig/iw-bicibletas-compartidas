@@ -1,6 +1,6 @@
 # Informe inicial de analyze — spec-004 (HU-04)
 
-**Comando**: `/speckit.analyze` (§5.3 paso 2, primera pasada) · **Spec Kit**: 1.1.3
+**Comando**: `/speckit.analyze` (§5.2, primera pasada) · **Spec Kit**: 1.1.3
 **Fecha**: 2026-11-19 · **Responsable**: Alex Morell
 **Funcionalidad activa**: `specs/spec-004` · **Rama**: `spec-004`
 **Estado de partida**: clarify 2026-11-19 hecho (`2f22e79`: D6–D8, AC4–AC6,
@@ -15,7 +15,7 @@ FR-001 orden, FR-005 JWT/401); implementación T001–T015 completa y en verde.
 | A3 | Coverage gap | MEDIA | quickstart § T4 (filas T4a–T4j) | Los escenarios se escribieron antes del clarify 2026-11-19: sin fila para AC4 (roles); AC5 y AC6 implícitas en T4a/T4e sin mapear | Añadir fila T4k (AC4) y mapear AC5→T4a, AC6→T4a+T4e en la tabla SC |
 | A4 | Inconsistencia | BAJA | `checklists/requirements.md` | Sin tabla *Acceptance Coverage* (spec-003 sí la tiene desde su T027); AC4–AC6 sin verificación rastreable en el checklist | Crear la tabla con FR/SC/AC → test que lo demuestra |
 | A5 | Inconsistencia | BAJA | plan.md (Unknowns, línea 33) | Solo menciona «las 5 preguntas de `/speckit.clarify`» (2026-10-28); no la sesión 2026-11-19 (D6–D8 del refine) | Añadir la nota de la segunda sesión y remitir a `refinamiento/clarify.md` |
-| A6 | Terminología | BAJA | clarify.md vs research.md | Colisión de prefijo «D»: clarify **D6–D8** (permisos / viaje activo / vista inicial) ≠ research **D6–D8** (validación de entrada / offsets / …) usados por tasks T004 | Renombrar las decisiones de `clarify.md` a **C1–C13** (o explicitar el prefijo) |
+| A6 | Terminología | BAJA | clarify.md vs research.md | Colisión de prefijo «D»: clarify **D6–D8** (permisos / viaje activo / vista inicial) ≠ research **D6–D8** (validación de entrada / offsets / …) usados por tasks T004 | Renombrar las decisiones de `clarify.md` a **C1–C8** (o explicitar el prefijo) |
 
 **Hallazgos nuevos en esta pasada**: 6 (0 CRITICAL, 1 HIGH, 2 MEDIUM, 3 LOW).
 
@@ -54,7 +54,7 @@ Tasks T001–T015 todos trazan a un requisito; sin tareas huérfanas.
 2. Correcciones: Phase 5 en `tasks.md` (T016 test AC4 roles, T017 año en
    T4j, T018 quickstart, T019 checklist, T020 plan, T021 numeración) +
    reaplicar `/speckit.analyze` → `analyze-final.md`.
-3. `/speckit-implement` sobre las tuebas nuevas → `converge-1` → correcciones →
+3. `/speckit-implement` sobre las pruebas nuevas → `converge-1` → correcciones →
    `converge-2`.
 
 *Primera pasada; este informe se conserva sin modificar. Sin hooks de

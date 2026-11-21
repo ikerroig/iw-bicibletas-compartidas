@@ -1,6 +1,6 @@
 # Informe final de analyze — spec-004 (HU-04)
 
-**Comando**: `/speckit.analyze` (segunda pasada, §5.3 paso 5) · **Spec Kit**: 1.1.3
+**Comando**: `/speckit.analyze` (segunda pasada, §5.2) · **Spec Kit**: 1.1.3
 **Fecha**: 2026-11-19 · **Responsable**: Alex Morell
 **Funcionalidad activa**: `specs/spec-004` · **Rama**: `spec-004`
 **Estado de partida**: correcciones A1–A6 aplicadas o con tarea asignada

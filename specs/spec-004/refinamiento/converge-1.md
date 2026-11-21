@@ -1,6 +1,6 @@
 # converge-1 — spec-004 (HU-04)
 
-**Comando**: `/speckit.converge` (1ª pasada, §5.3 paso 6) · **Spec Kit**: 1.1.3
+**Comando**: `/speckit.converge` (1ª pasada, §5.3 paso 2) · **Spec Kit**: 1.1.3
 **Fecha**: 2026-11-19 · **Responsable**: Alex Morell
 **Funcionalidad activa**: `specs/spec-004` · **Rama**: `spec-004`
 **Estado de partida**: 21/21 tareas `[X]`; informe

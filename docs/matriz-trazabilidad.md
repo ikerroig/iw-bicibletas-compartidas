@@ -100,7 +100,7 @@ T028–T031; evidencia en `specs/spec-003/refinamiento/converge-2.md`).
 
 ## HU-04 — Historial de viajes y desglose mensual (spec-004) · Alex Morell · Revisor: Iker Roig
 
-Decisiones: `specs/spec-004/research.md` (D1–D8) + clarify 2026-11-19 (C1–C3) · Tareas: `specs/spec-004/tasks.md` (T001–T021).
+Decisiones: `specs/spec-004/research.md` (D1–D8) + clarify 2026-11-19 (C1–C3) · Tareas: `specs/spec-004/tasks.md` (T001–T025).
 
 | Criterio | Decisión del plan | Tareas | Prueba prevista | Estado |
 |----------|-------------------|--------|-----------------|--------|
@@ -116,11 +116,11 @@ Decisiones: `specs/spec-004/research.md` (D1–D8) + clarify 2026-11-19 (C1–C3
 | SC-002 — filtros exactos y sumatorio = suma del periodo | D1, D2 | T005 | Go: T4b/T4e/T4f · S4 | ✅ |
 | SC-003 — viajes sin coste muestran la etiqueta | D3 | T004 | Go: T4c · S4 | ✅ |
 | SC-004 — < 3 s con un año completo de uso | D1 (dos consultas indexadas, sin N+1) | **T017** | Go: `TestHistorialT4jLatencia` con fixture de ≥ 365 viajes (0,5 s medidos) | ✅ |
-| Regresión y UX del refinamiento (aviso de filtro incompleto, suites) | Clarify C3 (primera carga sin filtro) | T012, T019 | Vitest: «filtro a medias…» + `npm test` (82/82) tras el merge de `main` · checklist con *Acceptance Coverage* | ✅ |
+| Regresión, UX y convergencia (contrato 500, aserciones error.codigo, aviso de filtro incompleto, suites) | Clarify C3 + Converge F1–F4 | T012, T019, **T022–T025** | Vitest: «filtro a medias…» + `npm test` (82/82) tras el merge de `main` · Go: T4d/T4i con `error.codigo` · checklist y contrato actualizados | ✅ |
 
 **Cobertura HU-04**: 8 FR + 4 SC = 12 criterios; **12/12 con tarea y
-prueba prevista, 12 ✅** (refinamiento 2026-11-19: AC4–AC6 cerrados con
-T016–T019; evidencia en `specs/spec-004/refinamiento/converge-2.md`).
+prueba prevista, 12 ✅** (refinamiento y convergencia 2026-11-19: AC4–AC6 y F1–F4 cerrados con
+T016–T025; evidencia en `specs/spec-004/refinamiento/converge-2.md`).
 
 ## HU-05 — Notificación de averías e inhabilitación (spec-005) · Josep Peiró · Revisor: Alberto Copa
 
