@@ -1,4 +1,4 @@
-# DemoSSD_GXX
+# DemoSSD_G13
 
 Esta carpeta contiene la demostración audiovisual de SI-16 exigida en el enunciado.
 

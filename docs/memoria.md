@@ -7,7 +7,7 @@
 
 ## Portada y resumen
 
-SI-16 es una aplicación web para usuarios y personal de un servicio público de bicicletas compartidas en València. Permite consultar la disponibilidad de estaciones, alquilar y devolver bicicletas, revisar viajes, notificar y resolver averías, equilibrar la flota y analizar su uso. El resultado es un monorepositorio con frontend SolidJS, API Go, PostgreSQL para los datos persistentes y Redis para el estado en vivo, desarrollado en ocho historias mediante especificaciones, tareas, pruebas y revisiones cruzadas. La [demo audiovisual](../DemoSSD_GXX/index.html) muestra la aplicación real conectada al backend y registra recorridos, validaciones, permisos y cambios de estado.
+SI-16 es una aplicación web para usuarios y personal de un servicio público de bicicletas compartidas en València. Permite consultar la disponibilidad de estaciones, alquilar y devolver bicicletas, revisar viajes, notificar y resolver averías, equilibrar la flota y analizar su uso. El resultado es un monorepositorio con frontend SolidJS, API Go, PostgreSQL para los datos persistentes y Redis para el estado en vivo, desarrollado en ocho historias mediante especificaciones, tareas, pruebas y revisiones cruzadas. La [demo audiovisual](../DemoSSD_G13/index.html) muestra la aplicación real conectada al backend y registra recorridos, validaciones, permisos y cambios de estado.
 
 ## 1. Introducción
 
@@ -112,7 +112,7 @@ gráficos permanecen visibles y la exportación ya no devuelve `401`.
 
 ### Estrategia y resultados actuales
 
-Se combinan pruebas unitarias de reglas puras, pruebas de integración Go con PostgreSQL y Redis de test, comprobaciones de contrato OpenAPI, pruebas de componentes SolidJS con Vitest/Testing Library/MSW y recorridos manuales recogidos en los `quickstart.md`. La captura final usa [`record_demo.mjs`](../DemoSSD_GXX/record_demo.mjs) para conducir Edge mediante CDP y registrar la interfaz real; es un recorrido reproducible de demostración, aunque no sustituye una suite E2E con aserciones.
+Se combinan pruebas unitarias de reglas puras, pruebas de integración Go con PostgreSQL y Redis de test, comprobaciones de contrato OpenAPI, pruebas de componentes SolidJS con Vitest/Testing Library/MSW y recorridos manuales recogidos en los `quickstart.md`. La captura final usa [`record_demo.mjs`](../DemoSSD_G13/record_demo.mjs) para conducir Edge mediante CDP y registrar la interfaz real; es un recorrido reproducible de demostración, aunque no sustituye una suite E2E con aserciones.
 
 En el `main` local examinado, el **21-11-2026**, con PostgreSQL de pruebas publicado en `127.0.0.1:5433` y Redis en `6379`:
 
@@ -132,7 +132,7 @@ Los casos reproducibles por historia están en los [quickstarts](../specs/spec-0
 Los dos recorridos se ejecutaron el **21-11-2026** sobre `main`, incluida
 T021 de HU-08 (commit `26931de`), con PostgreSQL en `127.0.0.1:5433`, Redis en
 `6379`, API en `:8080` y frontend en `:5173`. El resultado observado está
-conservado en la [grabación MP4](../DemoSSD_GXX/demo-si16.mp4).
+conservado en la [grabación MP4](../DemoSSD_G13/demo-si16.mp4).
 
 | Recorrido | Precondiciones y datos | Pasos | Resultado esperado | Resultado observado |
 |---|---|---|---|---|
@@ -188,7 +188,7 @@ Las PR iniciales de HU-01 a HU-06 figuran en [agrupamiento.md](./agrupamiento.md
 | Historias con `spec.md`, `plan.md` y `tasks.md` | 8/8 | Carpetas [`spec-001` a `spec-008`](../specs/) |
 | Historias con informes de refinamiento separados | 6/8; HU-05 y HU-06 documentan ajustes en sus archivos principales | Carpetas `refinamiento/` y [quickstarts](../specs/) |
 | Historias desarrolladas en la matriz global | **8/8**, con FR/SC, tarea, prueba prevista y estado | [Matriz](./matriz-trazabilidad.md) |
-| Recorridos integrados ejecutados | **2/2**, uno satisfactorio y otro con estado/error, entre responsables distintos | Sección 5 y [demo funcional](../DemoSSD_GXX/index.html) |
+| Recorridos integrados ejecutados | **2/2**, uno satisfactorio y otro con estado/error, entre responsables distintos | Sección 5 y [demo funcional](../DemoSSD_G13/index.html) |
 | Criterios HU-01 con tarea y prueba prevista | 21/21; incluidos los medidos con «Fast 4G» | [Verificación final](../specs/spec-001/refinamiento/verificacion-final.md) |
 | Suites de la integración local | Backend completo, `go vet`, 98/98 pruebas frontend y build correctos | Ejecución del 21-11-2026, sección 5 |
 
@@ -220,15 +220,15 @@ recorridos integrados y conserva una demo funcional de la interfaz. La medida
 de HU-01 SC-004 con «Fast 4G» está en la evidencia S1e y la corrección final de
 autenticación del CSV queda en T021. Como trabajo futuro se puede convertir el
 recorrido de captura en una suite E2E con aserciones y automatizar el
-despliegue. Antes de subir los ZIP solo debe sustituirse el marcador `GXX` por
-el número real del grupo si la plataforma no acepta el nombre provisional.
+despliegue. Los entregables se identifican con el número real del grupo:
+`ProyectoSSD_G13.zip` y `DemoSSD_G13.zip`.
 
 ## 9. Anexos
 
 - [Repositorio GitHub](https://github.com/ikerroig/iw-bicibletas-compartidas), [reparto del equipo](./agrupamiento.md) y [matriz global](./matriz-trazabilidad.md).
 - [Historias originales](../historia.md), [constitución](../.specify/memory/constitution.md), [plan y modelo comunes](../specs/spec-001/plan.md), [OpenAPI](../specs/spec-001/contracts/openapi.yaml) y [migraciones](../backend/migrations/).
 - Especificaciones completas: [HU-01](../specs/spec-001/), [HU-02](../specs/spec-002/), [HU-03](../specs/spec-003/), [HU-04](../specs/spec-004/), [HU-05](../specs/spec-005/), [HU-06](../specs/spec-006/), [HU-07](../specs/spec-007/) y [HU-08](../specs/spec-008/).
-- [Vídeo, reproductor e instrucciones de la demo](../DemoSSD_GXX/README.md).
+- [Vídeo, reproductor e instrucciones de la demo](../DemoSSD_G13/README.md).
 
 ### Glosario
 
