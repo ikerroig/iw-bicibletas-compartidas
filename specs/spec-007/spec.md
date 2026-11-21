@@ -8,11 +8,21 @@
 
 **Input**: User description: "HU-07 — Monitorización de desequilibrios y alertas de balanceo de flota (historia.md, SI-16)."
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: When a confirmed transfer would push the destination station above 100% of its capacity, should the system reject it or accept it anyway? → A: Reject the confirmation; destination must have room for all incoming units
+- Q: Should access to the logistics panel be restricted so that only the operario role can view and confirm transfers, with other roles denied? → A: Yes, enforce operario-only access; other roles get denied (403/error view)
+- Q: When two unbalanced stations are equally critical (e.g., both at 0% occupancy), what tie-break rule should order them in the panel? → A: Tie-break by `fecha_generacion` ASC (oldest alert first) *(enmienda 2026-11-20, H-001: sustituye a «station ID»; ver refine/clarify.md y hallazgos.md)*
+- Q: When no stations are unbalanced, what should the logistics panel display? → A: Empty-state message (e.g., "Sin estaciones descompensadas")
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Panel de alertas de balanceo para el operario de calle (Priority: P1)
 
-Un operario de transporte y calle necesita planificar la ruta de la furgoneta
+Un operario de logística («operario de transporte y calle» en la narrativa de
+la HU-07) necesita planificar la ruta de la furgoneta
 para redistribuir bicicletas. El sistema vigila la ocupación de cada estación
 y, cuando una cae por debajo del 10 % o supera el 90 % de su capacidad,
 genera automáticamente una alerta de prioridad alta. El operario abre su panel
@@ -41,6 +51,9 @@ ambas estaciones.
 3. **Given** que un operario realiza la carga o descarga de un lote de
    bicicletas, **When** confirma la acción en su dispositivo, **Then** la
    disponibilidad de ambas estaciones se recalcula de forma inmediata.
+4. **Given** que ninguna estación está descompensada, **When** el operario
+   abre su panel de logística, **Then** ve un mensaje de estado vacío (p. ej.
+   "Sin estaciones descompensadas") y no una tabla con filas.
 
 ### Edge Cases
 
@@ -58,6 +71,8 @@ ambas estaciones.
   corrigiendo los contadores.
 - Un lote confirmado con más unidades de las disponibles en origen: se valida
   y se rechaza la confirmación inconsistente sin alterar estaciones.
+- Un lote que excedería la capacidad del destino: se valida igualmente y se
+  rechaza la confirmación completa sin alterar estaciones.
 - Estaciones que alternan rápidamente entre umbrales: el panel siempre refleja
   el estado actual (alertas abiertas o resueltas) sin duplicados.
 
@@ -77,16 +92,24 @@ ambas estaciones.
   ocupación de la estación vuelve a situarse dentro del rango normal.
 - **FR-005**: El sistema MUST ofrecer al operario un panel de logística con la
   lista de estaciones descompensadas ordenada por urgencia de intervención
-  (primero los extremos más críticos).
+  (primero los extremos más críticos); en caso de empate, ordenar por
+  `fecha_generacion` ascendente (alerta más antigua primero).
 - **FR-006**: El sistema MUST permitir al operario confirmar la carga o
   descarga de un lote de bicicletas indicando estación de origen, estación de
-  destino y número de unidades.
+  destino y número de unidades, validando que el origen dispone de las
+  unidades y que el destino tiene capacidad para recibirlas; si alguna
+  validación falla, se rechaza la confirmación sin alterar estaciones.
 - **FR-007**: Tras la confirmación de un traslado, el sistema MUST recalcular
   y actualizar la disponibilidad de ambas estaciones de forma inmediata en la
   vista del operario y con un retardo máximo de 30 segundos en el estado
   global (consistente con HU-01).
 - **FR-008**: El sistema MUST excluir del cómputo de ocupación las bicicletas
   averiadas (consistente con HU-05).
+- **FR-009**: El sistema MUST restringir el acceso al panel de logística y a
+  la confirmación de traslados al rol de operario de logística
+  (`operario_logistica`); cualquier otro rol (y las peticiones sin
+  autenticar) recibe acceso denegado, según la forma definida en
+  `contracts/balanceo.md`.
 
 ### Key Entities
 
@@ -98,11 +121,10 @@ ambas estaciones.
 - **Operación de traslado**: Confirmación del operario; estación de origen,
   estación de destino, número de unidades movidas y fecha.
   *(Definición operativa: el traslado se ejecuta y valida en el acto —
-  FR-006 — con respuestas en `contracts/balanceo.md`. Su persistencia como
-  tabla de auditoría `traslados_balanceo` está PENDIENTE DE ACUERDO DEL
-  EQUIPO (const. III); ver data-model.md §"Pendiente" y tasks.md Phase 5
-  (tareas T021/T022, bloqueadas). El MVP no depende de ella y ese acuerdo
-  sigue sin ser otorgado.)*
+  FR-006 — con respuestas en `contracts/balanceo.md`. El equipo aprobó el
+  2026-11-20 persistir cada operación confirmada en `traslados_balanceo`,
+  incluyendo el operario que la ejecutó; el registro se realiza en la misma
+  transacción que el movimiento.)*
 
 ## Success Criteria *(mandatory)*
 
@@ -140,8 +162,10 @@ ambas estaciones.
   estación; las averiadas no cuentan (HU-05).
 - Umbrales estrictos: alerta solo con ocupación <10 % o >90 % exactamente, tal
   como indica la HU-07.
-- El panel de logística es una vista exclusiva del operario de transporte y
-  calle (rol identificado); la gestión de reparaciones pertenece a HU-06.
+- El panel de logística es una vista exclusiva del operario de logística (rol
+  `operario_logistica`; sinónimos de la narrativa: «operario de transporte y
+  calle», «operario de calle»), con acceso denegado a otros roles según
+  FR-009; la gestión de reparaciones pertenece a HU-06.
 - La prioridad de las alertas es alta por definición de la HU; el orden por
   urgencia sitúa primero los extremos más alejados del rango normal.
 - Los detalles de implementación (pila tecnológica, esquema de datos) se rigen

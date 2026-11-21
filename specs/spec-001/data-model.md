@@ -263,6 +263,33 @@ CREATE INDEX ix_alertas_abiertas ON alertas_balanceo(fecha_generacion DESC) WHER
 - **Umbrales estrictos** (HU-07): `vacia_menos_10` si ocupación `< 10 %`; `llena_mas_90` si `> 90 %`. Exactamente 10,00 % y 90,00 % **no** alertan. La ocupación solo se evalúa en estaciones `operativa`.
 - **Creación/resolución** (R10): tras cada mutación de estación y en el barrido de 60 s: si se cruza un umbral y no existe alerta abierta de ese `(estacion_id, tipo_alerta)` → INSERT (el índice unique garantiza la unicidad); si la ocupación vuelve al rango `[10, 90]` → `resuelta = true` sobre la alerta abierta correspondiente.
 
+## 8. Tabla `traslados_balanceo` (HU-07; migración 0004 aprobada por el equipo)
+
+Registra cada traslado confirmado por un operario de logística. El INSERT se hace en la misma transacción que el movimiento de anclajes; traslados rechazados no generan auditoría.
+
+| Campo | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PRIMARY KEY |
+| `estacion_origen_id` | BIGINT | NOT NULL, FK → estaciones(id) |
+| `estacion_destino_id` | BIGINT | NOT NULL, FK → estaciones(id), distinto del origen |
+| `unidades` | INTEGER | NOT NULL, CHECK > 0 |
+| `fecha` | TIMESTAMPTZ | NOT NULL DEFAULT now() |
+| `operario_id` | BIGINT | NOT NULL, FK → usuarios(id) |
+
+```sql
+CREATE TABLE traslados_balanceo (
+  id                  BIGSERIAL PRIMARY KEY,
+  estacion_origen_id  BIGINT NOT NULL REFERENCES estaciones(id),
+  estacion_destino_id BIGINT NOT NULL REFERENCES estaciones(id),
+  unidades            INTEGER NOT NULL CHECK (unidades > 0),
+  fecha               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  operario_id         BIGINT NOT NULL REFERENCES usuarios(id),
+  CHECK (estacion_origen_id <> estacion_destino_id)
+);
+```
+
+La migración 0005 añade `ix_alertas_balanceo_urgencia`, índice parcial de expresión sobre el score del `CASE` y `fecha_generacion ASC`, filtrado por alertas abiertas; no cambia el modelo lógico ni el contrato API.
+
 ## Modelo derivado: disponibilidad y ocupación (fuente única, R9)
 
 Definiciones usadas por el backend, Redis, HU-01, HU-05, HU-06 y HU-07 de forma consistente:
@@ -298,5 +325,5 @@ Detalle completo del contrato en [contracts/redis-state.md](./contracts/redis-st
 
 ## Estrategia de migración y seeds
 
-- Migración inicial `0001_esquema_base.sql` (este documento, íntegro) aportada por spec-001; migraciones posteriores `000N_spec-00X_tema.sql` con ordinal acordado (R6, principio III).
+- Migración inicial `0001_esquema_base.sql` (este documento, íntegro) aportada por spec-001; migraciones posteriores `000N_spec-00X_tema.sql` con ordinal acordado (R6, principio III). Para HU-07 el equipo aprobó los ordinales 0004 (auditoría de traslados) y 0005 (índice de score) el 2026-11-20.
 - `backend/cmd/seed`: ~60 estaciones geolocalizadas realistas (incluida alguna `fuera_de_servicio` y algunas en extremos de ocupación), anclajes = `capacidad_total` por estación, flota de bicicletas (algunas `averiada`), usuarios de prueba de **todos los roles** y con/without abono vigente; útil para los escenarios S1–S8 del [quickstart.md](./quickstart.md).

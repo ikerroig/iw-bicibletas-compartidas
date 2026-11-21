@@ -2,7 +2,7 @@
 
 **Branch**: `spec-007` | **Date**: 2026-10-30 | **Plan**: [plan.md](./plan.md) | **Contrato**: [contracts/balanceo.md](./contracts/balanceo.md) | **Modelo**: [data-model.md](./data-model.md)
 
-Guía de validación **end-to-end** del balanceo de flota. Es una guía de ejecución; la implementación vive en `tasks.md` (Phase 2, pendiente de `/speckit.tasks`) y el código. Hereda el setup del [quickstart global](../spec-001/quickstart.md) y de [spec-004](../spec-004/quickstart.md) (infra, migrate, seed, server, frontend) sobre la base ya presente en esta rama.
+Guía de validación **end-to-end** del balanceo de flota. La implementación está descrita en `tasks.md` (Phases 2–5) y el código. Hereda el setup del [quickstart global](../spec-001/quickstart.md) y de [spec-004](../spec-004/quickstart.md) (infra, migrate, seed, server, frontend) sobre la base ya presente en esta rama.
 
 ## 0. Prerrequisitos
 
@@ -37,10 +37,10 @@ npm test                      # Vitest: página de balanceo
 | T7a | **Umbrales estrictos (gate T5, constitución I)** | Ocupación 9,99 % → alerta `vacia_menos_10`; **10,00 % → sin alerta**; **90,00 % → sin alerta**; 90,01 % → `llena_mas_90` |
 | T7b | Unicidad y resolución (FR-003/FR-004) | Evaluar dos veces la misma estación → **1 sola** alerta abierta; volver a `[10, 90]` → `resuelta = true` y fuera del panel; re-cruzar → fila **nueva** abierta; 0 duplicados por (estación, umbral) |
 | T7c | Exclusiones (FR-008 + caso límite) | Estación `fuera_de_servicio` → sin alertas; solo bicis `averiada` ancladas → cuenta como ocupación 0 (genera `vacia_menos_10`); bici `disponible` sin anclaje → no cuenta en ninguna estación |
-| T7d | Panel (FR-005, SC-002) | `GET /balanceo/alertas` → solo abiertas, orden por urgencia (0 % antes que 9 %; 100 % antes que 91 %), `estacion_nombre` presente, `items: []` cuando la red está equilibrada |
+| T7d | Panel (FR-005, SC-002, T022) | `GET /balanceo/alertas` → solo abiertas, orden por urgencia (0 % antes que 9 %; 100 % antes que 91 %), empates por `fecha_generacion ASC`, `estacion_nombre` presente, `items: []` cuando la red está equilibrada; existe `ix_alertas_balanceo_urgencia` |
 | T7e | Roles (const. I) | Sin token → `401 NO_AUTENTICADO`; rol `usuario`/`gestor`/`operario_taller` → `403 ROL_NO_PERMITIDO` en **ambos** endpoints |
-| T7f | Traslado válido (FR-006/FR-007, SC-003) | `POST /balanceo/traslados` con lote factible → `200` con `origen`/`destino` **recalculados en la propia respuesta**; Redis `estacion:{id}:estado` de ambas escrito post-commit; umbrales evaluados inline (p. ej. destino que recibe el lote cruza > 90 % → alerta en la siguiente lectura del panel) |
-| T7g | Traslado inconsistente (caso límite) | `unidades > disponibles en origen` o `> anclajes libres en destino` o estación inexistente/fuera de servicio → `409 ESTACION_SIN_CAPACIDAD` **sin alterar nada** (recuentos idénticos antes/después); `unidades < 1`, origen = destino o JSON malformado → `422 ENTRADA_INVALIDA` |
+| T7f | Traslado válido (FR-006/FR-007, SC-003, T021) | `POST /balanceo/traslados` con lote factible → `200` con `origen`/`destino` **recalculados en la propia respuesta**; auditoría con origen, destino, unidades, `operario_id` y fecha registrada en la misma transacción; Redis `estacion:{id}:estado` de ambas escrito post-commit; umbrales evaluados inline |
+| T7g | Traslado inconsistente (caso límite) | `unidades > disponibles en origen` o `> anclajes libres en destino` o estación inexistente/fuera de servicio → `409 ESTACION_SIN_CAPACIDAD` **sin alterar nada**, incluida la auditoría (recuentos idénticos antes/después); `unidades < 1`, origen = destino o JSON malformado → `422 ENTRADA_INVALIDA` |
 | T7h | Latencia (SC-001) | (i) Barrido completo sobre el volumen de estaciones definido para el proyecto, cronometrado **< 5 s** (presupuesto verificable de SC-001); (ii) con el periodo de test inyectado, mutación de una estación fuera de rango (SQL) → alerta en `alertas_balanceo` con latencia **< periodo + 5 s**. La garantía de SC-001 (< 60 s = 55 s + barrido) depende de cumplir ese límite medido |
 
 > T7a/T7b cubren la regla crítica T5 del [quickstart global](../spec-001/quickstart.md) (alertas <10 % / >90 %): son **obligatorias antes de fusionar** (gate de calidad de la constitución).
@@ -71,6 +71,8 @@ Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/balanceo/trasla
 4. **Traslado rechazado** (caso límite): `unidades: 999` → `409 ESTACION_SIN_CAPACIDAD` y comprobar vía SQL que **nada cambió** en ambas estaciones; `origen == destino` y `unidades: 0` → `422 ENTRADA_INVALIDA`.
 5. **Roles** (const. I): login con `ana@si16.test` (rol usuario) → `403 ROL_NO_PERMITIDO` en ambos endpoints.
 6. **Estado global** (SC-003): `HGETALL estacion:4:estado` en redis-cli (estación de origen) refleja los nuevos contadores con `actualizado_en` del momento del traslado (≤ 30 s, constitución IV).
+7. **Auditoría (T021)**: consultar `SELECT estacion_origen_id, estacion_destino_id, unidades, operario_id, fecha FROM traslados_balanceo ORDER BY id DESC LIMIT 1;` y comprobar que la fila corresponde al traslado y al usuario autenticado.
+8. **Índice de urgencia (T022)**: comprobar en PostgreSQL que existe `ix_alertas_balanceo_urgencia`; el test T7d verifica también que el orden por score y antigüedad no cambia.
 
 ## 4. Criterios de aceptación de la HU-07 (SC del spec)
 

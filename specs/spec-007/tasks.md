@@ -6,17 +6,17 @@
 
 **Tests**: **INCLUIDOS (obligatorios)** — el gate de calidad de la constitución (Acuerdos de Colaboración) exige pruebas automatizadas de las reglas críticas que cubre esta spec (umbrales estrictos <10 % / >90 % = regla T5 del [quickstart global](../spec-001/quickstart.md), unicidad de alertas, rechazo del traslado inconsistente) antes de fusionar; T7a–T7h de [quickstart.md](./quickstart.md) las definen.
 
-**Organization**: La HU-07 tiene **una única user story** (US1, P1) que es también el MVP de esta spec. Tareas agrupadas en Setup → Foundational → US1 → Polish → **Bloqueadas**.
+**Organization**: La HU-07 tiene **una única user story** (US1, P1) que es también el MVP de esta spec. Tareas agrupadas en Setup → Foundational → US1 → Polish → **Migraciones aprobadas**.
 
 **Base de código**: la rama `spec-007` ya contiene `backend/` y `frontend/` tras los avances de spec-003/spec-004 (auth JWT con `RequireRole`, `cache.ActualizarEstadoEstacion`, `apierr`, `POST /devoluciones`, `GET /viajes`, páginas devolución/historial). **No recrear nada de eso.** La HU-07 añade solo: `services/balanceo`, `handlers/balanceo`, `workers/alertas`, `routes/spec_007_balanceo.go`, `pages/balanceo/`, `services/api/balanceo.ts` y el seed de estaciones en extremos. Si al ejecutar detectas que algo de la base falta, recrea la tarea y márcala.
 
-**Esquema compartido**: la HU-07 **no necesita migraciones** — usa `alertas_balanceo`, `estaciones`, `anclajes`, `bicicletas` y Redis `estacion:{id}:estado` tal como existen. Las únicas tareas que tocarían el modelo compartido (`traslados_balanceo`, índice de score) están en la **Phase 5: Bloqueadas** y NO se ejecutan sin acuerdo del equipo (const. III).
+**Esquema compartido**: el equipo aprobó los cambios de HU-07 el 2026-11-20 (const. III): T021 crea la auditoría de traslados en `0004_spec-007_traslados.sql` y T022 añade el índice de urgencia en `0005_spec-007_score.sql`. No se modifican las claves Redis.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (US1)
-- **[BLOCKED]**: No ejecutar hasta que el equipo apruebe el cambio de esquema compartido (Phase 5)
+- **[MIGRATION]**: Tarea de migración sobre el esquema compartido; ordinal aprobado por el equipo (Phase 5)
 - Include exact file paths in descriptions
 
 ---
@@ -78,16 +78,16 @@
 
 - [X] T018 [P] Gate de calidad constitución I + estática: re-ejecutar T7a/T7b (umbrales estrictos, unicidad, resolución) y T7g (traslado rechazado sin efectos) en `go test ./...`; `go vet ./...`, `gofmt -l` (solo cuentan avisos reales, no CRLF del working tree), `npm test` y `npm run build` (typecheck TS)
 - [X] T019 Ejecutar el escenario manual S7 y la validación SC-001…SC-004 de [quickstart.md](./quickstart.md) contra `localhost:5173` + API (login `logistica@si16.test`, panel ordenado, traslado 4→3, resolución automática, 409/422, roles 403, `HGETALL estacion:4:estado`); registrar resultado en la sección 5 de [quickstart.md](./quickstart.md)
-- [X] T020 [P] Revisar coherencia final spec ↔ código: barrido de FR-001…FR-008 y SC-001…SC-004 contra lo implementado (entrada de `/speckit.converge`), verificar que **no** se tocó `specs/spec-004/` ni código de otras specs, y actualizar los checkboxes de este `tasks.md`
+- [X] T020 [P] Revisar coherencia final spec ↔ código: barrido de FR-001…FR-009 y SC-001…SC-004 contra lo implementado (entrada de `/speckit.converge`), verificar que **no** se tocó `specs/spec-004/` ni código de otras specs, y actualizar los checkboxes de este `tasks.md`
 
 ---
 
-## Phase 5: Bloqueadas — pendientes de acuerdo del equipo (constitución III)
+## Phase 5: Extensión del esquema compartido aprobada por el equipo (constitución III)
 
-**⚠️ NO EJECUTAR** sin acuerdo previo del equipo: estas tareas crearían una migración nueva (`000N_spec-007_*.sql` con ordinal acordado, R6) sobre el **esquema PostgreSQL compartido** por las 8 specs. El MVP de la HU-07 está completo y validado sin ellas (Phase 3–4); se documentaron como `⚠ PENDIENTE DE ACUERDO DEL EQUIPO` en [data-model.md](./data-model.md).
+**Acuerdo del equipo (2026-11-20)**: revocar la decisión inicial de descarte y crear una tabla de auditoría y un índice parcial de expresión, usando los ordinales siguientes a las migraciones 0001–0003 existentes.
 
-- [ ] T021 [BLOCKED] [US1] *(requiere acuerdo de equipo)* Crear migración `backend/migrations/000N_spec-007_traslados.sql` con la tabla opcional de auditoría `traslados_balanceo` (FK estaciones origen/destino, `unidades`, `fecha`, `operario_id` FK usuarios) **solo si** el equipo aprueba la propuesta de data-model.md § "PENDIENTE": afectaría a `cmd/seed` y al INSERT dentro de `ConfirmarTraslado` (`backend/internal/services/balanceo/traslados.go`)
-- [ ] T022 [BLOCKED] *(requiere acuerdo de equipo)* Materializar el score de urgencia del panel (columna generada o índice expression sobre `alertas_balanceo`) en `backend/migrations/000N_spec-007_score.sql` **solo si** el equipo lo aprueba; ajustaría la consulta de orden de `backend/internal/handlers/balanceo/handler.go` — data-model.md § "PENDIENTE" punto 2
+- [X] T021 [MIGRATION] [US1] Crear `backend/migrations/0004_spec-007_traslados.sql` con `traslados_balanceo` (FK a estación origen/destino y operario, unidades positivas, fecha automática y estaciones distintas); insertar el registro dentro de la transacción en `backend/internal/services/balanceo/traslados.go`, pasando el `usuario_id` autenticado desde `backend/internal/handlers/balanceo/handler.go`. Verificar con una prueba de integración que los traslados exitosos quedan auditados y los rechazados no.
+- [X] T022 [MIGRATION] Materializar el orden de urgencia mediante un índice parcial de expresión `ix_alertas_balanceo_urgencia` en `backend/migrations/0005_spec-007_score.sql`, usando el mismo `CASE` y orden que `backend/internal/handlers/balanceo/handler.go`; verificar en integración que la migración crea el índice y que el orden existente se mantiene.
 
 ---
 
@@ -99,7 +99,7 @@
 - **Foundational (Phase 2)**: T003 y T004 en paralelo; **T003 bloquea el escenario manual S7** y la integración con datos reales
 - **User Story 1 (Phase 3)**: requiere Setup ✅; los tests (T005–T008) se escriben ANTES que la implementación; T013 depende de T012, T014 depende de T010
 - **Polish (Phase 4)**: depende de toda la US1
-- **Bloqueadas (Phase 5)**: sin dependencia de ejecución — **solo** de la aprobación del equipo; nunca bloquean el MVP
+- **Extensión aprobada (Phase 5)**: requiere el MVP de Phase 3–4 y aplica las migraciones secuenciales 0004 y 0005 aprobadas por el equipo.
 
 ### Within User Story 1
 
@@ -132,12 +132,12 @@ Frontend: T015 → T016 → T017
 4. Frontend T015–T017 → `npm test` en verde
 5. **STOP y VALIDAR**: escenario S7 del quickstart
 6. Polish T018–T020
-7. Phase 5 queda **aparcada** hasta el acuerdo del equipo (no forma parte del MVP)
+7. Phase 5 aplica T021/T022 con las migraciones 0004/0005 aprobadas por el equipo.
 
 ## Notes
 
 - [P] tasks = different files, no dependencies
 - Cada entrada en `routes/register.go`, `cmd/server/main.go`, `frontend/src/routes.tsx` y `frontend/src/index.tsx` es de **una línea/entrada** para que los merges con otras ramas sigan siendo triviales (const. V)
-- No migraciones, no claves Redis nuevas, no dependencias npm/go nuevas en las fases 1–4
+- Sin claves Redis nuevas ni dependencias npm/go nuevas; Phase 5 añade las migraciones de esquema aprobadas.
 - El worker cubre las mutaciones de otras specs (devoluciones ya presentes; desbloqueos/averías/taller futuros) **sin modificar su código** — la HU-07 es independiente (const. V)
 - Commits por fase (convención del repo): `docs: spec-007 …` / `feat: spec-007 …`
