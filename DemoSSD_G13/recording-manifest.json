@@ -1,0 +1,500 @@
+{
+  "fps": 4,
+  "width": 1280,
+  "height": 720,
+  "stories": [
+    {
+      "id": "hu-01-disponibilidad",
+      "spec": "HU-01",
+      "title": "Consultar la disponibilidad de la red",
+      "role": "Usuario registrado",
+      "summary": "Inicio de sesión, mapa, alternativa en lista, estados especiales y detalle de una estación.",
+      "frames": 1423,
+      "duration": 355.75,
+      "chapters": [
+        {
+          "title": "Credenciales incorrectas",
+          "t": 25.75
+        },
+        {
+          "title": "Acceso rechazado",
+          "t": 48
+        },
+        {
+          "title": "Inicio de sesión correcto",
+          "t": 72.5
+        },
+        {
+          "title": "Mapa de estaciones",
+          "t": 74.5
+        },
+        {
+          "title": "Cómo leer los marcadores",
+          "t": 107.5
+        },
+        {
+          "title": "Cobertura completa de la red",
+          "t": 137.75
+        },
+        {
+          "title": "Listado accesible",
+          "t": 167.25
+        },
+        {
+          "title": "Mapa y lista comparten datos",
+          "t": 200.25
+        },
+        {
+          "title": "Detalle de estación",
+          "t": 229.75
+        },
+        {
+          "title": "Estación sin bicicletas",
+          "t": 264.75
+        },
+        {
+          "title": "Estación fuera de servicio",
+          "t": 297
+        },
+        {
+          "title": "Actualización periódica",
+          "t": 327.25
+        }
+      ]
+    },
+    {
+      "id": "hu-02-desbloqueo",
+      "spec": "HU-02",
+      "title": "Desbloquear una bicicleta e iniciar el viaje",
+      "role": "Usuario con abono",
+      "summary": "Abono caducado, código incorrecto, desbloqueo correcto y prevención de viajes simultáneos.",
+      "frames": 1305,
+      "duration": 326.25,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: usuario con abono caducado",
+          "t": 25.75
+        },
+        {
+          "title": "Abono caducado",
+          "t": 31.5
+        },
+        {
+          "title": "La regla se valida antes del código",
+          "t": 61.75
+        },
+        {
+          "title": "Inicio de sesión: usuario sin abono anual",
+          "t": 91.25
+        },
+        {
+          "title": "Usuario sin abono",
+          "t": 97
+        },
+        {
+          "title": "Inicio de sesión: gestor sin permiso de alquiler",
+          "t": 129.25
+        },
+        {
+          "title": "Acceso por rol protegido",
+          "t": 135
+        },
+        {
+          "title": "Inicio de sesión: usuario con abono vigente",
+          "t": 167.25
+        },
+        {
+          "title": "Formulario habilitado",
+          "t": 173
+        },
+        {
+          "title": "Código inexistente",
+          "t": 201.75
+        },
+        {
+          "title": "Desbloqueo rechazado",
+          "t": 203.75
+        },
+        {
+          "title": "Desbloqueo correcto",
+          "t": 229.75
+        },
+        {
+          "title": "Viaje activo creado",
+          "t": 231.75
+        },
+        {
+          "title": "Un solo viaje simultáneo",
+          "t": 264.75
+        },
+        {
+          "title": "Disponibilidad recalculada",
+          "t": 295
+        }
+      ]
+    },
+    {
+      "id": "hu-03-devolucion",
+      "spec": "HU-03",
+      "title": "Devolver la bicicleta y calcular la tarifa",
+      "role": "Usuario con viaje activo",
+      "summary": "Rechazo de un anclaje inexistente, cierre atómico del viaje y coste del tiempo excedido.",
+      "frames": 1247,
+      "duration": 311.75,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: usuario sin viaje activo",
+          "t": 25.75
+        },
+        {
+          "title": "Sin viaje activo",
+          "t": 34.75
+        },
+        {
+          "title": "Inicio de sesión: propietaria del viaje activo",
+          "t": 67
+        },
+        {
+          "title": "Precondición visible",
+          "t": 72.75
+        },
+        {
+          "title": "Anclaje inexistente",
+          "t": 101.5
+        },
+        {
+          "title": "Devolución rechazada",
+          "t": 103.5
+        },
+        {
+          "title": "Anclaje ocupado",
+          "t": 131.5
+        },
+        {
+          "title": "Devolución correcta",
+          "t": 160.25
+        },
+        {
+          "title": "Tarifa calculada",
+          "t": 162.25
+        },
+        {
+          "title": "Redondeo del excedente",
+          "t": 195.25
+        },
+        {
+          "title": "Cierre atómico",
+          "t": 225.5
+        },
+        {
+          "title": "Viaje incorporado al historial",
+          "t": 255.75
+        },
+        {
+          "title": "Usuario liberado",
+          "t": 286
+        }
+      ]
+    },
+    {
+      "id": "hu-04-historial",
+      "spec": "HU-04",
+      "title": "Consultar y filtrar “Mis viajes”",
+      "role": "Usuario",
+      "summary": "Historial completo, orden cronológico, tramo gratuito, suma del periodo y estados vacíos.",
+      "frames": 1183,
+      "duration": 295.75,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: usuario del servicio",
+          "t": 25.75
+        },
+        {
+          "title": "Historial completo",
+          "t": 31.5
+        },
+        {
+          "title": "Viaje activo excluido",
+          "t": 64.5
+        },
+        {
+          "title": "Lectura de cada fila",
+          "t": 94.75
+        },
+        {
+          "title": "Tramo gratuito y sumatorio",
+          "t": 125
+        },
+        {
+          "title": "Filtro por mes y año",
+          "t": 152.5
+        },
+        {
+          "title": "Comparación con el mes anterior",
+          "t": 182.75
+        },
+        {
+          "title": "Quitar el filtro",
+          "t": 215
+        },
+        {
+          "title": "Periodo sin viajes",
+          "t": 242.5
+        },
+        {
+          "title": "Filtro incompleto",
+          "t": 270
+        }
+      ]
+    },
+    {
+      "id": "hu-05-averias",
+      "spec": "HU-05",
+      "title": "Reportar una avería e inhabilitar la bicicleta",
+      "role": "Usuario y operario de taller",
+      "summary": "Validación de la estación, registro del fallo, actualización de disponibilidad y aviso al taller.",
+      "frames": 1175,
+      "duration": 293.75,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: usuario que detecta el problema",
+          "t": 25.75
+        },
+        {
+          "title": "Comprobación antes del reporte",
+          "t": 35.5
+        },
+        {
+          "title": "Código de bicicleta inexistente",
+          "t": 71.25
+        },
+        {
+          "title": "Estación incorrecta",
+          "t": 100
+        },
+        {
+          "title": "Reporte rechazado",
+          "t": 102
+        },
+        {
+          "title": "Reporte correcto",
+          "t": 126.75
+        },
+        {
+          "title": "Bicicleta inhabilitada",
+          "t": 128.75
+        },
+        {
+          "title": "Reintento sin duplicados",
+          "t": 162.75
+        },
+        {
+          "title": "Disponibilidad actualizada",
+          "t": 197
+        },
+        {
+          "title": "Inicio de sesión: operario de mantenimiento",
+          "t": 226.5
+        },
+        {
+          "title": "Aviso recibido en taller",
+          "t": 232.25
+        },
+        {
+          "title": "Trazabilidad del aviso",
+          "t": 265.25
+        }
+      ]
+    },
+    {
+      "id": "hu-06-taller",
+      "spec": "HU-06",
+      "title": "Reparar, documentar y reubicar una bicicleta",
+      "role": "Operario de taller",
+      "summary": "Consulta de la ficha, validación del parte, intervención firmada y vuelta segura al servicio.",
+      "frames": 1297,
+      "duration": 324.25,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: operario de mantenimiento",
+          "t": 25.75
+        },
+        {
+          "title": "Bicicleta inexistente",
+          "t": 34.75
+        },
+        {
+          "title": "Ficha e incidencia original",
+          "t": 65.5
+        },
+        {
+          "title": "Parte incompleto bloqueado",
+          "t": 100.5
+        },
+        {
+          "title": "Guardar intervención",
+          "t": 129.25
+        },
+        {
+          "title": "Intervención registrada",
+          "t": 131.25
+        },
+        {
+          "title": "Operativa, pero aún no ubicada",
+          "t": 161.5
+        },
+        {
+          "title": "Anclaje ocupado rechazado",
+          "t": 195
+        },
+        {
+          "title": "Anclaje inexistente rechazado",
+          "t": 223
+        },
+        {
+          "title": "Ubicación confirmada",
+          "t": 249
+        },
+        {
+          "title": "Bicicleta disponible",
+          "t": 251
+        },
+        {
+          "title": "Inicio de sesión: usuario que consulta la red",
+          "t": 283.25
+        },
+        {
+          "title": "Reaparición en el mapa",
+          "t": 293
+        }
+      ]
+    },
+    {
+      "id": "hu-07-balanceo",
+      "spec": "HU-07",
+      "title": "Equilibrar estaciones mediante alertas y traslados",
+      "role": "Operario de logística",
+      "summary": "Panel de urgencias, validaciones de consistencia y recálculo inmediato de origen y destino.",
+      "frames": 1235,
+      "duration": 308.75,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: usuario sin permiso de logística",
+          "t": 25.75
+        },
+        {
+          "title": "Acceso restringido",
+          "t": 31.5
+        },
+        {
+          "title": "Inicio de sesión: operario de logística",
+          "t": 61
+        },
+        {
+          "title": "Alertas automáticas",
+          "t": 66.75
+        },
+        {
+          "title": "Lectura de prioridad",
+          "t": 99.75
+        },
+        {
+          "title": "Origen y destino iguales",
+          "t": 132
+        },
+        {
+          "title": "Lote superior al disponible",
+          "t": 158.75
+        },
+        {
+          "title": "Destino sin capacidad",
+          "t": 185.5
+        },
+        {
+          "title": "Traslado correcto",
+          "t": 213
+        },
+        {
+          "title": "Contadores recalculados",
+          "t": 215
+        },
+        {
+          "title": "Traslado atómico y auditable",
+          "t": 248
+        },
+        {
+          "title": "Panel actualizado",
+          "t": 280.25
+        }
+      ]
+    },
+    {
+      "id": "hu-08-analitica",
+      "spec": "HU-08",
+      "title": "Analizar el uso y exportar el histórico",
+      "role": "Gestor municipal",
+      "summary": "Control de permisos, gráficos por hora y día, periodos sin datos, validación y descarga CSV.",
+      "frames": 1423,
+      "duration": 355.75,
+      "chapters": [
+        {
+          "title": "Inicio de sesión: usuario sin permiso de gestión",
+          "t": 25.75
+        },
+        {
+          "title": "Permiso denegado",
+          "t": 31.5
+        },
+        {
+          "title": "Inicio de sesión: gestor municipal",
+          "t": 61
+        },
+        {
+          "title": "Gráficos y totales",
+          "t": 66.75
+        },
+        {
+          "title": "Distribución por hora",
+          "t": 99.75
+        },
+        {
+          "title": "Distribución semanal",
+          "t": 130
+        },
+        {
+          "title": "Análisis de los últimos siete días",
+          "t": 160.25
+        },
+        {
+          "title": "Periodo sin datos",
+          "t": 190.5
+        },
+        {
+          "title": "Rango invertido",
+          "t": 215.25
+        },
+        {
+          "title": "Visión anual",
+          "t": 240
+        },
+        {
+          "title": "Filtro restaurado",
+          "t": 270.25
+        },
+        {
+          "title": "Descarga CSV",
+          "t": 295
+        },
+        {
+          "title": "CSV generado",
+          "t": 297
+        },
+        {
+          "title": "Coherencia de la exportación",
+          "t": 327.25
+        }
+      ]
+    }
+  ],
+  "generated": "2026-11-24T19:28:28.645Z"
+}

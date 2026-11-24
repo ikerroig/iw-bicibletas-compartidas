@@ -3,69 +3,128 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Demo SI-16 · Historias de usuario</title>
+  <title>Demo SI-16 · Grupo 13</title>
   <style>
-    :root { color-scheme: dark; --bg:#08111f; --card:#101d30; --card2:#16263d; --text:#f4f7fb; --muted:#9eb0c9; --accent:#45d6e8; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:Segoe UI,Arial,sans-serif; background:linear-gradient(135deg,#08111f,#0d1c31); color:var(--text); }
-    main { width:min(1180px,92vw); margin:0 auto; padding:48px 0 70px; }
-    header { border-bottom:1px solid #29405f; padding-bottom:28px; margin-bottom:30px; }
-    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.16em; font-size:.78rem; font-weight:700; }
-    h1 { font-size:clamp(2rem,5vw,4rem); line-height:1.05; margin:12px 0; }
-    h2 { margin:0 0 10px; }
-    p { color:var(--muted); line-height:1.55; }
-    .video-card, .story { background:rgba(16,29,48,.9); border:1px solid #29405f; border-radius:18px; padding:20px; box-shadow:0 18px 45px #0003; }
-    video { width:100%; display:block; border-radius:12px; background:#000; }
-    .meta { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; color:var(--muted); font-size:.92rem; }
-    .meta span { background:var(--card2); border-radius:999px; padding:7px 12px; }
-    .stories { display:grid; gap:14px; margin-top:30px; }
-    .story { display:grid; grid-template-columns:1fr auto; gap:12px 20px; align-items:center; }
-    .story h2 { font-size:1.25rem; }
-    .story p { margin:4px 0 0; }
-    button { cursor:pointer; border:0; border-radius:999px; background:var(--accent); color:#08111f; font-weight:700; padding:11px 17px; }
-    button:hover { filter:brightness(1.12); }
-    .scenario { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; }
-    .scenario button { background:var(--card2); color:var(--text); border:1px solid #385477; font-size:.86rem; }
-    .scenario button:hover { background:#244263; }
-    footer { color:var(--muted); margin-top:32px; font-size:.9rem; }
-    @media (max-width:700px) { .story { grid-template-columns:1fr; } }
+    :root {
+      color-scheme: dark;
+      --bg:#07111f; --panel:#0f1d30; --panel2:#172943; --line:#294463;
+      --text:#f6f9fc; --muted:#a9bad0; --accent:#45d6e8; --green:#5ee0ad;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(circle at 85% 0,#123450 0,#07111f 42%); color:var(--text); font:16px/1.5 "Segoe UI",system-ui,sans-serif; }
+    header { max-width:1440px; margin:auto; padding:30px 30px 12px; }
+    .eyebrow { color:var(--accent); font-size:.78rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    h1 { margin:8px 0 6px; font-size:clamp(2rem,4vw,3.5rem); line-height:1.08; }
+    header p { max-width:84ch; margin:0; color:var(--muted); }
+    .modes { display:inline-flex; gap:4px; margin-top:18px; padding:4px; border:1px solid var(--line); border-radius:999px; background:var(--panel); }
+    button,select,a { font:inherit; }
+    button { cursor:pointer; }
+    .modes button { border:0; border-radius:999px; padding:8px 17px; background:transparent; color:var(--muted); font-weight:700; }
+    .modes button[aria-pressed="true"] { background:var(--accent); color:#05121d; }
+    main { display:grid; grid-template-columns:350px minmax(0,1fr); gap:24px; max-width:1440px; margin:auto; padding:16px 30px 58px; align-items:start; }
+    nav { position:sticky; top:16px; max-height:calc(100vh - 32px); overflow:auto; padding:9px; border:1px solid var(--line); border-radius:17px; background:rgba(15,29,48,.96); }
+    .nav-item { width:100%; display:grid; grid-template-columns:64px 1fr; gap:10px; padding:10px; border:0; border-radius:11px; background:transparent; color:inherit; text-align:left; }
+    .nav-item:hover,.nav-item[aria-current="true"] { background:var(--panel2); }
+    .nav-item[aria-current="true"] { box-shadow:inset 3px 0 var(--accent); }
+    .nav-item img { width:64px; height:38px; object-fit:cover; border-radius:6px; background:#000; }
+    .nav-item b { display:block; font-size:.91rem; line-height:1.25; }
+    .nav-item small { display:block; margin-top:3px; color:var(--muted); font-size:.75rem; }
+    .player { min-width:0; }
+    video { width:100%; aspect-ratio:16/9; display:block; border:1px solid var(--line); border-radius:15px; background:#000; box-shadow:0 20px 50px #0007; }
+    .bar { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-top:11px; }
+    .bar button,.bar select,.download { padding:7px 11px; border:1px solid var(--line); border-radius:9px; background:var(--panel); color:var(--text); text-decoration:none; }
+    .bar button:hover,.download:hover { border-color:var(--accent); }
+    .position { margin-left:auto; color:var(--muted); font-size:.88rem; }
+    .card { margin-top:17px; padding:20px 22px; border:1px solid var(--line); border-radius:17px; background:rgba(15,29,48,.94); }
+    .spec { color:var(--green); font-size:.76rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    .card h2 { margin:5px 0 7px; font-size:1.65rem; }
+    .card p { margin:0; color:var(--muted); }
+    .meta { margin-top:9px; color:var(--muted); font-size:.84rem; }
+    .chapters { list-style:none; display:grid; gap:4px; margin:15px 0 0; padding:0; }
+    .chapters button { width:100%; display:grid; grid-template-columns:30px 1fr auto; gap:8px; padding:8px 10px; border:0; border-radius:9px; background:transparent; color:inherit; text-align:left; }
+    .chapters button:hover,.chapters button[aria-current="true"] { background:var(--panel2); }
+    .chapters .n { color:var(--accent); font-weight:800; }
+    .chapters .time { color:var(--muted); font-variant-numeric:tabular-nums; font-size:.82rem; }
+    footer { max-width:1440px; margin:auto; padding:0 30px 35px; color:var(--muted); font-size:.82rem; }
+    @media (max-width:950px) { main { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:22px 16px 8px; } nav { position:static; max-height:300px; } }
   </style>
 </head>
 <body>
-<main>
   <header>
-    <div class="eyebrow">DemoSSD_G13 · SI-16</div>
-    <h1>Historias de usuario y escenarios</h1>
-    <p>Grabación de la aplicación SI-16 ejecutándose en local: casos habituales, errores, permisos, cambios de estado y operaciones de los cuatro roles.</p>
+    <div class="eyebrow">DemoSSD_G13 · SI-16 Bicicletas compartidas</div>
+    <h1>Demostración funcional por historias</h1>
+    <p>Cada recorrido comienza en el inicio de sesión y muestra, con ritmo pausado, las acciones, validaciones y resultados reales de la historia. Puede verse el vídeo completo o reproducir cada historia por separado.</p>
+    <div class="modes" role="group" aria-label="Modo de reproducción">
+      <button id="mode-complete" aria-pressed="true">Vídeo completo</button>
+      <button id="mode-story" aria-pressed="false">Por historia</button>
+    </div>
   </header>
-  <section class="video-card">
-    <video id="demo" controls preload="metadata">
-      <source src="demo-si16.mp4" type="video/mp4">
-      Tu navegador no puede reproducir este vídeo.
-    </video>
-    <div class="meta"><span>Aplicación real</span><span>8 historias</span><span>1 min 15 s</span><span>1280 × 720 · H.264</span><span><a href="demo-si16.mp4" download style="color:var(--accent)">Descargar MP4</a></span></div>
-  </section>
-  <section class="stories" aria-label="Historias de usuario">
-    <article class="story"><div><h2>HU-01 · Disponibilidad en tiempo real</h2><p>Mapa real, listado accesible y detalle de estación.</p></div><button data-time="6">Reproducir</button><div class="scenario"><button data-time="6">Mapa de red</button><button data-time="9">Listado</button><button data-time="12">Detalle de estación</button></div></article>
-    <article class="story"><div><h2>HU-02 · Desbloqueo</h2><p>Código de anclaje, desbloqueo y control del viaje activo.</p></div><button data-time="14">Reproducir</button><div class="scenario"><button data-time="14">Introducir código</button><button data-time="17">Viaje iniciado</button></div></article>
-    <article class="story"><div><h2>HU-03 · Devolución y tarifa</h2><p>Rechazo de anclaje inválido y devolución correcta con tarifa.</p></div><button data-time="20">Reproducir</button><div class="scenario"><button data-time="20">Código inválido</button><button data-time="23">Devolución correcta</button></div></article>
-    <article class="story"><div><h2>HU-04 · Historial</h2><p>Listado cronológico, coste acumulado y validación del filtro.</p></div><button data-time="26">Reproducir</button><div class="scenario"><button data-time="26">Historial</button><button data-time="29">Filtro incompleto</button></div></article>
-    <article class="story"><div><h2>HU-05 · Averías</h2><p>Reporte, inhabilitación y llegada inmediata al panel del taller.</p></div><button data-time="34">Reproducir</button><div class="scenario"><button data-time="34">Completar reporte</button><button data-time="37">Registrar</button><button data-time="39">Aviso al taller</button></div></article>
-    <article class="story"><div><h2>HU-06 · Taller</h2><p>Ficha, intervención técnica y ubicación tras reparar.</p></div><button data-time="43">Reproducir</button><div class="scenario"><button data-time="43">Ver ficha</button><button data-time="46">Guardar parte</button><button data-time="49">Reactivar</button></div></article>
-    <article class="story"><div><h2>HU-07 · Balanceo</h2><p>Alertas, rechazo de datos inválidos y traslado confirmado.</p></div><button data-time="52">Reproducir</button><div class="scenario"><button data-time="52">Alertas</button><button data-time="55">Validación</button><button data-time="58">Traslado</button></div></article>
-    <article class="story"><div><h2>HU-08 · Analítica</h2><p>Control de permisos, gráficos, exportación CSV y rango inválido.</p></div><button data-time="31">Reproducir</button><div class="scenario"><button data-time="31">Permiso denegado</button><button data-time="61">Gráficos</button><button data-time="64">CSV</button><button data-time="67">Rango inválido</button></div></article>
-  </section>
-  <footer>La demo se ha preparado como evidencia audiovisual de la entrega. Los datos y usuarios de prueba se describen en el README del proyecto.</footer>
-</main>
-<script>
-  const video = document.querySelector('#demo');
-  document.querySelectorAll('[data-time]').forEach((button) => {
-    button.addEventListener('click', () => {
-      video.currentTime = Number(button.dataset.time);
-      video.play();
-      video.focus();
-    });
-  });
-</script>
+  <main>
+    <nav id="index" aria-label="Historias de usuario"></nav>
+    <section class="player">
+      <video id="video" controls preload="metadata" playsinline></video>
+      <div class="bar">
+        <button id="previous">⏮ Escenario anterior</button>
+        <button id="next">Escenario siguiente ⏭</button>
+        <label>Velocidad <select id="speed"><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option><option value="2">2×</option></select></label>
+        <a class="download" id="download" download>Descargar MP4</a>
+        <span class="position" id="position"></span>
+      </div>
+      <article class="card" id="card"></article>
+    </section>
+  </main>
+  <footer id="footer"></footer>
+  <script src="datos.js"></script>
+  <script>
+    (() => {
+      const D = window.DEMO;
+      const $ = (id) => document.getElementById(id);
+      const video = $('video');
+      let mode = 'complete';
+      let selected = 0;
+      const mmss = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2,'0')}`;
+      const entries = (i) => [{ title:'Presentación e inicio de sesión', t:0 }, ...D.stories[i].chapters];
+
+      function sourceFor(i) { return mode === 'complete' ? D.complete : D.stories[i].video; }
+      function globalTime(i,t) { return mode === 'complete' ? D.stories[i].start + t : t; }
+      function load(i,t=0,play=false) {
+        selected=i;
+        const src=sourceFor(i);
+        const seek=() => { video.currentTime=globalTime(i,t); if(play) video.play().catch(()=>{}); };
+        if(video.getAttribute('src')===src && video.readyState>0) seek();
+        else { video.src=src; video.poster=D.stories[i].poster; video.addEventListener('loadedmetadata',seek,{once:true}); }
+        renderCard(); renderIndex(); updateDownload();
+      }
+      function locate() {
+        if(mode==='story') return { i:selected, t:video.currentTime };
+        let i=D.stories.findIndex((s)=>video.currentTime<s.start+s.duration);
+        if(i<0) i=D.stories.length-1;
+        return { i, t:Math.max(0,video.currentTime-D.stories[i].start) };
+      }
+      function chapterAt(i,t) { let k=0; entries(i).forEach((e,index)=>{ if(t>=e.t-.15) k=index; }); return k; }
+      function renderIndex() {
+        $('index').innerHTML=D.stories.map((s,i)=>`<button class="nav-item" data-i="${i}" aria-current="${i===selected}"><img src="${s.poster}" alt=""><span><b>${s.spec} · ${s.title}</b><small>${s.role} · ${s.chapters.length} escenarios · ${mmss(s.duration)}</small></span></button>`).join('');
+        $('index').querySelectorAll('[data-i]').forEach((b)=>b.onclick=()=>load(Number(b.dataset.i),0,true));
+      }
+      function renderCard() {
+        const s=D.stories[selected]; const pos=locate(); const k=chapterAt(selected,pos.t);
+        $('card').innerHTML=`<div class="spec">${s.spec} · ${s.role}</div><h2>${s.title}</h2><p>${s.summary}</p><div class="meta">${mmss(s.duration)} · 1280 × 720 · H.264 · interfaz y API reales</div><ol class="chapters">${entries(selected).map((e,i)=>`<li><button data-k="${i}" aria-current="${i===k}"><span class="n">${i===0?'▶':i}</span><span>${e.title}</span><span class="time">${mmss(e.t)}</span></button></li>`).join('')}</ol>`;
+        $('card').querySelectorAll('[data-k]').forEach((b)=>b.onclick=()=>load(selected,entries(selected)[Number(b.dataset.k)].t,true));
+        $('position').textContent=k===0?'Presentación':`Escenario ${k} de ${entries(selected).length-1}`;
+      }
+      function sync() { const p=locate(); if(p.i!==selected){selected=p.i;renderIndex();} renderCard(); }
+      function jump(delta) { const p=locate(); const list=entries(p.i); const k=chapterAt(p.i,p.t)+delta; if(k>=0&&k<list.length) load(p.i,list[k].t,true); else { const j=p.i+Math.sign(delta); if(j>=0&&j<D.stories.length) load(j,delta>0?0:entries(j).at(-1).t,true); } }
+      function setMode(next) { const p=locate(); mode=next; $('mode-complete').setAttribute('aria-pressed',String(mode==='complete')); $('mode-story').setAttribute('aria-pressed',String(mode==='story')); load(p.i,p.t,false); }
+      function updateDownload(){ const s=D.stories[selected]; $('download').href=mode==='complete'?D.complete:s.video; $('download').textContent=mode==='complete'?'Descargar vídeo completo':'Descargar esta historia'; }
+      $('mode-complete').onclick=()=>setMode('complete'); $('mode-story').onclick=()=>setMode('story');
+      $('previous').onclick=()=>jump(-1); $('next').onclick=()=>jump(1); $('speed').onchange=(e)=>video.playbackRate=Number(e.target.value);
+      video.addEventListener('timeupdate',sync); video.addEventListener('ratechange',()=>{$('speed').value=String(video.playbackRate);});
+      video.addEventListener('ended',()=>{if(mode==='story'&&selected<D.stories.length-1)load(selected+1,0,true);});
+      addEventListener('keydown',(e)=>{if(e.target.matches('input,select'))return;if(e.key==='n')jump(1);if(e.key==='p')jump(-1);});
+      const scenarios=D.stories.reduce((sum,s)=>sum+s.chapters.length,0);
+      $('footer').textContent=`${D.stories.length} historias · ${scenarios} escenarios · ${mmss(D.duration)} de demostración. Atajos: “n” siguiente y “p” anterior.`;
+      renderIndex(); load(0,0,false);
+    })();
+  </script>
 </body>
 </html>
