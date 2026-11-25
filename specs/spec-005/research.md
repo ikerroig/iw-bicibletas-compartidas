@@ -110,8 +110,12 @@ principales están implementadas: reporte transaccional, bloqueo de la bicicleta
 idempotencia, control de estación, autorización del panel y refresco cada 10
 segundos.
 
-La verificación previa a la revisión del compañero no ha detectado brechas
-funcionales nuevas. Quedan como tareas de cierre la revisión independiente por
-un compañero y la convergencia final posterior a sus observaciones. Si esa
-revisión no encuentra brechas, se conservará este informe como evidencia de
-resultado limpio.
+La verificación previa no detectó brechas funcionales nuevas. La revisión
+independiente quedó registrada en la PR #15: `acf91-ua` aprobó el commit
+`be76c22` el 2026-11-20. La matriz global conserva el criterio revisado, su
+tarea, prueba, responsable y revisor.
+
+La convergencia final se repitió el 2026-11-25 sobre la versión de entrega. La
+suite completa de Go, las 98 pruebas de frontend, `go vet` y el build de Vite
+terminaron correctamente. No quedan brechas accionables de HU-05; no fue
+necesario añadir tareas correctoras.

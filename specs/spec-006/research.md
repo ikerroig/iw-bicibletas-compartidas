@@ -103,11 +103,12 @@ alcance de HU-06.
 | A-003 | FR-005, FR-007, SC-003 | Ubicación transaccional y recálculo de estación después del commit | Mantener | Cubierto por prueba y recorrido manual |
 | A-004 | mantenimiento preventivo | Incidencia resuelta de tipo `otro` sin estación | Mantener | Cubierto por `TestTallerMantenimientoPreventivo` |
 | A-005 | permisos y entradas inválidas | Middleware de rol y validación de parte vacío | Mantener | Cubierto por `TestTallerValidaRolYCampos` |
-| A-006 | anclaje ocupado, inexistente o fuera de servicio | Errores diferenciados en servicio y handler | Mantener; conservar evidencia de error | Requiere revisión final de escenarios |
+| A-006 | anclaje ocupado, inexistente o fuera de servicio | Errores diferenciados en servicio y handler | Mantener; conservar evidencia de error | Cubierto por `TestTallerUbicacionErroresAnclaje` (T020, 2026-11-25) |
 
 Las filas A-001–A-005 están respaldadas por pruebas automatizadas o por el
-recorrido manual. A-006 queda señalado para que la revisión cruzada compruebe
-al menos uno de esos criterios de error.
+recorrido manual. A-006 quedó señalado en el primer análisis porque ninguna
+prueba automática comprobaba los errores de anclaje; se cerró con T020 (véase
+el informe de `converge`).
 
 ## Informe de `converge`
 
@@ -116,6 +117,18 @@ El estado de referencia para esta revisión es el commit `ea9aad5` de la rama
 firmado, el mantenimiento preventivo, el cierre de incidencias, la ubicación
 transaccional y la separación entre estado disponible y anclaje.
 
-La verificación previa a la revisión del compañero no ha detectado brechas
-funcionales nuevas. Quedan como cierre la revisión independiente y la
-convergencia final posterior a sus observaciones.
+La verificación previa no detectó brechas funcionales nuevas. La revisión
+independiente quedó registrada en la PR #16: `acf91-ua` aprobó el commit
+`1fd6ebc` el 2026-11-20. La matriz global conserva el criterio revisado, su
+tarea, prueba, responsable y revisor.
+
+La convergencia final se repitió el 2026-11-25 sobre la versión de entrega. La
+suite completa de Go, las 98 pruebas de frontend, `go vet` y el build de Vite
+terminaron correctamente. Al revisar la entrega se vio que A-006 seguía sin
+prueba automática: la revisión de la PR #16 comprobó FR-005/FR-007, no los
+escenarios de error. Se añadió la tarea correctora T020, que incorpora
+`TestTallerUbicacionErroresAnclaje`: anclaje ocupado (409
+`ANCLAJE_OCUPADO`), fuera de servicio (409 `ANCLAJE_FUERA_DE_SERVICIO`) e
+inexistente (404 `ANCLAJE_NO_ENCONTRADO`), sin que la bicicleta quede
+anclada. El código ya cumplía y no fue necesario cambiarlo. Con T020 no quedan
+brechas accionables de HU-06.

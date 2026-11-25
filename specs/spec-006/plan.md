@@ -55,7 +55,7 @@
 | HU-06 / FR-002, FR-003, FR-006 | C-002 y C-005: parte válido, autoría del JWT y cierre | T004, T005, T009 | Parte persistido con operario y fecha |
 | HU-06 / FR-005, FR-007 | C-001 y C-004: ubicación posterior en anclaje libre | T006, T016 | Anclaje ocupado y estación tras ubicar |
 | HU-06 / mantenimiento preventivo | C-003: incidencia resuelta de tipo `otro` | T004, T009 | `TestTallerMantenimientoPreventivo` |
-| HU-06 / permisos y errores | C-004 y C-005: rol y errores de ubicación | T007, T009, T017 | `TestTallerValidaRolYCampos` y revisión manual |
+| HU-06 / permisos y errores | C-004 y C-005: rol y errores de ubicación | T007, T009, T017, T020 | `TestTallerValidaRolYCampos` y `TestTallerUbicacionErroresAnclaje` |
 
-Las tareas pendientes indican evidencias de cierre y revisión, no nuevos
-requisitos ni ampliaciones del alcance.
+Todas las filas quedaron contrastadas mediante las pruebas, el recorrido final,
+la matriz global y la revisión cruzada de la PR #16.

@@ -72,5 +72,5 @@ operario_taller -> GET /incidencias -> incidencias abiertas ordenadas por fecha
 | HU-05 / FR-008 | Refresco cada 10 segundos y actualización manual | T012, T017 | Inspección y prueba manual del panel |
 | HU-05 / permisos | Solo usuario reporta y solo taller consulta pendientes | T005, T016, T018 | Respuestas 401/403 |
 
-Las filas pendientes no implican un cambio de alcance: indican qué evidencia
-debe aportar la verificación final y qué revisará el compañero.
+Todas las filas quedaron contrastadas mediante las pruebas, el recorrido final,
+la matriz global y la revisión cruzada de la PR #15.
