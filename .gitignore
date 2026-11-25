@@ -28,6 +28,11 @@ node_modules/
 dist/
 build/
 frontend/dist/
+
+# Artefactos temporales usados para grabar la demo funcional.
+/DemoSSD_G13/.demo-browser/
+/DemoSSD_G13/recording-frames/
+/DemoSSD_G13/downloads-temp/
 frontend/coverage/
 *.log
 npm-debug.log*

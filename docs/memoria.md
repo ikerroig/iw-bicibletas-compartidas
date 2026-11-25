@@ -112,7 +112,7 @@ gráficos permanecen visibles y la exportación ya no devuelve `401`.
 
 ### Estrategia y resultados actuales
 
-Se combinan pruebas unitarias de reglas puras, pruebas de integración Go con PostgreSQL y Redis de test, comprobaciones de contrato OpenAPI, pruebas de componentes SolidJS con Vitest/Testing Library/MSW y recorridos manuales recogidos en los `quickstart.md`. La captura final usa [`record_demo.mjs`](../DemoSSD_G13/record_demo.mjs) para conducir Edge mediante CDP y registrar la interfaz real; es un recorrido reproducible de demostración, aunque no sustituye una suite E2E con aserciones.
+Se combinan pruebas unitarias de reglas puras, pruebas de integración Go con PostgreSQL y Redis de test, comprobaciones de contrato OpenAPI, pruebas de componentes SolidJS con Vitest/Testing Library/MSW y recorridos manuales recogidos en los `quickstart.md`. La captura final usa [`record_demo.mjs`](../DemoSSD_G13/record_demo.mjs) para conducir Edge mediante CDP y registrar la interfaz real. Genera un vídeo independiente por historia —todos desde el login— y [`build_videos.mjs`](../DemoSSD_G13/build_videos.mjs) los concatena en un MP4 completo; es una demostración reproducible, aunque no sustituye una suite E2E con aserciones.
 
 En el `main` local examinado, el **21-11-2026**, con PostgreSQL de pruebas publicado en `127.0.0.1:5433` y Redis en `6379`:
 
@@ -129,10 +129,14 @@ Los casos reproducibles por historia están en los [quickstarts](../specs/spec-0
 
 ### Acta de recorridos integrados
 
-Los dos recorridos se ejecutaron el **21-11-2026** sobre `main`, incluida
-T021 de HU-08 (commit `26931de`), con PostgreSQL en `127.0.0.1:5433`, Redis en
-`6379`, API en `:8080` y frontend en `:5173`. El resultado observado está
-conservado en la [grabación MP4](../DemoSSD_G13/demo-si16.mp4).
+La demostración final se repitió el **24-11-2026** sobre `main`, incluida T021
+de HU-08 (commit `26931de`), con PostgreSQL en `127.0.0.1:5433`, Redis en
+`6379`, API en `:8080` y frontend en `:5173`. Para no alterar los datos locales,
+la grabación usó la base aislada `si16_demo_video` y reinició su seed antes de
+cada historia. Los ocho vídeos comienzan en el login, reúnen 101 capítulos y se
+conservan por separado y concatenados en la [grabación MP4](../DemoSSD_G13/demo-si16.mp4)
+de 42 min 52 s. Las dos filas siguientes resumen los recorridos integrados que
+también quedan cubiertos por esos segmentos.
 
 | Recorrido | Precondiciones y datos | Pasos | Resultado esperado | Resultado observado |
 |---|---|---|---|---|
@@ -188,6 +192,7 @@ Las PR iniciales de HU-01 a HU-06 figuran en [agrupamiento.md](./agrupamiento.md
 | Historias con `spec.md`, `plan.md` y `tasks.md` | 8/8 | Carpetas [`spec-001` a `spec-008`](../specs/) |
 | Historias con informes de refinamiento separados | 6/8; HU-05 y HU-06 documentan ajustes en sus archivos principales | Carpetas `refinamiento/` y [quickstarts](../specs/) |
 | Historias desarrolladas en la matriz global | **8/8**, con FR/SC, tarea, prueba prevista y estado | [Matriz](./matriz-trazabilidad.md) |
+| Historias con recorrido audiovisual desde el login | **8/8**, 101 capítulos y vídeo completo de 42 min 52 s | [Reproductor de la demo](../DemoSSD_G13/index.html) |
 | Recorridos integrados ejecutados | **2/2**, uno satisfactorio y otro con estado/error, entre responsables distintos | Sección 5 y [demo funcional](../DemoSSD_G13/index.html) |
 | Criterios HU-01 con tarea y prueba prevista | 21/21; incluidos los medidos con «Fast 4G» | [Verificación final](../specs/spec-001/refinamiento/verificacion-final.md) |
 | Suites de la integración local | Backend completo, `go vet`, 98/98 pruebas frontend y build correctos | Ejecución del 21-11-2026, sección 5 |
