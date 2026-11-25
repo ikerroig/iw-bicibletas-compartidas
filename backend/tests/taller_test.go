@@ -165,6 +165,72 @@ func TestTallerValidaRolYCampos(t *testing.T) {
 	}
 }
 
+// TestTallerUbicacionErroresAnclaje cubre A-006 de HU-06: ubicar una bicicleta
+// reparada en un anclaje ocupado, fuera de servicio o inexistente se rechaza con
+// un error diferenciado y la bicicleta sigue sin anclaje.
+func TestTallerUbicacionErroresAnclaje(t *testing.T) {
+	d := depsTest(t)
+	app := nuevaApp(d)
+	insert(t, d, `TRUNCATE alertas_balanceo, incidencias_mantenimientos, viajes,
+		anclajes, bicicletas, estaciones, usuarios RESTART IDENTITY CASCADE`)
+
+	var estacionID, reparadaID, ancladaID int64
+	if err := d.Pool.QueryRow(ctx, `INSERT INTO estaciones (nombre, latitud, longitud, capacidad_total)
+		VALUES ('Errores anclaje test', 39.47, -0.37, 2) RETURNING id`).Scan(&estacionID); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Pool.QueryRow(ctx, `INSERT INTO bicicletas (codigo, estado)
+		VALUES ('T-HU06-R', 'disponible') RETURNING id`).Scan(&reparadaID); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Pool.QueryRow(ctx, `INSERT INTO bicicletas (codigo, estado)
+		VALUES ('T-HU06-O', 'disponible') RETURNING id`).Scan(&ancladaID); err != nil {
+		t.Fatal(err)
+	}
+	insert(t, d, `INSERT INTO anclajes (estacion_id, codigo_anclaje, estado, bicicleta_id)
+		VALUES ($1, 'T06-E01', 'ocupado', $2), ($1, 'T06-E02', 'fuera_de_servicio', NULL)`,
+		estacionID, ancladaID)
+	_, tallerToken := crearUsuarioRol(t, d, "hu06-anclajes@test.local", "operario_taller")
+
+	casos := []struct {
+		nombre, anclaje, codigo string
+		status                  int
+	}{
+		{"anclaje ocupado", "T06-E01", "ANCLAJE_OCUPADO", http.StatusConflict},
+		{"anclaje fuera de servicio", "T06-E02", "ANCLAJE_FUERA_DE_SERVICIO", http.StatusConflict},
+		{"anclaje inexistente", "T06-NO-EXISTE", "ANCLAJE_NO_ENCONTRADO", http.StatusNotFound},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			rec := postUbicacionTaller(app, tallerToken, reparadaID,
+				fmt.Sprintf("{\"codigo_anclaje\":%q}", c.anclaje))
+			if rec.Code != c.status {
+				t.Fatalf("status %d, esperaba %d; body %s", rec.Code, c.status, rec.Body.String())
+			}
+			var cuerpo struct {
+				Error struct {
+					Codigo string `json:"codigo"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &cuerpo); err != nil {
+				t.Fatal(err)
+			}
+			if cuerpo.Error.Codigo != c.codigo {
+				t.Fatalf("codigo %q, esperaba %q", cuerpo.Error.Codigo, c.codigo)
+			}
+		})
+	}
+
+	var anclada int
+	if err := d.Pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM anclajes WHERE bicicleta_id = $1`, reparadaID).Scan(&anclada); err != nil {
+		t.Fatal(err)
+	}
+	if anclada != 0 {
+		t.Fatalf("la bicicleta quedo anclada tras errores de ubicacion")
+	}
+}
+
 func getFichaTaller(app *gin.Engine, token string, bicicletaID int64) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet,
 		fmt.Sprintf("/api/v1/taller/bicicletas/%d", bicicletaID), nil)

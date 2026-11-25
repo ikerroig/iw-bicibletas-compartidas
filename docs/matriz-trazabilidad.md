@@ -153,7 +153,7 @@ Decisiones: `specs/spec-006/research.md` (C-001–C-005) · Tareas: `specs/spec-
 | FR-002 — parte con piezas, notas y operario | Validación de campos y autor obtenido del JWT | T004, T007–T010, T017 | Go: `TestTallerValidaRolYCampos` · Vitest de taller | ✅ |
 | FR-003 — cambio a operativa e intervención firmada | Guardado transaccional del parte, fecha y operario | T004, T005, T009, T011 | Go: `TestTallerFichaReparacionYUbicacion` | ✅ |
 | FR-004 — historial completo | No se sobrescriben intervenciones; la ficha devuelve todo el historial | T003, T004, T009 | Go: ficha tras guardar el parte · demo funcional | ✅ |
-| FR-005 — ubicación en anclaje libre y disponibilidad | Reparación y ubicación son pasos separados; la ubicación recalcula la estación | T006, T008–T010, T017 | Go: `TestTallerFichaReparacionYUbicacion` · Vitest · demo | ✅ |
+| FR-005 — ubicación en anclaje libre y disponibilidad | Reparación y ubicación son pasos separados; la ubicación recalcula la estación | T006, T008–T010, T017, T020 | Go: `TestTallerFichaReparacionYUbicacion`, `TestTallerUbicacionErroresAnclaje` (anclaje ocupado, fuera de servicio o inexistente) · Vitest · demo | ✅ |
 | FR-006 — incidencia atendida deja de estar pendiente | El parte resuelve las incidencias abiertas de la bicicleta | T004, T005, T009 | Go: `TestTallerFichaReparacionYUbicacion` | ✅ |
 | FR-007 — operativa sin ubicación no disponible | La bicicleta no cuenta hasta confirmar un anclaje | T004, T006, T009, T017 | Go: reparación y ubicación en dos pasos · quickstart HU-06 | ✅ |
 | SC-001 — 100 % de fichas muestran el reporte original | La ficha conserva y presenta la incidencia de HU-05 | T003, T009, T017 | Go + demo: reporte visible antes de reparar | ✅ |

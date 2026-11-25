@@ -4,7 +4,7 @@
 
 Asignatura: Ingeniería Web · Práctica de desarrollo dirigido por especificaciones (SDD) · Grupo 13
 Equipo: Iker Roig, Alex Morell, Josep Peiró y Alberto Copa
-Fecha de la memoria: 25 de noviembre de 2026 · Estado del código: rama `main`, commit `9d04ced`
+Fecha de la memoria: 25 de noviembre de 2026 · Estado del código: rama `main` en `9d04ced` más esta entrega (PR #20), que solo añade la prueba `TestTallerUbicacionErroresAnclaje` de HU-06
 
 ---
 
@@ -314,11 +314,11 @@ La constitución obliga a que las reglas críticas tengan pruebas automáticas a
 
 ### 7.2 Resultados de las pruebas automáticas
 
-Última ejecución: **25-11-2026**, sobre `main` tras incorporar los cambios remotos hasta `3b2e5f7`, con PostgreSQL y Redis de Docker Compose y sin caché de pruebas (`-count=1`):
+Última ejecución: **25-11-2026**, sobre la rama `entrega/memoria-y-demo` (código de `main` en `9d04ced` más la prueba de A-006 de HU-06), con PostgreSQL y Redis de Docker Compose y sin caché de pruebas (`-count=1`):
 
 | Comprobación | Resultado |
 |---|---|
-| `go test -count=1 ./...` | Pasan todos los paquetes: servicios, workers, `backend/tests`, contrato e integración (49,9 s) |
+| `go test -count=1 ./...` | Pasan todos los paquetes: servicios, workers, `backend/tests`, contrato e integración (53,6 s) |
 | `go vet ./...` | Sin avisos |
 | `npx vitest run` | **16 archivos, 98 pruebas superadas** |
 | `npm run build` | TypeScript y compilación de Vite correctos (JS de 390 kB, 126 kB con gzip) |
@@ -453,7 +453,7 @@ Estado de cada `tasks.md` a 25-11-2026:
 | spec-003 HU-03 | Alex Morell | 33 | 0 | — |
 | spec-004 HU-04 | Alex Morell | 25 | 0 | — |
 | spec-005 HU-05 | Josep Peiró | 20 | 0 | — |
-| spec-006 HU-06 | Josep Peiró | 19 | 0 | — |
+| spec-006 HU-06 | Josep Peiró | 20 | 0 | — |
 | spec-007 HU-07 | Alberto Copa | 22 | 0 | — |
 | spec-008 HU-08 | Alberto Copa | 21 | 0 | — |
 
@@ -480,7 +480,7 @@ Comparación entre la primera versión funcional y la final, por historia. Los r
 | HU-03 | 5 | 7 → 0 | 2 → 0 | 10/10 | [`spec-003/refinamiento`](../specs/spec-003/refinamiento/) |
 | HU-04 | 3 (más 5 de la sesión previa al plan) | 6 → 0 | 4 → 0 funcionales; 1 nota de coordinación abierta (F2: el OpenAPI global no declara el `422` de `historialViajes`) | 12/12 | [`spec-004/refinamiento`](../specs/spec-004/refinamiento/) |
 | HU-05 | 4 (C-001 a C-004, en `research.md`) | 6 criterios auditados → 0 abiertos, informe integrado en `research.md` | 0 → 0; converge final limpio el 25-11 | 12/12 | [`spec-005`](../specs/spec-005/) |
-| HU-06 | 5 (C-001 a C-005, en `research.md`) | 6 criterios auditados → 0 abiertos, informe integrado en `research.md` | 0 → 0; converge final limpio el 25-11 | 11/11 | [`spec-006`](../specs/spec-006/) |
+| HU-06 | 5 (C-001 a C-005, en `research.md`) | 6 criterios auditados → 0 abiertos (A-006, errores de anclaje sin prueba automática, cerrado con T020), informe integrado en `research.md` | 0 → 0 funcionales; converge final del 25-11 con una tarea correctora de prueba (T020) | 11/11 | [`spec-006`](../specs/spec-006/) |
 | HU-07 | 4 | 7 → 0 | 0 → 0 | 13/13 | [`spec-007/refinamiento`](../specs/spec-007/refinamiento/) |
 | HU-08 | 2 | 6 → 0 | 0 en converge-1; 1 detectada después, al grabar la demo (CSV con la clave JWT antigua, T021) → 0 | 11/11 | [`spec-008/refinamiento`](../specs/spec-008/refinamiento/) |
 | **Total** | **33** | **48 → 0**; HU-05/HU-06 añaden 12 criterios auditados sin hallazgos abiertos | **14 → 0** funcionales; 1 nota documental abierta | **97/97** | — |

@@ -35,10 +35,15 @@
       criterio FR-005/FR-007, sus tareas y la prueba verificada.
 - [x] T019 Ejecutar `converge` final tras T018. Repetido el 2026-11-25: suite
       Go completa, `go vet`, 98 pruebas frontend y build correctos, sin
-      brechas accionables ni tareas correctoras nuevas.
+      brechas funcionales.
+- [x] T020 Tarea correctora de `converge`: cubrir A-006 con
+      `TestTallerUbicacionErroresAnclaje` en `backend/tests/taller_test.go`
+      (anclaje ocupado → 409, fuera de servicio → 409, inexistente → 404, la
+      bicicleta sigue sin anclaje). Pasa el 2026-11-25 sin cambios en el código.
 
 ## Estado de convergencia
 
-Las tareas T014–T019 documentan el ciclo completo: decisiones, análisis,
-pruebas, recorrido manual, revisión independiente y convergencia final. No
+Las tareas T014–T020 documentan el ciclo completo: decisiones, análisis,
+pruebas, recorrido manual, revisión independiente, convergencia final y la
+prueba correctora de A-006. No
 queda trabajo accionable dentro del alcance de HU-06.
