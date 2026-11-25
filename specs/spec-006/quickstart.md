@@ -33,6 +33,9 @@
   las tres pruebas de HU-06 superadas.
 - `npm test -- --run --reporter=dot` terminó con 11 ficheros y 62 pruebas
   superadas; `npm run build` también terminó correctamente.
+- La validación final del 2026-11-25 ejecutó `go test -count=1 ./...`,
+  `go vet ./...`, los 16 ficheros y 98 pruebas actuales del frontend y el
+  build de producción; todas las comprobaciones terminaron correctamente.
 
 ## Recorrido manual de cierre previo a revisión
 

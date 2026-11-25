@@ -30,15 +30,15 @@
 - [x] T017 Ejecutar el recorrido manual del taller: consultar ficha, guardar
       parte firmado, comprobar bicicleta disponible sin anclaje, ubicarla y
       comprobar mapa/contadores y la ruta `/taller`.
-- [ ] T018 Realizar la revisión de compañero: seleccionar al menos un criterio
-      de HU-06, comprobar su tarea, evidencia y prueba, y registrar el
-      resultado, responsable y revisor.
-- [ ] T019 Ejecutar `converge` final tras T018, añadir aquí cualquier tarea
-      correctora nueva y repetir implementación y pruebas si aparece una
-      brecha real.
+- [x] T018 Registrar la revisión cruzada de HU-06: la PR #16 fue aprobada por
+      `acf91-ua` el 2026-11-20 sobre `1fd6ebc`; la matriz global conserva el
+      criterio FR-005/FR-007, sus tareas y la prueba verificada.
+- [x] T019 Ejecutar `converge` final tras T018. Repetido el 2026-11-25: suite
+      Go completa, `go vet`, 98 pruebas frontend y build correctos, sin
+      brechas accionables ni tareas correctoras nuevas.
 
 ## Estado de convergencia
 
-Las tareas T014–T017 documentan el refinamiento y la verificación previa. T018
-y T019 permanecen abiertas hasta disponer de la revisión de otro integrante y
-de la convergencia final.
+Las tareas T014–T019 documentan el ciclo completo: decisiones, análisis,
+pruebas, recorrido manual, revisión independiente y convergencia final. No
+queda trabajo accionable dentro del alcance de HU-06.

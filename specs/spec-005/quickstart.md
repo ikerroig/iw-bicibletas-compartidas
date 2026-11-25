@@ -35,10 +35,10 @@
 - El frontend se volvió a verificar el 2026-11-20: `npm test -- --run
   --reporter=dot` terminó con 10 ficheros y 61 pruebas superadas; `npm run
   build` también terminó correctamente.
-- La repetición backend del 2026-11-20 quedó pendiente porque PostgreSQL no
-  estaba escuchando en `127.0.0.1:55432`. La evidencia backend anterior se
-  conserva en la sección de validación superior y debe repetirse antes del
-  cierre final con Docker activo.
+- La validación final se repitió el 2026-11-25 con PostgreSQL en `5433` y
+  Redis en `6379`: `go test -count=1 ./...` y `go vet ./...` terminaron
+  correctamente; el frontend completó 16 ficheros y 98 pruebas y el build de
+  producción volvió a pasar.
 - Los avisos `Not implemented: navigation` de `jsdom` pertenecen a las pruebas
   existentes de descarga CSV de HU-08; no provocaron fallos: las 61 pruebas
   terminaron en verde.

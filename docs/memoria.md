@@ -36,7 +36,7 @@ Fecha de la memoria: 25 de noviembre de 2026 · Estado del código: rama `main`,
 - **Operario de logística**: recibe las alertas de estaciones vacías o llenas y registra los traslados.
 - **Gestor** del servicio: consulta las estadísticas de uso y exporta los datos.
 
-**Resultado.** Las ocho historias de usuario (HU-01 a HU-08, una spec por historia) están implementadas en un monorepositorio con frontend SolidJS + Tailwind CSS, API en Go con Gin, PostgreSQL como base de datos principal y Redis para el estado en vivo de las estaciones, que es la pila propuesta en el pliego. Pasan las suites automáticas de backend (unitarias, contrato e integración) y de frontend (véase [§7.2](#72-resultados-de-las-pruebas-automáticas)), y el refinamiento con `clarify`, `analyze` y `converge` dejó 0 incidencias documentales y 0 brechas funcionales abiertas en las historias con informe (véase [§9.4](#94-balance-del-refinamiento)). La [demo](#11-demo) recorre las ocho historias en 101 escenarios grabados sobre la aplicación real.
+**Resultado.** Las ocho historias de usuario (HU-01 a HU-08, una spec por historia) están implementadas en un monorepositorio con frontend SolidJS + Tailwind CSS, API en Go con Gin, PostgreSQL como base de datos principal y Redis para el estado en vivo de las estaciones, que es la pila propuesta en el pliego. Pasan las suites automáticas de backend (unitarias, contrato e integración) y de frontend (véase [§7.2](#72-resultados-de-las-pruebas-automáticas)). El refinamiento con `clarify`, `analyze` y `converge` dejó 0 brechas funcionales y ninguna incidencia crítica o alta abierta; solo se conserva una nota documental de coordinación de HU-04 (véase [§9.4](#94-balance-del-refinamiento)). La [demo](#11-demo) recorre las ocho historias en 101 escenarios grabados sobre la aplicación real.
 
 El proyecto se ha desarrollado con **GitHub Spec Kit**: cada historia nace de un `spec.md` y pasa por `clarify`, `plan`, `tasks`, `analyze`, `implement` y `converge`. Esta memoria se apoya en esos documentos, que se conservan en [`specs/`](../specs/).
 
@@ -314,11 +314,11 @@ La constitución obliga a que las reglas críticas tengan pruebas automáticas a
 
 ### 7.2 Resultados de las pruebas automáticas
 
-Última ejecución: **25-11-2026**, sobre `main` en el commit `9d04ced`, con PostgreSQL y Redis de Docker Compose y sin caché de pruebas (`-count=1`):
+Última ejecución: **25-11-2026**, sobre `main` tras incorporar los cambios remotos hasta `3b2e5f7`, con PostgreSQL y Redis de Docker Compose y sin caché de pruebas (`-count=1`):
 
 | Comprobación | Resultado |
 |---|---|
-| `go test -count=1 -p 1 ./...` | Pasan todos los paquetes: servicios, workers, `backend/tests` (11 s), contrato e integración (24 s) |
+| `go test -count=1 ./...` | Pasan todos los paquetes: servicios, workers, `backend/tests`, contrato e integración (49,9 s) |
 | `go vet ./...` | Sin avisos |
 | `npx vitest run` | **16 archivos, 98 pruebas superadas** |
 | `npm run build` | TypeScript y compilación de Vite correctos (JS de 390 kB, 126 kB con gzip) |
@@ -452,8 +452,8 @@ Estado de cada `tasks.md` a 25-11-2026:
 | spec-002 HU-02 | Iker Roig | 63 | 0 | — |
 | spec-003 HU-03 | Alex Morell | 33 | 0 | — |
 | spec-004 HU-04 | Alex Morell | 25 | 0 | — |
-| spec-005 HU-05 | Josep Peiró | 18 | 2 | T019 (revisión de otro integrante) y T020 (converge final) |
-| spec-006 HU-06 | Josep Peiró | 17 | 2 | T018 (revisión de otro integrante) y T019 (converge final) |
+| spec-005 HU-05 | Josep Peiró | 20 | 0 | — |
+| spec-006 HU-06 | Josep Peiró | 19 | 0 | — |
 | spec-007 HU-07 | Alberto Copa | 22 | 0 | — |
 | spec-008 HU-08 | Alberto Copa | 21 | 0 | — |
 
@@ -479,22 +479,22 @@ Comparación entre la primera versión funcional y la final, por historia. Los r
 | HU-02 | 5 | 13 → 0 (12 cerradas, 1 aceptada con justificación) | 3 → 0 | 14/14 | [`spec-002/refinamiento`](../specs/spec-002/refinamiento/) |
 | HU-03 | 5 | 7 → 0 | 2 → 0 | 10/10 | [`spec-003/refinamiento`](../specs/spec-003/refinamiento/) |
 | HU-04 | 3 (más 5 de la sesión previa al plan) | 6 → 0 | 4 → 0 funcionales; 1 nota de coordinación abierta (F2: el OpenAPI global no declara el `422` de `historialViajes`) | 12/12 | [`spec-004/refinamiento`](../specs/spec-004/refinamiento/) |
-| HU-05 | 4 (C-001 a C-004, en `research.md`) | Sin informe de analyze separado | Sin informe de converge; T020 (converge final) abierta | 12/12 | [`spec-005`](../specs/spec-005/) |
-| HU-06 | 5 (C-001 a C-005, en `research.md`) | Sin informe de analyze separado | Sin informe de converge; T019 (converge final) abierta | 11/11 | [`spec-006`](../specs/spec-006/) |
+| HU-05 | 4 (C-001 a C-004, en `research.md`) | 6 criterios auditados → 0 abiertos, informe integrado en `research.md` | 0 → 0; converge final limpio el 25-11 | 12/12 | [`spec-005`](../specs/spec-005/) |
+| HU-06 | 5 (C-001 a C-005, en `research.md`) | 6 criterios auditados → 0 abiertos, informe integrado en `research.md` | 0 → 0; converge final limpio el 25-11 | 11/11 | [`spec-006`](../specs/spec-006/) |
 | HU-07 | 4 | 7 → 0 | 0 → 0 | 13/13 | [`spec-007/refinamiento`](../specs/spec-007/refinamiento/) |
 | HU-08 | 2 | 6 → 0 | 0 en converge-1; 1 detectada después, al grabar la demo (CSV con la clave JWT antigua, T021) → 0 | 11/11 | [`spec-008/refinamiento`](../specs/spec-008/refinamiento/) |
-| **Total** | **33** | **48 → 0** en las 6 historias con informe | **14 → 0** funcionales; 1 nota documental abierta | **97/97** | — |
+| **Total** | **33** | **48 → 0**; HU-05/HU-06 añaden 12 criterios auditados sin hallazgos abiertos | **14 → 0** funcionales; 1 nota documental abierta | **97/97** | — |
 
 | Indicador, con denominador | Estado | Fuente |
 |---|---|---|
 | Historias con `spec.md`, `plan.md` y `tasks.md` | 8/8 | [`specs/`](../specs/) |
-| Historias con informes de refinamiento separados | 6/8; HU-05 y HU-06 documentan sus decisiones en los archivos principales | Carpetas `refinamiento/` |
-| Ambigüedades abiertas en el analyze final | 0 en las 6 historias con informe | Informes `analyze-final.md` |
+| Historias con evidencia completa de refinamiento | 8/8; seis usan carpeta `refinamiento/` y HU-05/HU-06 integran los informes en `research.md` | [`specs/`](../specs/) |
+| Ambigüedades abiertas tras el analyze final | 0 en las ocho historias | Informes separados y `research.md` de HU-05/HU-06 |
 | Recorridos integrados ejecutados | **2/2**, uno satisfactorio y otro con estado o error, entre responsables distintos | [§7.4](#74-pruebas-de-extremo-a-extremo) |
 | Historias con recorrido en vídeo desde el login | **8/8**, 101 escenarios | [§11](#11-demo) |
 | Criterios de HU-01 con tarea y prueba prevista | 21/21, incluidos los medidos con «Fast 4G» | [Verificación final](../specs/spec-001/refinamiento/verificacion-final.md) |
 
-Las filas de la matriz agrupan a veces varios criterios (por ejemplo, «FR-001, SC-001»), así que su total no coincide con los 109 FR y SC de las specs. La profundidad de la evidencia no es la misma en todas las historias: HU-05 y HU-06 no tienen informes separados de analyze y converge, y se indica así en lugar de suponer un resultado. Como dice el enunciado, estos indicadores describen la mejora y no premian haber encontrado más defectos.
+Las filas de la matriz agrupan a veces varios criterios (por ejemplo, «FR-001, SC-001»), así que su total no coincide con los 109 FR y SC de las specs. La presentación de la evidencia no es idéntica en todas las historias: HU-05 y HU-06 integran analyze y converge en `research.md`, mientras las demás usan archivos separados. Como dice el enunciado, estos indicadores describen la mejora y no premian haber encontrado más defectos.
 
 **Registro mínimo de trazabilidad y revisión.** La [matriz global](./matriz-trazabilidad.md) desarrolla los criterios de las ocho historias. Esta tabla da el registro mínimo que pide el enunciado, con una muestra trazable por historia:
 
@@ -549,12 +549,12 @@ En las PR de refinamiento, el revisor dejó por escrito qué criterio concreto c
 - **Coordinación de lo compartido.** El contrato OpenAPI, las migraciones y la matriz de trazabilidad los tocaban varias historias; hubo conflictos al fusionar y algunas filas de la matriz se añadieron en la rama equivocada.
 - **Concurrencia.** El alquiler y la devolución necesitaron índices únicos y transacciones para que dos peticiones simultáneas no dejaran estados incoherentes.
 - **Entorno Windows.** Puertos ocupados, permisos de la caché de Go y de `esbuild`, que se trataron sin confundirlos con fallos funcionales.
-- **Profundidad desigual del refinamiento.** HU-05 y HU-06 registraron sus decisiones en los archivos principales y no tienen informes separados de analyze y converge.
+- **Formato desigual del refinamiento.** HU-05 y HU-06 registraron analyze y converge dentro de `research.md`, mientras las otras historias emplearon archivos separados; el contenido y el cierre están conservados, pero la navegación no es uniforme.
 
 ### 10.3 Trabajo futuro
 
 - Convertir el recorrido de la demo en una suite E2E con aserciones y ejecutarla en un flujo de CI.
-- Cerrar la nota de coordinación de HU-04 (declarar el `422` en el OpenAPI global) y completar los informes de analyze y converge de HU-05 y HU-06.
+- Cerrar la nota de coordinación de HU-04 (declarar el `422` en el OpenAPI global) y, en una iteración futura, homogeneizar el formato de los informes de refinamiento.
 - Valorar con el equipo el desglose de la analítica por estación que menciona la narrativa, ampliando el contrato compartido de forma acordada.
 - Automatizar el despliegue (contenedores para la API y el frontend).
 

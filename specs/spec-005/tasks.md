@@ -41,16 +41,15 @@
       panel mostró todos los datos de la incidencia y `/averias` e
       `/incidencias` respondieron 200; el refresco de 10 segundos y el botón
       manual se comprobaron en `pages/incidencias`.
-- [ ] T019 Realizar la revisión de compañero: seleccionar al menos un criterio
-      de HU-05, comprobar su tarea, evidencia y prueba, y registrar el
-      resultado, responsable y revisor.
-- [ ] T020 Ejecutar `converge` final tras T017–T019, añadir aquí cualquier
-      tarea correctora nueva y repetir implementación y pruebas si aparece una
-      brecha real.
+- [x] T019 Registrar la revisión cruzada de HU-05: la PR #15 fue aprobada por
+      `acf91-ua` el 2026-11-20 sobre `be76c22`; la matriz global conserva el
+      criterio FR-003/FR-004, sus tareas y la prueba verificada.
+- [x] T020 Ejecutar `converge` final tras T017–T019. Repetido el 2026-11-25:
+      suite Go completa, `go vet`, 98 pruebas frontend y build correctos, sin
+      brechas accionables ni tareas correctoras nuevas.
 
 ## Estado de convergencia
 
-Las tareas T015–T018 documentan el refinamiento y la verificación previa. T019
-y T020 permanecen abiertas hasta disponer de la revisión de otro integrante y
-de la convergencia final; no se marcan como completadas solo porque el código
-ya funcione.
+Las tareas T015–T020 documentan el ciclo completo: decisiones, análisis,
+pruebas, recorrido manual, revisión independiente y convergencia final. No
+queda trabajo accionable dentro del alcance de HU-05.

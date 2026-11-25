@@ -57,5 +57,5 @@
 | HU-06 / mantenimiento preventivo | C-003: incidencia resuelta de tipo `otro` | T004, T009 | `TestTallerMantenimientoPreventivo` |
 | HU-06 / permisos y errores | C-004 y C-005: rol y errores de ubicación | T007, T009, T017 | `TestTallerValidaRolYCampos` y revisión manual |
 
-Las tareas pendientes indican evidencias de cierre y revisión, no nuevos
-requisitos ni ampliaciones del alcance.
+Todas las filas quedaron contrastadas mediante las pruebas, el recorrido final,
+la matriz global y la revisión cruzada de la PR #16.
